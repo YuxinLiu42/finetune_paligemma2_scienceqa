@@ -1,16 +1,21 @@
-from torch import nn
 import torch
+from torch import nn
+
 
 class Model(nn.Module):
-    """Just a dummy model to show how to structure your code"""
-    def __init__(self):
+    """Simple fully-connected classifier for MNIST."""
+
+    def __init__(self, input_size: int = 784, num_classes: int = 10) -> None:
         super().__init__()
-        self.layer = nn.Linear(1, 1)
+        self.network = nn.Sequential(
+            nn.Linear(input_size, 128),
+            nn.ReLU(),
+            nn.Linear(128, 64),
+            nn.ReLU(),
+            nn.Linear(64, num_classes),
+        )
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        return self.layer(x)
-
-if __name__ == "__main__":
-    model = Model()
-    x = torch.rand(1)
-    print(f"Output shape of model: {model(x).shape}")
+        """Forward pass. Input shape: (batch, 1, 28, 28)."""
+        x = x.view(x.size(0), -1)  # flatten
+        return self.network(x)

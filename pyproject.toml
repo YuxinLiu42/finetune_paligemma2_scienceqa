@@ -20,6 +20,7 @@ requires-python = ">=3.11.0"
 dependencies = [
     "fastapi==0.115.6",
     "torch==2.6.0",
+    "torchvision>=0.21.0",
     "typer==0.15.1",
     "uvicorn==0.34.0",
 ]
@@ -51,7 +52,10 @@ url = "https://download.pytorch.org/whl/cpu"
 explicit = true
 
 [tool.ruff]
-line-length = 120
+line-length = 88
+
+[tool.ruff.lint]
+select = ["E", "F", "W"]
 
 [tool.coverage.run]
 omit = ["tests/*"]
