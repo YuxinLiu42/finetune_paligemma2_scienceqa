@@ -2,6 +2,9 @@
 requires = ["uv_build>=0.9.22,<0.10.0"]
 build-backend = "uv_build"
 
+[tool.uv_build]
+source-dir = "src"
+
 [project]
 name = "project_name"
 version = "0.0.1"
@@ -25,6 +28,9 @@ dependencies = [
     "typer==0.15.1",
     "uvicorn==0.34.0",
 ]
+
+[project.scripts]
+train = "project_name.train:train"
 
 [dependency-groups]
 dev = [
