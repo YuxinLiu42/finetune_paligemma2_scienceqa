@@ -1,11 +1,14 @@
-"""Module for downloading and preprocessing the data."""
+"""Module for downloading, preprocessing, and loading the dataset."""
 
 import logging
 from pathlib import Path
 import typer
+from torch.utils.data import DataLoader
 from datasets import DatasetDict, load_dataset, load_from_disk
 from rich.logging import RichHandler
 import shutil
+import lightning as L
+from PIL import Image
 
 logging.basicConfig(
     level=logging.INFO,
@@ -282,6 +285,157 @@ def subset_data(
         len(debug_dataset["validation"]),
         len(debug_dataset["test"]),
     )
+
+
+class DataModule(L.LightningDataModule):
+    """LightningDataModule for the dataset.
+
+    Expects data already downloaded and preprocessed by the CLI commands.
+    Handles dataset loading, prompt construction, image/text processing,
+    and label masking for seq2seq-style fine-tuning.
+
+    Args:
+        processed_dir: Root directory of processed data.
+        subset: Dataset subset name.
+        processor: AutoProcessor instance from the model module.
+        batch_size: Dataloader batch size.
+        num_workers: Number of dataloader worker processes.
+        max_length: Max token length for text prompt inputs.
+        max_label_length: Max token length for answer label inputs.
+    """
+
+    def __init__(
+        self,
+        processed_dir: Path = PROCESSED_DATA_DIR,
+        subset: str = DATASET_SUBSET,
+        processor=None,
+        batch_size: int = 4,
+        num_workers: int = 2,
+        max_length: int = 256,
+        max_label_length: int = 32,
+    ) -> None:
+        """Initialize the DataModule with dataset paths and processing parameters."""
+        super().__init__()
+        self.data_path = processed_dir / subset
+        self.processor = processor
+        self.batch_size = batch_size
+        self.num_workers = num_workers
+        self.max_length = max_length
+        self.max_label_length = max_label_length
+        self.dataset = None
+
+    def setup(self, stage: str | None = None) -> None:
+        """Load the processed dataset from disk.
+
+        Called by the Trainer before any dataloader is created.
+        Loads all splits (train/validation/test) into memory.
+
+        Args:
+            stage: Current stage ('fit', 'validate', 'test', or 'predict').
+                   Not used here since all splits are loaded at once.
+        """
+        log.info("Loading processed dataset from %s ...", self.data_path)
+        self.dataset = load_from_disk(self.data_path)
+        log.info(
+            "Dataset loaded: train=%d | validation=%d | test=%d",
+            len(self.dataset["train"]),
+            len(self.dataset["validation"]),
+            len(self.dataset["test"]),
+        )
+
+    def _collate(self, samples: list[dict]) -> dict:
+        """Collate a batch of samples into model-ready tensors.
+
+        For each sample, constructs the text prompt and retrieves the image.
+        Missing images are replaced with a blank RGB placeholder.
+        Label tokens corresponding to padding are masked with -100 so they
+        are ignored by the loss function.
+
+        Args:
+            samples: List of dataset samples, each containing keys:
+                     'question', 'choices', 'answer_text', and 'image'.
+
+        Returns:
+            A dict of tensors ready for the model, including 'labels'.
+        """
+        # Avoid circular import by importing processor here
+        from project_name.model import build_prompt
+
+        prompts, answer_texts, images = [], [], []
+        for s in samples:
+            prompts.append(build_prompt(s["question"], s["choices"]))
+            answer_texts.append(s["answer_text"])
+            images.append(
+                s["image"] if s["image"] is not None else Image.new("RGB", (224, 224))
+            )
+
+        # Tokenize prompts and process images together
+        inputs = self.processor(
+            text=prompts,
+            images=images,
+            return_tensors="pt",
+            padding="longest",
+            truncation=True,
+            max_length=self.max_length,
+        )
+
+        # Tokenize answer texts separately to build labels
+        label_encodings = self.processor.tokenizer(
+            answer_texts,
+            return_tensors="pt",
+            padding="longest",
+            truncation=True,
+            max_length=self.max_label_length,
+        )
+
+        # Mask padding tokens in labels so they don't contribute to the loss
+        labels = label_encodings["input_ids"].clone()
+        labels[labels == self.processor.tokenizer.pad_token_id] = -100
+        inputs["labels"] = labels
+
+        return dict(inputs)
+
+    def train_dataloader(self) -> DataLoader:
+        """Return the DataLoader for the training split.
+
+        Returns:
+            DataLoader with shuffling enabled for training.
+        """
+        return DataLoader(
+            self.dataset["train"],
+            batch_size=self.batch_size,
+            shuffle=True,
+            num_workers=self.num_workers,
+            collate_fn=self._collate,
+        )
+
+    def val_dataloader(self) -> DataLoader:
+        """Return the DataLoader for the validation split.
+
+        Returns:
+            DataLoader without shuffling for deterministic evaluation.
+        """
+        return DataLoader(
+            self.dataset["validation"],
+            batch_size=self.batch_size,
+            shuffle=False,
+            num_workers=self.num_workers,
+            collate_fn=self._collate,
+        )
+
+    def test_dataloader(self) -> DataLoader:
+        """Return the DataLoader for the test split.
+
+        Returns:
+            DataLoader without shuffling for deterministic evaluation.
+        """
+        return DataLoader(
+            self.dataset["test"],
+            batch_size=self.batch_size,
+            shuffle=False,
+            num_workers=self.num_workers,
+            collate_fn=self._collate,
+        )
 
 
 if __name__ == "__main__":
