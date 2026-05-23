@@ -251,21 +251,20 @@ class TestTrainingStep:
         assert isinstance(mock_model, MagicMock)
         assert loss == mock_model.return_value.loss
 
-
-def test_logs_train_loss_with_correct_kwargs(self, module: PaliGemmaModule) -> None:
-    """self.log must be called with on_step=True, on_epoch=True, prog_bar=True."""
-    mock_log = MagicMock()
-    setattr(module, "log", mock_log)
-    mock_model = module.model
-    assert isinstance(mock_model, MagicMock)
-    module.training_step(_make_batch(), batch_idx=0)
-    mock_log.assert_called_once_with(
-        "train/loss",
-        mock_model.return_value.loss,
-        on_step=True,
-        on_epoch=True,
-        prog_bar=True,
-    )
+    def test_logs_train_loss_with_correct_kwargs(self, module: PaliGemmaModule) -> None:
+        """self.log must be called with on_step=True, on_epoch=True, prog_bar=True."""
+        mock_log = MagicMock()
+        setattr(module, "log", mock_log)
+        mock_model = module.model
+        assert isinstance(mock_model, MagicMock)
+        module.training_step(_make_batch(), batch_idx=0)
+        mock_log.assert_called_once_with(
+            "train/loss",
+            mock_model.return_value.loss,
+            on_step=True,
+            on_epoch=True,
+            prog_bar=True,
+        )
 
 
 class TestValidationStep:
@@ -431,7 +430,8 @@ class TestConfigureOptimizers:
         """AdamW must be constructed with the learning_rate stored in hparams."""
         result = module.configure_optimizers()
         actual_lr = result["optimizer"].param_groups[0]["lr"]
-        assert actual_lr == pytest.approx(module.hparams.learning_rate)
+        hparams: dict[str, Any] = dict(module.hparams)
+        assert actual_lr == pytest.approx(hparams["learning_rate"])
 
     def test_scheduler_is_cosine_annealing(self, module: PaliGemmaModule) -> None:
         """Scheduler must be CosineAnnealingLR for smooth LR decay."""
