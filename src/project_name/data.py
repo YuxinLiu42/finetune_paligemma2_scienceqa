@@ -5,6 +5,7 @@ from pathlib import Path
 import typer
 from datasets import DatasetDict, load_dataset, load_from_disk
 from rich.logging import RichHandler
+import shutil
 
 logging.basicConfig(
     level=logging.INFO,
@@ -111,6 +112,9 @@ def preprocess(
             f"{', '.join(COLUMNS_ALWAYS_DROP)}."
         ),
     ),
+    overwrite: bool = typer.Option(
+        False, help="Overwrite existing processed dataset if it already exists."
+    ),
 ) -> None:
     """Preprocess the raw ScienceQA-IMG dataset and save the processed version to disk.
 
@@ -129,6 +133,7 @@ def preprocess(
         val_ratio: Ratio of validation samples to keep (between 0 and 1).
         drop_cols: Comma-separated optional columns to drop.
                    Allowed: hint, lecture, subject, topic.
+        overwrite: Overwrite existing processed dataset if it already exists.
     """
     raw_path = raw_dir / DATASET_SUBSET
     processed_path = processed_dir / DATASET_SUBSET
@@ -138,12 +143,17 @@ def preprocess(
         raise typer.Exit(code=1)
 
     if processed_path.exists():
-        log.info("Processed dataset already exists at %s, skipping.", processed_path)
-        return
+        if not overwrite:
+            log.info(
+                "Processed dataset already exists at %s, skipping.", processed_path
+            )
+            return
+        log.info("Overwrite enabled, removing existing dataset at %s.", processed_path)
+        shutil.rmtree(processed_path)
 
     # Parse and validate optional extra columns to drop
     extra_drop: list[str] = [c.strip() for c in drop_cols.split(",") if c.strip()]
-    invalid = [c for c in extra_drop if c not in COLUMNS_TO_KEEP]
+    invalid = [c for c in extra_drop if c not in COLUMNS_OPTIONAL]
     if invalid:
         log.error(
             "Cannot drop unknown or required columns: %s. "
@@ -153,7 +163,7 @@ def preprocess(
         )
         raise typer.Exit(code=1)
 
-    effective_keep = [c for c in COLUMNS_OPTIONAL if c not in extra_drop]
+    effective_keep = [c for c in COLUMNS_TO_KEEP if c not in extra_drop]
     log.info("Columns kept: %s", effective_keep)
     if extra_drop:
         log.info("Extra columns dropped by user: %s", extra_drop)
