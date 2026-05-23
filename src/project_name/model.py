@@ -41,3 +41,8 @@ class Model(L.LightningModule):
     def configure_optimizers(self):
         """Return Adam optimizer with configured learning rate."""
         return torch.optim.Adam(self.parameters(), lr=self.lr)
+
+    def build_prompt(question: str, choices: list[str]) -> str:
+        """Build a text prompt from a question and its answer choices."""
+        formatted = "\n".join(f"{i}. {c}" for i, c in enumerate(choices))
+        return f"{question}\n{formatted}"

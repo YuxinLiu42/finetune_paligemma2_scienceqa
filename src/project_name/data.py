@@ -322,7 +322,7 @@ class DataModule(L.LightningDataModule):
         self.num_workers = num_workers
         self.max_length = max_length
         self.max_label_length = max_label_length
-        self.dataset = None
+        self.dataset: DatasetDict | None = None
 
     def setup(self, stage: str | None = None) -> None:
         """Load the processed dataset from disk.
@@ -401,6 +401,7 @@ class DataModule(L.LightningDataModule):
         Returns:
             DataLoader with shuffling enabled for training.
         """
+        assert self.dataset is not None, "Call setup() before accessing dataloaders."
         return DataLoader(
             self.dataset["train"],
             batch_size=self.batch_size,
@@ -415,6 +416,7 @@ class DataModule(L.LightningDataModule):
         Returns:
             DataLoader without shuffling for deterministic evaluation.
         """
+        assert self.dataset is not None, "Call setup() before accessing dataloaders."
         return DataLoader(
             self.dataset["validation"],
             batch_size=self.batch_size,
@@ -429,6 +431,7 @@ class DataModule(L.LightningDataModule):
         Returns:
             DataLoader without shuffling for deterministic evaluation.
         """
+        assert self.dataset is not None, "Call setup() before accessing dataloaders."
         return DataLoader(
             self.dataset["test"],
             batch_size=self.batch_size,
