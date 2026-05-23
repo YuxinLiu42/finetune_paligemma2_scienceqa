@@ -3,10 +3,7 @@ layout: default
 nav_exclude: true
 ---
 
-# Exam template for 02476 Machine Learning Operations
-
-This is the report template for the exam. Please only remove the text formatted as with three dashes in front and behind
-like:
+# Exam template for Machine Learning Operations LMU SS26
 
 ```--- question 1 fill here ---```
 
@@ -45,35 +42,38 @@ be installed with `pip install click markdown`.
 ## Group information
 
 ### Question 1
-> **Enter the group number you signed up on <learn.inside.dtu.dk>**
+> **Enter the group number you signed up**
 >
 > Answer:
 
-41
+1
 
 ### Question 2
 > **Enter the study number for each member in the group**
 >
 > Answer:
 
-s183319, s194345, s185231, s184399, s194333
+Duc-Anh Nguyen 12433139
 
 ### Question 3
 > **What framework did you choose to work with and did it help you complete the project?**
->
-> Answer length: 100-200 words.
->
-> Example:
-> *We used the third-party framework ... in our projekkkkct. We used functionality ... and functionality ... from the*
-> *package to do ... and ... in our project*.
->
+
 > Answer:
 
-In this project we utilized the [Transformers](https://github.com/huggingface/transformers) repository from the Huggingface group. This repository provides the [t5-small model](https://huggingface.co/t5-small), which is a natural language processing (NLP) model that can translate text from one language to another. In this project we have used the Trainer class in the pytorch lightning framework to train and test the t5-small model on a subset of the english/ german (en-de) subset of the [WMT19 dataset](https://huggingface.co/datasets/wmt19) (from the fourth conference on machine translation). We have used Weights and biases (`wandb`) to both handle the configuration file with the hyperparameters for the model and for logging the training and validation loss. 
+In this project we utilized the [Transformers](https://github.com/huggingface/transformers) repository from the Huggingface group. This repository provides the [t5-small model](https://huggingface.co/t5-small), which is a natural language processing (NLP) model that can translate text from one language to another. 
+
+In this project we have used the Trainer class in the pytorch lightning framework to train and test the t5-small model on a subset of the english/ german (en-de) subset of the [WMT19 dataset](https://huggingface.co/datasets/wmt19) (from the fourth conference on machine translation). 
+
+We have used Weights and biases (`wandb`) to both handle the configuration file with the hyperparameters for the model and for logging the training and validation loss. 
+
+
 
 ## Coding environment
 
 > In the following section we are interested in learning more about you local development environment.
+
+
+
 
 ### Question 4
 
@@ -110,8 +110,16 @@ python setup.py install
 > *experiments.*
 > Answer:
 
-The overall structure is initialized with the cookiecutter template. In general we tried to follow the cookiecutter structure as much as possible. Since the original WMT19 dataset took up too much memory in both cloud and drive, we processed the data locally and only included a subset in the proccessed folder in the data folder. Thus we deleted the data/external/, data/interim/ and data/raw/ folders. We also deleted the folders notebooks/, references/, src/features/, src/visualization/, since we did not use these. We filled out the src/data/ folder and the src/models/ folder in which we also included a file src/models/evaluate_model.py for evaluating the model and a folder src/models/config/, with the configuration files.
+The overall structure is initialized with the cookiecutter template. In general we tried to follow the cookiecutter structure as much as possible. 
+
+
+Since the original WMT19 dataset took up too much memory in both cloud and drive, we processed the data locally and only included a subset in the proccessed folder in the data folder. Thus we deleted the data/external/, data/interim/ and data/raw/ folders. We also deleted the folders notebooks/, references/, src/features/, src/visualization/, since we did not use these. We filled out the src/data/ folder and the src/models/ folder in which we also included a file src/models/evaluate_model.py for evaluating the model and a folder src/models/config/, with the configuration files.
 We also included the tests/ folder which holds scripts for conducting different pytests.
+
+
+
+
+
 
 
 ### Question 6
@@ -130,6 +138,15 @@ In this project we have used typing and written comments when the code is not co
 > In the following section we are interested in how version control was used in your project during development to
 > corporate and increase the quality of your code.
 
+
+
+
+
+
+
+
+
+
 ### Question 7
 
 > **How many tests did you implement?**
@@ -137,6 +154,11 @@ In this project we have used typing and written comments when the code is not co
 > Answer: 
 
 7
+
+
+
+
+
 
 ### Question 8
 
@@ -168,6 +190,16 @@ The reason for the code coverage less than 100% in the file `model.py` is that w
 
 In `predict_model.py`, the reason for the coverage being less than 100% is that we do not test with loading in a checkpoint. Unless we transfered this to GitHub, it would not be able to run in actions. Lastly, we have tested the code run in the `if __name__ == '__main__':`-block. In order to do so we had to open a pipe to another cmd using `os.popen` doing so, so the code is simply not counted here.
 
+
+
+
+
+
+
+
+
+
+
 ### Question 9
 
 > **Did your workflow include using branches and pull requests? If yes, explain how. If not, explain how branches and**
@@ -180,8 +212,15 @@ In `predict_model.py`, the reason for the coverage being less than 100% is that 
 > *addition to the main branch. To merge code we ...*
 >
 > Answer:
-
 We added branch protection on the main branch. Hence we created a feature branch where changes were made. We then used pull requests to merge with the main branch quite often. A pull request typically only concerned a few changes in a limited amount of scripts. Hence we avoided having an unmanageable amount of branches as well as reduced the number of merge conflicts. Before merging a branch with the main branch the tests are conducted to ensure that the merge will result in a working code. Furthermore when making major changes we assured that pull request were created and reviewed immediately.
+
+
+
+
+
+
+
+
 
 ### Question 10
 
@@ -197,6 +236,14 @@ We added branch protection on the main branch. Hence we created a feature branch
 > Answer:
 
 The wmt19 dataset originally contained around 9GB of data. Hence we decided to create a subset of the dataset. Data version control hereby contributed to an easy update of the data. We initially created a bucket in Google Cloud and used dvc to manage this. However s194333 did not have enough credit to sustain this service hence we had to create another bucket containing the same data with a different billing account. However we also stored the data on google drive, in case we potentially would use all credits on cloud again. Hence the dvc package proved to be very usefull for switching between different data storage options. In addition, dvc was an easy update to implement on all our devices since it only required some simple terminal commands. 
+
+
+
+
+
+
+
+
 
 ### Question 11
 
@@ -226,6 +273,17 @@ https://github.com/MikkelGodsk/dtu_mlops_exam_project/actions/runs/3961726045/wo
 > In the following section we are interested in learning more about the experimental setup for running your code and
 > especially the reproducibility of your experiments.
 
+
+
+
+
+
+
+
+
+
+
+
 ### Question 12
 
 > **How did you configure experiments? Did you make use of config files? Explain with coding examples of how you would**
@@ -248,6 +306,13 @@ We utilized the *sweep* functionality of `wandb` in an attempt to optimize hyper
 
 When using the src/models/predict_model.py we use a simple argparser to give the input string to be translated along with the checkpoint file containing the trained model weights.
 
+
+
+
+
+
+
+
 ### Question 13
 
 > **Reproducibility of experiments are important. Related to the last question, how did you secure that no information**
@@ -262,6 +327,17 @@ When using the src/models/predict_model.py we use a simple argparser to give the
 > Answer:
 
  When we load the config file the hyperparameters of the model is set to the values provided in the file. Hence one can easily see which parameters are used to train. However, when conducting experiments it is important to track which parameters are used. By ensuring commits between changes in config file we make sure that experiments are logged in the git commit history. In order to reproduce the experiments we included a seed in the configuration file. Hereby we ensure that the exact same results are obtained when training a model with a specific set of hyperparameters. Furthermore we created docker images, which ensures that our models can be run on all computers. By running multiple experiments in W&B we ensure that hyperparameters are kept in W&B.
+
+
+
+
+
+
+
+
+
+
+
 
 ### Question 14
 
@@ -296,6 +372,18 @@ We also perform a sweep in an attempt to optimize hyperparamters based on obtain
 
 This did however show us that with the best hyperparameterse the validation loss remains constant.
 
+
+
+
+
+
+
+
+
+
+
+
+
 ### Question 15
 
 > **Docker is an important tool for creating containerized applications. Explain how you used docker in your**
@@ -312,6 +400,17 @@ This did however show us that with the best hyperparameterse the validation loss
 In our project, reproducablity is very important, hence we utilize Docker in order to ensure that the application can be run on all devices. Hence we created docker images for training and deploying the model. Since building docker images are a time consuming task, we prefred google cloud for building the dockerimages in cloud using a dockerfile and triggers. After being build the docker images are run using google cloud Run.
 A link to the training docker file is provided in the following:
 https://github.com/MikkelGodsk/dtu_mlops_exam_project/blob/main/trainer.dockerfile
+
+
+
+
+
+
+
+
+
+
+
 
 
 ### Question 16
@@ -334,6 +433,21 @@ We used the inbuild tool from pytorch lightning for profiling the training, but 
 ## Working in the cloud
 
 > In the following section we would like to know more about your experience when developing in the cloud.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 ### Question 17
 
@@ -365,6 +479,22 @@ Vertex AI:
 Training framework where we run the docker image
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 ### Question 18
 
 > **The backbone of GCP is the Compute engine. Explained how you made use of this service and what type of VMs**
@@ -380,6 +510,20 @@ Training framework where we run the docker image
 
 In this project we did not utilize the Compute engine and used Vertex AI instead. 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 ### Question 19
 
 > **Insert 1-2 images of your GCP bucket, such that we can see what data you have stored in it.**
@@ -393,6 +537,17 @@ The bucket can be seen in the following
 ```
 Here the bucket wmt19-de-en refers to the full dataset whereas 30k-dataset refers to the smaller dataset.
 
+
+
+
+
+
+
+
+
+
+
+
 ### Question 20
 
 > **Upload one image of your GCP container registry, such that we can see the different images that you have stored.**
@@ -403,6 +558,17 @@ Here the bucket wmt19-de-en refers to the full dataset whereas 30k-dataset refer
 ![GCP Registry](figures/gcp_registry.png)
 
 
+
+
+
+
+
+
+
+
+
+
+
 ### Question 21
 
 > **Upload one image of your GCP cloud build history, so we can see the history of the images that have been build in**
@@ -411,6 +577,16 @@ Here the bucket wmt19-de-en refers to the full dataset whereas 30k-dataset refer
 > Answer:
 
 ![Build history](figures/build_history_cloud.png)
+
+
+
+
+
+
+
+
+
+
 
 ### Question 22
 
@@ -435,6 +611,14 @@ Link to our model:
 https://translation-gcp-app-jc4crsqeca-lz.a.run.app/translate/How are you doing?
 
 
+
+
+
+
+
+
+
+
 ### Question 23
 
 > **Did you manage to implement monitoring of your deployed model? If yes, explain how it works. If not, explain how**
@@ -449,6 +633,18 @@ https://translation-gcp-app-jc4crsqeca-lz.a.run.app/translate/How are you doing?
 > Answer:
 
 We did not manage to implement monitoring. We would like to have monitoring implemented such that over time we could measure translation accuracy (based e.g on user rating) that would inform us about the performance and hence usefullness of our model. Provided we modelled the german and english language perfectly, our model would be quite prone to data-drifting. The only real issue would be words having new meanings or new words being adapted to the languages. However, this *perfect* modelling is rarely the case in real life as the dataset for a given translation task, will ultimately only be a subset of the distribution modelling the language. This means that our model will be context dependent. A weakness derived from this could e.g. be if the training dataset was exceedingly formal and we received an input which was very informal. As such, monitoring a user-based translation accuracy score could inform when our model becomes outdated.
+
+
+
+
+
+
+
+
+
+
+
+
 
 ### Question 24
 
@@ -467,6 +663,17 @@ s194333 did not use any credit for this project, since she managed to use all he
 ## Overall discussion of project
 
 > In the following section we would like you to think about the general structure of your project.
+
+
+
+
+
+
+
+
+
+
+
 
 ### Question 25
 
@@ -490,6 +697,16 @@ In order to utilize the **GPC** git and dvc both provides a link from the local 
 
 When training a dataset stored in a **GCP bucket** was utilized. Information sharing and version control of the dataset was handled by utilizing **dvc**. We interfaced with our application through **Cloud Run** by using the **Fast API** framework. Finally, we didn't utilize monitoring as we had plenty of work on our hands, trying to interface with and getting our model to run on cloud.
 
+
+
+
+
+
+
+
+
+
+
 ### Question 26
 
 > **Discuss the overall struggles of the project. Where did you spend most time and what did you do to overcome these**
@@ -505,6 +722,15 @@ When training a dataset stored in a **GCP bucket** was utilized. Information sha
 Our first time consuming task was to download the data. This was downloaded from huggingface which took a long time. We also spent an excessive amount of time trying to train our model on cloud. Some main factors contributing to this issue, was our funding running short and having to authenticate multiple frameworks within a docker container. s194333 created the project on GCP, however she quickly (within 48 hours) ran short on funding (complementary of the course) due to operations ineracting with the *bucket* storing our data. We aren't entirely certain as to what depleted the grants, however this greatly restricted our work. From docker we needed to authenticate dvc, GCP, in addition to `wandb`. This proved tremendously cumbersome as the authentication requires certfication, which we would preferably avoid storing in the docker image. During this process we spent a lot of time debugging. Due to long building times errors didn't occur immediatly, which resulted in a lot of reapeated idle time. 
 
 In general most of the tools and frameworks were relativly new for us, which resulted in a lot of google searches and unknown errors. The exercises significantly prepared us for conducting the project, however we still had a lot to learn when making the project. This challenged us in many ways, however we ultimately managed to overcome these.
+
+
+
+
+
+
+
+
+
 
 ### Question 27
 
@@ -522,7 +748,12 @@ In general most of the tools and frameworks were relativly new for us, which res
 > Answer:
 
 
-Student s184399 created github repository with the cookiecutter structure. Furthermore the student was in charge of testing the models using unittesting and other previously mentioned tests. Furthermore he also contributed to building the docker images in the cloud and deploying the model. 
+Student 12433130 created github repository 
+
+
+with the cookiecutter structure. Furthermore the student was in charge of testing the models using unittesting and other previously mentioned tests. Furthermore he also contributed to building the docker images in the cloud and deploying the model. 
+
+
 
 Student s185231 was in charge of building the docker images in the cloud. Furthermore the student helped downloading the data and creating the scripts for training and testing the model.
 
