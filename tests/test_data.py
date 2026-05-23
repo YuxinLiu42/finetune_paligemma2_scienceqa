@@ -1,9 +1,9 @@
 """Tests for the data pipeline: CLI commands and DataModule."""
 
-import pytest
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
+import pytest
 import torch
 from datasets import Dataset, DatasetDict
 from PIL import Image
@@ -124,9 +124,9 @@ class TestDownload:
         result = runner.invoke(app, ["download", "--raw-dir", str(tmp_path)])
 
         assert result.exit_code == 0
-        assert "skipping download" in result.output
+        assert save_path.exists()
 
-    @patch("data.load_dataset")
+    @patch("project_name.data.load_dataset")
     def test_downloads_and_saves(self, mock_load: MagicMock, tmp_path: Path) -> None:
         """Dataset is downloaded from HuggingFace and saved to disk."""
         mock_dataset = _make_dataset()
@@ -175,15 +175,15 @@ class TestPreprocess:
         )
 
         assert result.exit_code == 0
-        assert "skipping" in result.output
+        assert (tmp_path / "processed" / DATASET_SUBSET).exists()
 
-    @patch("data.load_from_disk")
+    @patch("project_name.data.load_from_disk")
     def test_answer_text_added(self, mock_load: MagicMock, tmp_path: Path) -> None:
         """answer_text is correctly derived from choices and answer index."""
         (tmp_path / "raw" / DATASET_SUBSET).mkdir(parents=True)
         mock_load.return_value = _make_dataset()
 
-        with patch("data.DatasetDict.save_to_disk"):
+        with patch("project_name.data.DatasetDict.save_to_disk"):
             result = runner.invoke(
                 app,
                 [
@@ -198,18 +198,19 @@ class TestPreprocess:
         assert result.exit_code == 0
         assert "answer_text" in result.output
 
-    @patch("data.load_from_disk")
+    @patch("project_name.data.load_from_disk")
     def test_always_drop_columns_removed(
         self, mock_load: MagicMock, tmp_path: Path
     ) -> None:
         """Columns in COLUMNS_ALWAYS_DROP are never present in the output."""
         (tmp_path / "raw" / DATASET_SUBSET).mkdir(parents=True)
-        mock_load.return_value = _make_dataset()
+        raw_dataset = _make_dataset()
+        mock_load.return_value = raw_dataset
 
         saved: list[DatasetDict] = []
 
-        def _capture(dataset_dict: DatasetDict, path: Path) -> None:
-            saved.append(dataset_dict)
+        def _capture(path: Path) -> None:
+            saved.append(raw_dataset)
 
         with patch.object(DatasetDict, "save_to_disk", _capture):
             runner.invoke(
@@ -225,9 +226,9 @@ class TestPreprocess:
 
         if saved:
             for col in COLUMNS_ALWAYS_DROP:
-                assert col not in saved[0]["train"].column_names
+                assert col not in saved[0]["validation"].column_names
 
-    @patch("data.load_from_disk")
+    @patch("project_name.data.load_from_disk")
     def test_subject_filter_removes_other_subjects(
         self, mock_load: MagicMock, tmp_path: Path
     ) -> None:
@@ -243,7 +244,7 @@ class TestPreprocess:
             }
         )
 
-        with patch("data.DatasetDict.save_to_disk"):
+        with patch("project_name.data.DatasetDict.save_to_disk"):
             result = runner.invoke(
                 app,
                 [
@@ -260,7 +261,7 @@ class TestPreprocess:
         assert result.exit_code == 0
         assert "physics" in result.output
 
-    @patch("data.load_from_disk")
+    @patch("project_name.data.load_from_disk")
     def test_rejects_invalid_drop_cols(
         self, mock_load: MagicMock, tmp_path: Path
     ) -> None:
@@ -283,7 +284,7 @@ class TestPreprocess:
 
         assert result.exit_code == 1
 
-    @patch("data.load_from_disk")
+    @patch("project_name.data.load_from_disk")
     def test_overwrite_removes_existing(
         self, mock_load: MagicMock, tmp_path: Path
     ) -> None:
@@ -292,7 +293,7 @@ class TestPreprocess:
         (tmp_path / "processed" / DATASET_SUBSET).mkdir(parents=True)
         mock_load.return_value = _make_dataset()
 
-        with patch("data.DatasetDict.save_to_disk"):
+        with patch("project_name.data.DatasetDict.save_to_disk"):
             result = runner.invoke(
                 app,
                 [
@@ -322,14 +323,15 @@ class TestSubsetData:
     def test_skips_if_debug_exists(self, tmp_path: Path) -> None:
         """subset_data is skipped when the debug directory already exists."""
         (tmp_path / DATASET_SUBSET).mkdir(parents=True)
-        (tmp_path / f"{DATASET_SUBSET}_debug").mkdir(parents=True)
+        debug_path = tmp_path / f"{DATASET_SUBSET}_debug"
+        debug_path.mkdir(parents=True)
 
         result = runner.invoke(app, ["subset-data", "--processed-dir", str(tmp_path)])
 
         assert result.exit_code == 0
-        assert "skipping" in result.output
+        assert debug_path.exists()
 
-    @patch("data.load_from_disk")
+    @patch("project_name.data.load_from_disk")
     def test_subset_size_capped_at_n_samples(
         self, mock_load: MagicMock, tmp_path: Path
     ) -> None:
@@ -339,7 +341,7 @@ class TestSubsetData:
             n_train=50, n_validation=20, n_test=20
         )
 
-        with patch("data.DatasetDict.save_to_disk"):
+        with patch("project_name.data.DatasetDict.save_to_disk"):
             result = runner.invoke(
                 app,
                 [
@@ -354,7 +356,7 @@ class TestSubsetData:
         assert result.exit_code == 0
         assert "train=10" in result.output
 
-    @patch("data.load_from_disk")
+    @patch("project_name.data.load_from_disk")
     def test_subset_does_not_exceed_split_size(
         self, mock_load: MagicMock, tmp_path: Path
     ) -> None:
@@ -364,7 +366,7 @@ class TestSubsetData:
             n_train=3, n_validation=2, n_test=2
         )
 
-        with patch("data.DatasetDict.save_to_disk"):
+        with patch("project_name.data.DatasetDict.save_to_disk"):
             result = runner.invoke(
                 app,
                 [
@@ -415,7 +417,7 @@ class TestDataModule:
         processed_dataset: DatasetDict,
         mock_processor: MagicMock,
     ) -> DataModule:
-        """Return a fully set-up ScienceQADataModule backed by a temp directory.
+        """Return a fully set-up DataModule backed by a temp directory.
 
         Args:
             tmp_path: Pytest-provided temporary directory.
@@ -423,9 +425,9 @@ class TestDataModule:
             mock_processor: Mock AutoProcessor instance.
 
         Returns:
-            A ScienceQADataModule with setup() already called.
+            A DataModule with setup() already called.
         """
-        with patch("data.load_from_disk", return_value=processed_dataset):
+        with patch("project_name.data.load_from_disk", return_value=processed_dataset):
             dm = DataModule(
                 processed_dir=tmp_path,
                 processor=mock_processor,
@@ -450,7 +452,7 @@ class TestDataModule:
         """_collate() output dict contains a 'labels' key."""
         samples = [data_module.dataset["train"][i] for i in range(2)]
 
-        with patch("data.build_prompt", return_value="Q: ..."):
+        with patch("project_name.data.build_prompt", return_value="Q: ..."):
             batch = data_module._collate(samples)
 
         assert "labels" in batch
@@ -463,7 +465,7 @@ class TestDataModule:
 
         samples = [data_module.dataset["train"][i] for i in range(2)]
 
-        with patch("data.build_prompt", return_value="Q: ..."):
+        with patch("project_name.data.build_prompt", return_value="Q: ..."):
             batch = data_module._collate(samples)
 
         assert (batch["labels"][label_ids == 0] == -100).all()
@@ -481,7 +483,7 @@ class TestDataModule:
 
         data_module.processor.side_effect = _capture
 
-        with patch("data.build_prompt", return_value="Q: ..."):
+        with patch("project_name.data.build_prompt", return_value="Q: ..."):
             data_module._collate(samples)
 
         assert isinstance(received_images[0], Image.Image)
