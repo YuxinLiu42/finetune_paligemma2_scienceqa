@@ -15,6 +15,7 @@ from lightning.pytorch.callbacks import (
 from lightning.pytorch.loggers import WandbLogger
 from omegaconf import DictConfig, OmegaConf
 from rich.logging import RichHandler
+from typing import cast, Any
 
 from project_name.data import DataModule
 from project_name.model import PaliGemmaModule
@@ -54,7 +55,7 @@ class PredictionLogger(Callback):
     def on_test_batch_end(
         self,
         trainer: L.Trainer,
-        pl_module: L.LightningModule,
+        pl_module: PaliGemmaModule,
         outputs,
         batch: dict,
         batch_idx: int,
@@ -197,7 +198,7 @@ def train(cfg: DictConfig) -> float:
         )
         params = OmegaConf.to_container(cfg, resolve=True)
         assert isinstance(params, dict)
-        logger.log_hyperparams(params)
+        logger.log_hyperparams(cast(dict[str, Any], params))
         log.info(
             "W&B logging enabled | project=%s, run=%s",
             cfg.wandb.project,
