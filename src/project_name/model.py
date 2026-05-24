@@ -106,7 +106,7 @@ class PaliGemmaModule(L.LightningModule):
                 lora_dropout=0.05,
                 bias="none",
             )
-            self.model = get_peft_model(self.model, lora_config)
+            self.model = get_peft_model(self.model, lora_config)  # type: ignore[assignment]
 
         trainable = sum(p.numel() for p in self.model.parameters() if p.requires_grad)
         total = sum(p.numel() for p in self.model.parameters())
