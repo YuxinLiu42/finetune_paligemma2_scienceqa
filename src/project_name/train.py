@@ -15,7 +15,6 @@ from lightning.pytorch.callbacks import (
 from lightning.pytorch.loggers import WandbLogger
 from omegaconf import DictConfig, OmegaConf
 from rich.logging import RichHandler
-from typing import cast, Any
 
 from project_name.data import DataModule
 from project_name.model import PaliGemmaModule
@@ -197,8 +196,7 @@ def train(cfg: DictConfig) -> float:
             log_model=cfg.wandb.log_model,
         )
         params = OmegaConf.to_container(cfg, resolve=True)
-        assert isinstance(params, dict)
-        logger.log_hyperparams(cast(dict[str, Any], params))
+        logger.log_hyperparams(params)  # type: ignore[arg-type]
         log.info(
             "W&B logging enabled | project=%s, run=%s",
             cfg.wandb.project,
