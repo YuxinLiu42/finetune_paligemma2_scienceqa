@@ -77,7 +77,7 @@ def evaluate(
 
     total_correct = 0
     total_samples = 0
-    subject_stats = dict[str, dict[str, int]] = defaultdict(
+    subject_stats: dict[str, dict[str, int]] = defaultdict(
         lambda: {"correct": 0, "total": 0}
     )
 
@@ -90,7 +90,7 @@ def evaluate(
         labels = batch["labels"].to(model.device)
         subjects = batch.get("subject", [])
 
-        generated_ids = model.model.generate(
+        generated_ids = model.model.generate(  # type: ignore[misc]
             input_ids=input_ids,
             pixel_values=pixel_values,
             max_new_tokens=10,
@@ -124,6 +124,7 @@ def evaluate(
         overall_acc,
     )
 
+    # Print subject breakdown table if requested
     if by_subject and subject_stats:
         table = Table(title="Accuracy by Subject")
         table.add_column("Subject", style="cyan")
@@ -142,6 +143,7 @@ def evaluate(
 
         rprint(table)
 
+    # Build results dict and save to JSON
     results = {
         "checkpoint": str(ckpt_path),
         "total_correct": total_correct,
