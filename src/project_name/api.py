@@ -1,14 +1,198 @@
-"""still need to modify."""
+"""FastAPI inference service for PaliGemma2 ScienceQA predictions."""
 
-from fastapi import FastAPI
+import base64
+import io
 import logging
+import os
+from contextlib import asynccontextmanager
+from pathlib import Path
 
-logger = logging.getLogger(__name__)
+import torch
+from fastapi import FastAPI, HTTPException
+from PIL import Image
+from pydantic import BaseModel, Field
+from rich.logging import RichHandler
 
-app = FastAPI()
+from project_name.model import PaliGemmaModule
+from project_name.predict import load_checkpoint, predict_single
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(message)s",
+    handlers=[RichHandler()],
+)
+log = logging.getLogger(__name__)
+
+_module: PaliGemmaModule | None = None
 
 
-@app.get("/")
-def root():
-    """A simple root endpoint."""
-    return {"message": "ok"}
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Load the PaliGemma2 checkpoint on startup and release it on shutdown.
+
+    The checkpoint path is resolved from the environment variable
+    ``CHECKPOINT_PATH``. If the variable is not set, or the path does not
+    exist, the service starts without a loaded model and every /predict call
+    will return 503 until the service is restarted with a valid path.
+
+    Args:
+        app: The FastAPI application instance (required by the lifespan protocol).
+    """
+    global _module
+    checkpoint_env = os.environ.get("CHECKPOINT_PATH", "")
+    if checkpoint_env:
+        checkpoint_path = Path(checkpoint_env)
+        if checkpoint_path.exists():
+            log.info("Loading checkpoint from %s ...", checkpoint_path)
+            _module = load_checkpoint(checkpoint_path)
+            log.info("Model ready.")
+        else:
+            log.warning(
+                "CHECKPOINT_PATH is set but file not found: %s", checkpoint_path
+            )
+    else:
+        log.warning("CHECKPOINT_PATH not set — /predict will return 503.")
+
+    yield
+
+    _module = None
+    log.info("Model released.")
+
+
+app = FastAPI(
+    title="PaliGemma2 ScienceQA API",
+    description="Single-sample inference endpoint for "
+    "PaliGemma2 fine-tuned on ScienceQA.",
+    version="0.1.0",
+    lifespan=lifespan,
+)
+
+
+class PredictRequest(BaseModel):
+    """Request body for the /predict endpoint.
+
+    Attributes:
+        question: The question text.
+        choices: List of answer choice strings (2–10 items).
+        hint: Optional hint text appended to the prompt.
+        lecture: Optional lecture text appended to the prompt.
+        image_b64: Optional base64-encoded JPEG/PNG image.
+            If omitted, text-only inference is performed.
+        max_new_tokens: Maximum number of tokens the model may generate.
+    """
+
+    question: str = Field(..., min_length=1, description="Question text.")
+    choices: list[str] = Field(
+        ...,
+        min_length=2,
+        max_length=10,
+        description="Answer choices, e.g. ['True', 'False'] or ['A', 'B', 'C'].",
+    )
+    hint: str = Field(default="", description="Optional hint text. Skipped if empty.")
+    lecture: str = Field(
+        default="", description="Optional lecture text. Skipped if empty."
+    )
+    image_b64: str | None = Field(
+        default=None,
+        description="Base64-encoded image (JPEG or PNG). Omit for text-only questions.",
+    )
+    max_new_tokens: int = Field(
+        default=10, ge=1, le=128, description="Max tokens to generate."
+    )
+
+
+class PredictResponse(BaseModel):
+    """Response body for the /predict endpoint.
+
+    Attributes:
+        prediction: Predicted answer letter, e.g. "A" or "B".
+    """
+
+    prediction: str = Field(..., description="Predicted answer letter (A/B/C/D/...).")
+
+
+@app.get("/", summary="Health check")
+def root() -> dict[str, str]:
+    """Return service status and whether the model is loaded.
+
+    Returns:
+        A dict with ``status`` and ``model_loaded`` keys.
+    """
+    return {
+        "status": "ok",
+        "model_loaded": str(_module is not None),
+    }
+
+
+@app.post(
+    "/predict",
+    response_model=PredictResponse,
+    summary="Run inference on a single sample",
+)
+def predict(request: PredictRequest) -> PredictResponse:
+    """Run single-sample inference and return the predicted answer letter.
+
+    The image, if provided, must be base64-encoded JPEG or PNG.
+    The prediction is a single letter (A, B, C, ...) corresponding to the
+    index of the predicted choice in ``request.choices``.
+
+    Args:
+        request: PredictRequest containing the question, choices, and
+            optional image and hint.
+
+    Returns:
+        PredictResponse with the predicted answer letter.
+
+    Raises:
+        HTTPException 503: Model checkpoint has not been loaded.
+        HTTPException 400: Image decoding failed.
+    """
+    if _module is None:
+        raise HTTPException(
+            status_code=503,
+            detail="Model checkpoint not loaded. "
+            "Please set CHECKPOINT_PATH and restart the service.",
+        )
+
+    # Decode image if provided
+    image: Image.Image | None = None
+    if request.image_b64 is not None:
+        try:
+            image_bytes = base64.b64decode(request.image_b64)
+            image = Image.open(io.BytesIO(image_bytes)).convert("RGB")
+        except Exception as exc:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Failed to decode image_b64: {exc}",
+            ) from exc
+
+    # Only forward optional fields that were actually provided,
+    # matching whatever columns survived --drop-cols during preprocessing.
+    prompt_kwargs: dict[str, str] = {}
+    if request.hint:
+        prompt_kwargs["hint"] = request.hint
+    if request.lecture:
+        prompt_kwargs["lecture"] = request.lecture
+
+    with torch.inference_mode():
+        prediction = predict_single(
+            module=_module,
+            image=image,
+            question=request.question,
+            choices=request.choices,
+            max_new_tokens=request.max_new_tokens,
+            **prompt_kwargs,
+        )
+
+    log.info(
+        "Prediction complete | question: %.60s | prediction: %s",
+        request.question,
+        prediction,
+    )
+    return PredictResponse(prediction=prediction)
+
+
+if __name__ == "__main__":
+    import uvicorn
+
+    uvicorn.run(app, host="0.0.0.0", port=8000)
