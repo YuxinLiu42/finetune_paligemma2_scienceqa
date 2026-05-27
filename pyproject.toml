@@ -54,6 +54,9 @@ dev = [
     "mkdocs-material==9.7.1",
     "mkdocstrings-python==2.0.1",
     "snakeviz>=2.2.2",
+    "dvc>=3.67.1",
+    "dvc-gdrive>=3.0.1",
+    "dvc-gs>=3.0.2",
 ]
 
 
