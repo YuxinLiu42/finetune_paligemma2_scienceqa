@@ -27,7 +27,7 @@ logging.basicConfig(
 log = logging.getLogger(__name__)
 
 CHECKPOINT_DIR = Path("checkpoints")
-
+_CONFIGS_DIR = str(Path(__file__).parent.parent.parent / "configs")
 # Number of test samples logged as a W&B prediction artifact.
 N_PREDICTION_SAMPLES = 32
 
@@ -141,7 +141,7 @@ class PredictionLogger(Callback):
         self._rows.clear()
 
 
-@hydra.main(version_base="1.3", config_path="../../configs", config_name="train")
+@hydra.main(version_base="1.3", config_path=_CONFIGS_DIR, config_name="train")
 def train(cfg: DictConfig) -> float:
     """Fine-tune PaliGemma2 on the preprocessed ScienceQA-IMG dataset.
 
