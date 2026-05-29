@@ -241,7 +241,7 @@ def subset_data(
         PROCESSED_DATA_DIR, help="Directory containing the processed dataset."
     ),
     n_samples: int = typer.Option(
-        200, help="Number of samples to select per split " "for fast debugging."
+        200, help="Number of samples to select per split for fast debugging."
     ),
 ) -> None:
     """Select a small subset of the processed dataset for fast debugging.

@@ -123,9 +123,7 @@ def predict(
         ...,
         "--choices",
         "-c",
-        help=(
-            "Comma-separated answer choices, " "e.g. 'oxygen,carbon dioxide,nitrogen'."
-        ),
+        help=("Comma-separated answer choices, e.g. 'oxygen,carbon dioxide,nitrogen'."),
     ),
     image_path: Path = typer.Option(
         None, "--image", "-i", help="Path to the input image file."

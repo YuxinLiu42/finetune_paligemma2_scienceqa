@@ -39,7 +39,7 @@ def build_prompt(
         Formatted prompt string ready for the processor.
     """
     choices_str = " ".join(
-        f"({chr(65+i)}) {choice}" for i, choice in enumerate(choices)
+        f"({chr(65 + i)}) {choice}" for i, choice in enumerate(choices)
     )
     parts = [f"answer en {question}"]
     if hint:

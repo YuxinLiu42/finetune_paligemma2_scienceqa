@@ -40,11 +40,11 @@ We, as a team, successfully developed an image classifier that can accurately cl
 
 > Answer:
 
-In this project we utilized the [Transformers](https://github.com/huggingface/transformers) repository from the Huggingface group. This repository provides the [t5-small model](https://huggingface.co/t5-small), which is a natural language processing (NLP) model that can translate text from one language to another. 
+In this project we utilized the [Transformers](https://github.com/huggingface/transformers) repository from the Huggingface group. This repository provides the [t5-small model](https://huggingface.co/t5-small), which is a natural language processing (NLP) model that can translate text from one language to another.
 
-In this project we have used the Trainer class in the pytorch lightning framework to train and test the t5-small model on a subset of the english/ german (en-de) subset of the [WMT19 dataset](https://huggingface.co/datasets/wmt19) (from the fourth conference on machine translation). 
+In this project we have used the Trainer class in the pytorch lightning framework to train and test the t5-small model on a subset of the english/ german (en-de) subset of the [WMT19 dataset](https://huggingface.co/datasets/wmt19) (from the fourth conference on machine translation).
 
-We have used Weights and biases (`wandb`) to both handle the configuration file with the hyperparameters for the model and for logging the training and validation loss. 
+We have used Weights and biases (`wandb`) to both handle the configuration file with the hyperparameters for the model and for logging the training and validation loss.
 
 
 
@@ -84,11 +84,11 @@ python setup.py install
 > **Explain how you managed dependencies in your project? Explain the process a new team member would have to go**
 > **through to get an exact copy of your environment.**
 
-We used (mini)conda, pipreqs, docker, and git to manage our dependencies. We created a conda environment to make sure that the dependencies of our project do not cross-contaminate with others. Requirements of both pip and conda were handled by package pipreqs. To get a complete copy of our development environment, one would have to build our docker file: 
+We used (mini)conda, pipreqs, docker, and git to manage our dependencies. We created a conda environment to make sure that the dependencies of our project do not cross-contaminate with others. Requirements of both pip and conda were handled by package pipreqs. To get a complete copy of our development environment, one would have to build our docker file:
 
-docker build -f Docker.dockerfile . -t trainer:latest. 
+docker build -f Docker.dockerfile . -t trainer:latest.
 
-This file contains requirements.txt and environment.yml (generated wrespectively with commands pipreqs and conda env export > environment.yml). Finally, version control was managed with Git. A new team member would be invited to join the github repository, clone it, and run the docker file. 
+This file contains requirements.txt and environment.yml (generated wrespectively with commands pipreqs and conda env export > environment.yml). Finally, version control was managed with Git. A new team member would be invited to join the github repository, clone it, and run the docker file.
 
 
 
@@ -111,7 +111,7 @@ This file contains requirements.txt and environment.yml (generated wrespectively
 > *experiments.*
 > Answer:
 
-The overall structure is initialized with the cookiecutter template. In general we tried to follow the cookiecutter structure as much as possible. 
+The overall structure is initialized with the cookiecutter template. In general we tried to follow the cookiecutter structure as much as possible.
 
 
 Since the original WMT19 dataset took up too much memory in both cloud and drive, we processed the data locally and only included a subset in the proccessed folder in the data folder. Thus we deleted the data/external/, data/interim/ and data/raw/ folders. We also deleted the folders notebooks/, references/, src/features/, src/visualization/, since we did not use these. We filled out the src/data/ folder and the src/models/ folder in which we also included a file src/models/evaluate_model.py for evaluating the model and a folder src/models/config/, with the configuration files.
@@ -134,7 +134,7 @@ The models folder is used to store our imported model. The reports folder is use
 
 The test folder is used to store any test cases and test scripts used to test the project. The test folder includes subfolders for unit tests, integration tests, and acceptance tests.
 
-From the original template we removed the LICENSE file, the notebooks, and references folders as not of interest to our project. We added the config folder. 
+From the original template we removed the LICENSE file, the notebooks, and references folders as not of interest to our project. We added the config folder.
 
 
 
@@ -149,7 +149,7 @@ From the original template we removed the LICENSE file, the notebooks, and refer
 > **Did you implement any rules for code quality and format? Additionally, explain with your own words why these**
 > **concepts matters in larger projects.**
 
-Our code is formatted to meet Pep8 standards via black editor. Import statements are taken care of with isort. Rules for code and quality format are important as they ensure consistency, maintainability, and readability in large projects. This improves collaboration and reduces errors, ultimately saving time and resources. 
+Our code is formatted to meet Pep8 standards via black editor. Import statements are taken care of with isort. Rules for code and quality format are important as they ensure consistency, maintainability, and readability in large projects. This improves collaboration and reduces errors, ultimately saving time and resources.
 
 
 ### Question 6
@@ -190,7 +190,7 @@ In this project we have used typing and written comments when the code is not co
 
 > **How many tests did you implement?**
 >
-> Answer: 
+> Answer:
 
 7
 
@@ -235,7 +235,7 @@ No, having a code coverage of 100% does not guarantee that the code is error-fre
 > *The total code coverage of code is X%, which includes all our source code. We are far from 100% coverage of our **
 > *code and even if we were then...*
 >
-> Answer: 
+> Answer:
 
 The total code coverage of code is 93%, which includes all our source code.
 | Name                          | STMTS | Miss | Cover | Missing        |
@@ -329,7 +329,7 @@ Yes, initially Google Drive, then GCP bucket, and finally Git Large File System.
 >
 > Answer:
 
-The wmt19 dataset originally contained around 9GB of data. Hence we decided to create a subset of the dataset. Data version control hereby contributed to an easy update of the data. We initially created a bucket in Google Cloud and used dvc to manage this. However s194333 did not have enough credit to sustain this service hence we had to create another bucket containing the same data with a different billing account. However we also stored the data on google drive, in case we potentially would use all credits on cloud again. Hence the dvc package proved to be very usefull for switching between different data storage options. In addition, dvc was an easy update to implement on all our devices since it only required some simple terminal commands. 
+The wmt19 dataset originally contained around 9GB of data. Hence we decided to create a subset of the dataset. Data version control hereby contributed to an easy update of the data. We initially created a bucket in Google Cloud and used dvc to manage this. However s194333 did not have enough credit to sustain this service hence we had to create another bucket containing the same data with a different billing account. However we also stored the data on google drive, in case we potentially would use all credits on cloud again. Hence the dvc package proved to be very usefull for switching between different data storage options. In addition, dvc was an easy update to implement on all our devices since it only required some simple terminal commands.
 
 
 
@@ -356,7 +356,7 @@ The wmt19 dataset originally contained around 9GB of data. Hence we decided to c
 > **multiple operating systems, python version etc. Do you make use of caching? Feel free to insert a link to one of**
 > **your github actions workflow.**
 
-To control the testing and deploying we used git workflow. The test suite that we use consists of validation testing and unit testing. We use two git hub triggers, one for pull request on the main, which runs the validation test and unit test suite, and one for pushing/merging to main, which runs  the build and deployment suite after having passed all tests. The tests suite tests various versions of python, but only on linux(ubuntu) which the docker container is built on. 
+To control the testing and deploying we used git workflow. The test suite that we use consists of validation testing and unit testing. We use two git hub triggers, one for pull request on the main, which runs the validation test and unit test suite, and one for pushing/merging to main, which runs  the build and deployment suite after having passed all tests. The tests suite tests various versions of python, but only on linux(ubuntu) which the docker container is built on.
 
 The validation tests consist of checking if the newest module gives the correct inference on some custom data. We also verify the data used to train the model, by checking if the format of the training data is correct. The unit testing consists of testing the front end api, to ensure excellent user experience.
 
@@ -422,7 +422,7 @@ https://github.com/MikkelGodsk/dtu_mlops_exam_project/actions/runs/3961726045/wo
 
 As a first apporoach, we used a simple argparser, that worked in the following way:
 
-python train.py --lr 1e-4 --batch_size 50 --seed 1337. 
+python train.py --lr 1e-4 --batch_size 50 --seed 1337.
 
 Hyperparameters were stored under config/config.yaml. In general, a configuration file contains desired experiment settings, such as hyperparameters, data paths, and run options. A developer uses a library or script to read the file and set the corresponding values in the code before running the experiment. Further on, we built and run several images locally, varying the initialization of the LR.
 
@@ -543,13 +543,13 @@ In W&B we track the training loss as seen on the figure below.
 
 ![Training loss](figures/train_loss.png)
 
-We see a small descrease of the loss. This metric is essential for showing whether the model is learning from the data during the training. 
+We see a small descrease of the loss. This metric is essential for showing whether the model is learning from the data during the training.
 
 We also track the validation loss as seen on the figure below.
 
 ![Validation loss](figures/val_loss.png)
 
-The validation loss is very important to monitor the models performance when presented to unknown data. 
+The validation loss is very important to monitor the models performance when presented to unknown data.
 
 We also perform a sweep in an attempt to optimize hyperparamters based on obtaining the lowest possible validation loss.
 
@@ -585,7 +585,7 @@ In the training phase, Docker is used to create a containerized environment for 
 building docker image:
 docker build -f wandb.dockerfile . -t train_wandb
 
-taining docker image: 
+taining docker image:
 docker run -e WANDB_API_KEY=b4ad9544b66bcfec7dfd8aeb858fbcf3bf701c98 train_wandb:latest
 
 Link to docker file:
@@ -606,7 +606,7 @@ Link to docker file:
 > Example:
 > *For our project we developed several images: one for training, inference and deployment. For example to run the*
 > *training docker image: `docker run trainer:latest lr=1e-3 batch_size=64`. Link to docker file: <weblink>*
-> 
+>
 > Answer:
 
 In our project, reproducablity is very important, hence we utilize Docker in order to ensure that the application can be run on all devices. Hence we created docker images for training and deploying the model. Since building docker images are a time consuming task, we prefred google cloud for building the dockerimages in cloud using a dockerfile and triggers. After being build the docker images are run using google cloud Run.
@@ -656,7 +656,7 @@ We used the inbuild tool from pytorch lightning for profiling the training, but 
 > **When running into bugs while trying to run your experiments, how did you perform debugging? Additionally, did you**
 > **try to profile your code or do you think it is already perfect?**
 
-When running into bugs while trying to run experiments, we first tried to identify the source of the problem by reviewing the code and any error messages that are displayed. Next, we used the TIMM documentation to understand why the trainig was failing. We also made sure to test small sections of the code at a time to ensure that the problem was not caused by an interaction between multiple sections. Additionally, we consulted online resources to see if similar bugs have been reported and if there were any known solutions. We did not perform any profiling of our main code. 
+When running into bugs while trying to run experiments, we first tried to identify the source of the problem by reviewing the code and any error messages that are displayed. Next, we used the TIMM documentation to understand why the trainig was failing. We also made sure to test small sections of the code at a time to ensure that the problem was not caused by an interaction between multiple sections. Additionally, we consulted online resources to see if similar bugs have been reported and if there were any known solutions. We did not perform any profiling of our main code.
 
 
 
@@ -706,7 +706,7 @@ Bucket, on the other hand, is a cloud-based storage service that allows users to
 > Answer:
 
 Buckets:
-We used GCP buckets for initally storing the data. However we quickly ran out of credits and hence had to create a new bucket containg the same data but with a different billing account. Furthermore we also used buckets for storring checkpoints. 
+We used GCP buckets for initally storing the data. However we quickly ran out of credits and hence had to create a new bucket containg the same data but with a different billing account. Furthermore we also used buckets for storring checkpoints.
 
 Build:
 Images are build using cloud build.
@@ -715,7 +715,7 @@ Triggers:
 In order to automatically build images triggers are used to connect the github repository to google cloud
 
 Containers:
-Images are stored in containers 
+Images are stored in containers
 
 Run:
 Models are deployed using google Run
@@ -748,7 +748,7 @@ Training framework where we run the docker image
 >
 > Answer:
 
-In this project we did not utilize the Compute engine and used Vertex AI instead. 
+In this project we did not utilize the Compute engine and used Vertex AI instead.
 
 
 
@@ -778,7 +778,7 @@ We are using Cloud Run to deploy the docker images of our application, and scale
 >
 > Answer:
 
-The bucket can be seen in the following 
+The bucket can be seen in the following
 ```markdown
 ![my_image](figures/cloud_bucket.png)
 ```
@@ -826,7 +826,7 @@ Here the bucket wmt19-de-en refers to the full dataset whereas 30k-dataset refer
 
 > **Upload one image of your GCP container registry, such that we can see the different images that you have stored.**
 > **You can take inspiration from [this figure](figures/registry.png).**
-y 
+y
 ![registry](figures/registry_.png)
 
 
@@ -916,7 +916,7 @@ y
 > **Did you manage to deploy your model, either in locally or cloud? If not, describe why. If yes, describe how and**
 > **preferably how you invoke your deployed service?**
 
-We successfully deployed our model in the cloud using Google Cloud Platform's Cloud Run service. We wrapped our model into an application and made it accessible to users via a specific URL. It can be accessed via <https://riceclassifier-375010-zhexeh6bxa-uc.a.run.app/> . User is required to load a 224x224, black and white image in jpg format of a grain of rice among Arborio, Basmati, Ipsala, Jasmine, and Karacadag rice varieties for recognition. 
+We successfully deployed our model in the cloud using Google Cloud Platform's Cloud Run service. We wrapped our model into an application and made it accessible to users via a specific URL. It can be accessed via <https://riceclassifier-375010-zhexeh6bxa-uc.a.run.app/> . User is required to load a 224x224, black and white image in jpg format of a grain of rice among Arborio, Basmati, Ipsala, Jasmine, and Karacadag rice varieties for recognition.
 
 It can also be accessed using `curl -X POST -F "file=@file.json" <  11:05 AM
 https://riceclassifier-375010-zhexeh6bxa-uc.a.run.app/>`
@@ -936,15 +936,15 @@ https://riceclassifier-375010-zhexeh6bxa-uc.a.run.app/>`
 > *For deployment we wrapped our model into application using ... . We first tried locally serving the model, which*
 > *worked. Afterwards we deployed it in the cloud, using ... . To invoke the service an user would call*
 > *`curl -X POST -F "file=@file.json"<weburl>`*
-> 
+>
 > Answer:
 
-Deploying the model locally was quite straight forward. Inputs to the model can easily be given through the terminal. However deploying in google cloud caused a lot more complication. For deployment we wrapped our model into an application using FastAPI and used cloud run. We were heavily challenged by the fact that after training the model the checkpoint could not be saved to a bucket on cloud without authentication, which we did not manage to implement. Hence we did not use the finetuned model for deployment directly trough cloud. 
+Deploying the model locally was quite straight forward. Inputs to the model can easily be given through the terminal. However deploying in google cloud caused a lot more complication. For deployment we wrapped our model into an application using FastAPI and used cloud run. We were heavily challenged by the fact that after training the model the checkpoint could not be saved to a bucket on cloud without authentication, which we did not manage to implement. Hence we did not use the finetuned model for deployment directly trough cloud.
 We did however manage to finetune the model on the hypatia cluster at DTU and uploading a checkpoint to bucket, however we had issues with downloading he checkpoint from within the python code (again due to authentication issues). Given a little more time, it would have been easy to setup DVC such that the model weights would be store alongside the dataset, whence we should have been able to get the finetuned model to deploy.
 
 In the training file, we used distributed data loading and multiple workers implemented through pytorch-lightning.
 
-Link to our model: 
+Link to our model:
 https://translation-gcp-app-jc4crsqeca-lz.a.run.app/translate/How are you doing?
 
 
@@ -1007,7 +1007,7 @@ By monitoring our model in these ways, we were able to ensure the longevity of o
 
 > **How many credits did you end up using during the project and what service was most expensive?**
 
-In total, 2 credits at the time of writing were spend during development. The most expensive service was github LFS which had "significant" bandwidth costs. 
+In total, 2 credits at the time of writing were spend during development. The most expensive service was github LFS which had "significant" bandwidth costs.
 
 ![billing](figures/billing.png)
 
@@ -1025,7 +1025,7 @@ In total, 2 credits at the time of writing were spend during development. The mo
 >
 > Answer:
 
-s194333 did not use any credit for this project, since she managed to use all her credit on the project created for M21. In total on this project together we used around 5 dollars. Google cloud was not very transparent about billing account or money usage.  
+s194333 did not use any credit for this project, since she managed to use all her credit on the project created for M21. In total on this project together we used around 5 dollars. Google cloud was not very transparent about billing account or money usage.
 
 
 
@@ -1070,9 +1070,9 @@ We also used GitHub Actions to push the deployment version to Google Cloud Platf
 > Answer:
 
 ![Graphical reprsentation of architecture](figures/graphical_representation_of_architecture.png)
-The starting point of the diagram is our local pytorch application, which we wrapped in the **pytorch lightning** framework. This served as the inital steps of creating the mlops pipeline. We version-controled our project using **git** via **Github**. A new environment can be initialized using either **Conda** or **pip**. We opted to use `pipreqs` for finding the package requirements of our project, which made for seamless instantiation of the projects *requirements.txt*. We utilized `wandb` in conjunction with **pytorch lightning** for logging the 'experiments'/ training of our *NLP* model. For training configuration `wandb` performed satisfactory, hence `hydra` was omited from this project. These are the essential parts which are contained into a **docker** container. Locally the project follows the codestructure of **Cookiecutter**. 
+The starting point of the diagram is our local pytorch application, which we wrapped in the **pytorch lightning** framework. This served as the inital steps of creating the mlops pipeline. We version-controled our project using **git** via **Github**. A new environment can be initialized using either **Conda** or **pip**. We opted to use `pipreqs` for finding the package requirements of our project, which made for seamless instantiation of the projects *requirements.txt*. We utilized `wandb` in conjunction with **pytorch lightning** for logging the 'experiments'/ training of our *NLP* model. For training configuration `wandb` performed satisfactory, hence `hydra` was omited from this project. These are the essential parts which are contained into a **docker** container. Locally the project follows the codestructure of **Cookiecutter**.
 
-In order to utilize the **GPC** git and dvc both provides a link from the local machine. Git furthermore enabled **Github actions** for testing the code before uploading to a remote storage. Using a **trigger** connected to the github repository we created **docker images** in **docker containers** in the cloud. 
+In order to utilize the **GPC** git and dvc both provides a link from the local machine. Git furthermore enabled **Github actions** for testing the code before uploading to a remote storage. Using a **trigger** connected to the github repository we created **docker images** in **docker containers** in the cloud.
 
 When training a dataset stored in a **GCP bucket** was utilized. Information sharing and version control of the dataset was handled by utilizing **dvc**. We interfaced with our application through **Cloud Run** by using the **Fast API** framework. Finally, we didn't utilize monitoring as we had plenty of work on our hands, trying to interface with and getting our model to run on cloud.
 
@@ -1112,7 +1112,7 @@ Integrating our model into the cookie cutter structure was another challenge we 
 >
 > Answer:
 
-Our first time consuming task was to download the data. This was downloaded from huggingface which took a long time. We also spent an excessive amount of time trying to train our model on cloud. Some main factors contributing to this issue, was our funding running short and having to authenticate multiple frameworks within a docker container. s194333 created the project on GCP, however she quickly (within 48 hours) ran short on funding (complementary of the course) due to operations ineracting with the *bucket* storing our data. We aren't entirely certain as to what depleted the grants, however this greatly restricted our work. From docker we needed to authenticate dvc, GCP, in addition to `wandb`. This proved tremendously cumbersome as the authentication requires certfication, which we would preferably avoid storing in the docker image. During this process we spent a lot of time debugging. Due to long building times errors didn't occur immediatly, which resulted in a lot of reapeated idle time. 
+Our first time consuming task was to download the data. This was downloaded from huggingface which took a long time. We also spent an excessive amount of time trying to train our model on cloud. Some main factors contributing to this issue, was our funding running short and having to authenticate multiple frameworks within a docker container. s194333 created the project on GCP, however she quickly (within 48 hours) ran short on funding (complementary of the course) due to operations ineracting with the *bucket* storing our data. We aren't entirely certain as to what depleted the grants, however this greatly restricted our work. From docker we needed to authenticate dvc, GCP, in addition to `wandb`. This proved tremendously cumbersome as the authentication requires certfication, which we would preferably avoid storing in the docker image. During this process we spent a lot of time debugging. Due to long building times errors didn't occur immediatly, which resulted in a lot of reapeated idle time.
 
 In general most of the tools and frameworks were relativly new for us, which resulted in a lot of google searches and unknown errors. The exercises significantly prepared us for conducting the project, however we still had a lot to learn when making the project. This challenged us in many ways, however we ultimately managed to overcome these.
 
@@ -1150,7 +1150,7 @@ Student s221813: Main responsible for the Report, created the inital DVC impleme
 
 Student s174261: was responsible for version control, structure of the repositoy, version control on the data and for the creating the test suite.
 
-Student s174250: Tested, selected and trained the base model for the project. Created the inference routine, and the API/website to interact with it. Setup github actions and the deployment pipeline. Setup Google Cloud and Cloud Run to run our containers. Setup Monitoring and Alerts in Google Cloud. 
+Student s174250: Tested, selected and trained the base model for the project. Created the inference routine, and the API/website to interact with it. Setup github actions and the deployment pipeline. Setup Google Cloud and Cloud Run to run our containers. Setup Monitoring and Alerts in Google Cloud.
 
 All members contributed to code by performing experiments locally. This includes creating and updating dockerfiles and making changes to the package requirements file. All members also contributed to writing and finalizing the report.
 
@@ -1178,10 +1178,10 @@ All members contributed to code by performing experiments locally. This includes
 > Answer:
 
 
-Student 12433130 created github repository 
+Student 12433130 created github repository
 
 
-with the cookiecutter structure. Furthermore the student was in charge of testing the models using unittesting and other previously mentioned tests. Furthermore he also contributed to building the docker images in the cloud and deploying the model. 
+with the cookiecutter structure. Furthermore the student was in charge of testing the models using unittesting and other previously mentioned tests. Furthermore he also contributed to building the docker images in the cloud and deploying the model.
 
 
 
@@ -1191,4 +1191,4 @@ Student s183319 heavily contributed to the report and was in charge of managing 
 
 Student 194333 was responsible for creating the scripts for training and prediction as well as afterwards training the model. Furthermore the student analysed the results and performed a sweep in W&B.
 
-Student s194245 was in charge of handeling the data -all the way from downloading to utilizing. Furthermore the student was in charge of utilizing google cloud for training. 
+Student s194245 was in charge of handeling the data -all the way from downloading to utilizing. Furthermore the student was in charge of utilizing google cloud for training.

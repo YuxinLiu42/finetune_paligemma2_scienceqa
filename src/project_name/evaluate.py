@@ -19,7 +19,7 @@ logging.basicConfig(
 )
 log = logging.getLogger(__name__)
 app = typer.Typer(
-    help="Evaluate a fine-tuned PaliGemma2 checkpoint " "on ScienceQA test set."
+    help="Evaluate a fine-tuned PaliGemma2 checkpoint on ScienceQA test set."
 )
 
 

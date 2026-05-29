@@ -9,7 +9,7 @@ We plan on utilizing one of the strengths of the Transformers framework which is
 ### What data are you going to run on (initially, may change)
 We are using the dataset:lmms-lab/ScienceQA
 
-Each sample in the train and test set has the following information: 
+Each sample in the train and test set has the following information:
 
 
 
