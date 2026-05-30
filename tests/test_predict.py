@@ -1,6 +1,7 @@
 """Tests for single-sample prediction with a fine-tuned PaliGemma2 model."""
 
 from unittest.mock import MagicMock, patch
+from pathlib import Path
 import torch
 from typer.testing import CliRunner
 from project_name.predict import app, load_checkpoint, predict_single
@@ -22,7 +23,7 @@ def test_load_checkpoint_auto_selects_cpu() -> None:
             return_value=fake_module,
         ) as mock_load,
     ):
-        module = load_checkpoint("fake.ckpt")
+        module = load_checkpoint(Path("fake.ckpt"))
 
     # The checkpoint loader was called with a CPU device
     _, kwargs = mock_load.call_args
@@ -42,7 +43,7 @@ def test_load_checkpoint_prefers_cuda() -> None:
             return_value=fake_module,
         ) as mock_load,
     ):
-        load_checkpoint("fake.ckpt")
+        load_checkpoint(Path("fake.ckpt"))
 
     _, kwargs = mock_load.call_args
     assert kwargs["map_location"] == torch.device("cuda")
