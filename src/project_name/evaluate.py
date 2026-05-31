@@ -40,6 +40,9 @@ def evaluate(
     by_subject: bool = typer.Option(
         False, help="Whether to report accuracy broken down by subject."
     ),
+    limit_batches: int = typer.Option(
+        0, help="Limit number of batches to evaluate (0 for no limit)."
+    ),
 ) -> None:
     """Evaluate a fine-tuned PaliGemma2 checkpoint on the ScienceQA test set.
 
@@ -55,6 +58,7 @@ def evaluate(
         num_workers: Number of DataLoader worker processes.
         output_path: Path to save evaluation results as JSON.
         by_subject: Whether to report accuracy broken down by subject.
+        limit_batches: Limit number of batches to evaluate (0 for no limit).
     """
     log.info("Loading model from checkpoint: %s", ckpt_path)
     model = PaliGemmaModule.load_from_checkpoint(ckpt_path)
@@ -82,7 +86,9 @@ def evaluate(
     )
 
     log.info("Running inference on test set ...")
-    for batch in test_loader:
+    for batch_idx, batch in enumerate(test_loader):
+        if limit_batches and batch_idx >= limit_batches:
+            break
         input_ids = batch["input_ids"].to(model.device)
         pixel_values = batch.get("pixel_values")
         if pixel_values is not None:
@@ -109,7 +115,7 @@ def evaluate(
 
         for i, (pred, target) in enumerate(zip(preds, targets)):
             is_correct = pred.strip().upper() == target.strip().upper()
-            total_correct += is_correct
+            total_correct += int(is_correct)
             total_samples += 1
             if by_subject and subjects:
                 subj = subjects[i]
