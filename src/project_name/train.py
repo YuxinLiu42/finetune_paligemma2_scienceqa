@@ -74,6 +74,8 @@ class PredictionLogger(Callback):
             batch_idx: Index of the current test batch.
             dataloader_idx: Index of the dataloader (unused).
         """
+        if not isinstance(trainer.logger, WandbLogger):
+            return
         assert isinstance(pl_module, PaliGemmaModule)
         if len(self._rows) >= self.n_samples:
             return
@@ -109,7 +111,12 @@ class PredictionLogger(Callback):
                 else None
             )
             self._rows.append(
-                [img, pred.strip(), target.strip(), pred.strip() == target.strip()]
+                [
+                    img,
+                    pred.strip().upper(),
+                    target.strip().upper(),
+                    pred.strip().upper() == target.strip().upper(),
+                ]
             )
 
     def on_test_epoch_end(
@@ -191,7 +198,7 @@ def train(cfg: DictConfig) -> float:
     )
 
     logger = None
-    if cfg.trainer.wandb.project:
+    if cfg.trainer.wandb.enabled:
         logger = WandbLogger(
             project=cfg.trainer.wandb.project,
             name=cfg.trainer.wandb.run_name or None,
@@ -252,6 +259,10 @@ def train(cfg: DictConfig) -> float:
     log.info("Training complete. Running test set evaluation with best checkpoint ...")
     ckpt_path = None if cfg.trainer.fast_dev_run else "best"
     trainer.test(model=model, datamodule=data, ckpt_path=ckpt_path)
+    if cfg.trainer.fast_dev_run:
+        log.info("fast_dev_run complete — skipping checkpoint summary.")
+        return 0.0
+
     best_val_loss = trainer.checkpoint_callback.best_model_score  # type: ignore[union-attr]
     log.info(
         "Best checkpoint saved at %s | val/loss=%.4f",

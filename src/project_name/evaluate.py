@@ -124,10 +124,10 @@ def evaluate(
 
     overall_acc = total_correct / total_samples if total_samples > 0 else 0.0
     log.info(
-        "Evaluation complete: %d / %d correct | Accuracy: %.4f%%",
+        "Evaluation complete: %d / %d correct | Accuracy: %.2f%%",
         total_correct,
         total_samples,
-        overall_acc,
+        overall_acc * 100,
     )
 
     # Print subject breakdown table if requested

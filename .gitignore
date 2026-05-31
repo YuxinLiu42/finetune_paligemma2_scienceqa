@@ -183,3 +183,6 @@ profile_output.prof
 /checkpoints/
 /wandb/
 /outputs/
+eval_results.json
+make_tiny_ckpt.py
+/tiny-paligemma/

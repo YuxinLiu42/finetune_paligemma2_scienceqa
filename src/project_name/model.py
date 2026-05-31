@@ -121,7 +121,8 @@ class PaliGemmaModule(L.LightningModule):
             lora_config = LoraConfig(
                 r=lora_r,
                 lora_alpha=lora_alpha,
-                target_modules=["q_proj", "v_proj"],
+                # only match the q_proj and v_proj of the language model
+                target_modules=r".*language_model.*\.(q_proj|v_proj)$",
                 lora_dropout=lora_dropout,
                 bias="none",
             )
@@ -198,7 +199,9 @@ class PaliGemmaModule(L.LightningModule):
         label_ids[label_ids == -100] = self.processor.tokenizer.pad_token_id
         targets = self.processor.batch_decode(label_ids, skip_special_tokens=True)
 
-        correct = sum(p.strip() == t.strip() for p, t in zip(preds, targets))
+        correct = sum(
+            p.strip().upper() == t.strip().upper() for p, t in zip(preds, targets)
+        )
         acc = correct / len(preds)
         self.log("test/accuracy", acc, on_step=False, on_epoch=True, prog_bar=True)
 

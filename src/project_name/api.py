@@ -75,8 +75,7 @@ class PredictRequest(BaseModel):
         choices: List of answer choice strings (2–10 items).
         hint: Optional hint text appended to the prompt.
         lecture: Optional lecture text appended to the prompt.
-        image_b64: Optional base64-encoded JPEG/PNG image.
-            If omitted, text-only inference is performed.
+        image_b64: Required base64-encoded image string (JPEG or PNG).
         max_new_tokens: Maximum number of tokens the model may generate.
     """
 
@@ -91,9 +90,10 @@ class PredictRequest(BaseModel):
     lecture: str = Field(
         default="", description="Optional lecture text. Skipped if empty."
     )
-    image_b64: str | None = Field(
-        default=None,
-        description="Base64-encoded image (JPEG or PNG). Omit for text-only questions.",
+    image_b64: str = Field(
+        ...,
+        min_length=1,
+        description="Base64-encoded image (JPEG or PNG).",
     )
     max_new_tokens: int = Field(
         default=10, ge=1, le=128, description="Max tokens to generate."
@@ -131,7 +131,7 @@ def root() -> dict[str, str]:
 def predict(request: PredictRequest) -> PredictResponse:
     """Run single-sample inference and return the predicted answer letter.
 
-    The image, if provided, must be base64-encoded JPEG or PNG.
+    The image must be base64-encoded JPEG or PNG.
     The prediction is a single letter (A, B, C, ...) corresponding to the
     index of the predicted choice in ``request.choices``.
 
@@ -153,17 +153,15 @@ def predict(request: PredictRequest) -> PredictResponse:
             "Please set CHECKPOINT_PATH and restart the service.",
         )
 
-    # Decode image if provided
-    image: Image.Image | None = None
-    if request.image_b64 is not None:
-        try:
-            image_bytes = base64.b64decode(request.image_b64)
-            image = Image.open(io.BytesIO(image_bytes)).convert("RGB")
-        except Exception as exc:
-            raise HTTPException(
-                status_code=400,
-                detail=f"Failed to decode image_b64: {exc}",
-            ) from exc
+    # Decode the image (required — PaliGemma is image-conditioned)
+    try:
+        image_bytes = base64.b64decode(request.image_b64)
+        image = Image.open(io.BytesIO(image_bytes)).convert("RGB")
+    except Exception as exc:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Failed to decode image_b64: {exc}",
+        ) from exc
 
     # Only forward optional fields that were actually provided,
     # matching whatever columns survived --drop-cols during preprocessing.

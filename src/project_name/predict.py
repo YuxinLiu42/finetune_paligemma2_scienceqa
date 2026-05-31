@@ -58,7 +58,7 @@ def load_checkpoint(
 
 def predict_single(
     module: PaliGemmaModule,
-    image: Image.Image | None,
+    image: Image.Image,
     question: str,
     choices: list[str],
     max_new_tokens: int = 10,
@@ -73,7 +73,7 @@ def predict_single(
 
     Args:
         module: Loaded PaliGemmaModule in eval mode.
-        image: PIL Image, or None for text-only samples.
+        image: PIL Image. PaliGemma is image-conditioned and requires an image.
         question: The question string.
         choices: List of answer choice strings.
         max_new_tokens: Maximum number of tokens to generate in the answer.
@@ -151,12 +151,13 @@ def predict(
             --hint "Plants need sunlight to grow."
     """
     choices_list = [choice.strip() for choice in choices.split(",")]
-    image: Image.Image | None = None
-    if image_path is not None:
-        image = Image.open(image_path).convert("RGB")
-        log.info("Loaded image from %s", image_path)
-    else:
-        log.warning("No image provided, running text-only inference.")
+    if image_path is None:
+        raise typer.BadParameter(
+            "PaliGemma is image-conditioned and requires an image. "
+            "Pass one with --image / -i."
+        )
+    image = Image.open(image_path).convert("RGB")
+    log.info("Loaded image from %s", image_path)
 
     # Only forward optional fields that were actually provided,
     # matching whatever columns survived --drop-cols during preprocessing.

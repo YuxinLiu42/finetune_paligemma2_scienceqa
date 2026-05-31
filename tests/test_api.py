@@ -1,8 +1,29 @@
 """Tests for the FastAPI inference API."""
 
+import base64
+import io
 from unittest.mock import patch
+
 from fastapi.testclient import TestClient
+from PIL import Image
+import pytest
 from project_name.api import app
+
+
+@pytest.fixture(autouse=True)
+def _no_checkpoint_env(monkeypatch):
+    """Ensure CHECKPOINT_PATH is unset so lifespan doesn't load a real model."""
+    monkeypatch.delenv("CHECKPOINT_PATH", raising=False)
+
+
+def _make_image_b64() -> str:
+    """Return a base64-encoded tiny PNG for requests that need a valid image."""
+    buf = io.BytesIO()
+    Image.new("RGB", (16, 16), "white").save(buf, format="PNG")
+    return base64.b64encode(buf.getvalue()).decode()
+
+
+VALID_IMAGE_B64 = _make_image_b64()
 
 
 def test_root_return_200() -> None:
@@ -36,7 +57,11 @@ def test_predict_without_model_returns_503() -> None:
     with TestClient(app) as client:
         response = client.post(
             "/predict",
-            json={"question": "Is water wet?", "choices": ["Yes", "No"]},
+            json={
+                "question": "Is water wet?",
+                "choices": ["Yes", "No"],
+                "image_b64": VALID_IMAGE_B64,
+            },
         )
     assert response.status_code == 503
 
@@ -50,7 +75,11 @@ def test_predict_returns_prediction() -> None:
         with TestClient(app) as client:
             response = client.post(
                 "/predict",
-                json={"question": "Is water wet?", "choices": ["Yes", "No"]},
+                json={
+                    "question": "Is water wet?",
+                    "choices": ["Yes", "No"],
+                    "image_b64": VALID_IMAGE_B64,
+                },
             )
     assert response.status_code == 200
     assert response.json()["prediction"] == "A"
@@ -70,6 +99,7 @@ def test_predict_with_hint_and_lecture() -> None:
                     "choices": ["Oxygen", "CO2"],
                     "hint": "Think about photosynthesis.",
                     "lecture": "Plants use sunlight to convert CO2.",
+                    "image_b64": VALID_IMAGE_B64,
                 },
             )
     # Verify hint and lecture were forwarded via prompt_kwargs
@@ -87,7 +117,11 @@ def test_predict_without_hint_and_lecture() -> None:
         with TestClient(app) as client:
             client.post(
                 "/predict",
-                json={"question": "Is water wet?", "choices": ["Yes", "No"]},
+                json={
+                    "question": "Is water wet?",
+                    "choices": ["Yes", "No"],
+                    "image_b64": VALID_IMAGE_B64,
+                },
             )
     _, kwargs = mock_predict.call_args
     assert "hint" not in kwargs
@@ -107,3 +141,13 @@ def test_predict_invalid_image_returns_400() -> None:
                 },
             )
     assert response.status_code == 400
+
+
+def test_predict_missing_image_returns_422() -> None:
+    """Predict endpoint returns 422 when image_b64 is absent."""
+    with TestClient(app) as client:
+        response = client.post(
+            "/predict",
+            json={"question": "Is water wet?", "choices": ["Yes", "No"]},
+        )
+    assert response.status_code == 422

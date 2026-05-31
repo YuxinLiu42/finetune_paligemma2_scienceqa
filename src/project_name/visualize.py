@@ -131,7 +131,7 @@ def plot_error_samples(
                 "No image",
                 ha="center",
                 va="center",
-                transformers=ax.transAxes,
+                transform=ax.transAxes,
                 color="gray",
             )
 
@@ -143,8 +143,8 @@ def plot_error_samples(
         ax.set_xlabel(label, fontsize=8)
         ax.set_xticks([])
         ax.set_yticks([])
-        ax.splines["top"].set_linewidth(0)
-        ax.splines["right"].set_linewidth(0)
+        ax.splines["top"].set_linewidth(False)
+        ax.splines["right"].set_linewidth(False)
 
     # Hide unused axes
     for ax in axes[len(errors) :]:
@@ -181,7 +181,7 @@ def plot_prediction_length_distribution(
     with results_path.open() as f:
         results = json.load(f)
 
-    lengths = [len(s.get("prediction", "").split()) for s in results["samples"]]
+    lengths = [len(s.get("prediction", "").split()) for s in results["by_subject"]]
 
     fig, ax = plt.subplots(figsize=(7, 4))
     ax.hist(lengths, bins=20, color="steelblue", edgecolor="black")

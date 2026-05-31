@@ -5,8 +5,10 @@ from pathlib import Path
 import torch
 from typer.testing import CliRunner
 from project_name.predict import app, load_checkpoint, predict_single
+from PIL import Image
 
 runner = CliRunner()
+fake_image = Image.new("RGB", (16, 16))
 
 
 def test_load_checkpoint_auto_selects_cpu() -> None:
@@ -64,7 +66,7 @@ def test_predict_single_returns_decoded_letter() -> None:
     ) as mock_build:
         result = predict_single(
             fake_module,
-            image=None,
+            image=fake_image,
             question="Is water wet?",
             choices=["Yes", "No"],
         )
@@ -91,7 +93,7 @@ def test_predict_single_forwards_prompt_kwargs() -> None:
     ) as mock_build:
         predict_single(
             fake_module,
-            image=None,
+            image=fake_image,
             question="What do plants absorb?",
             choices=["Oxygen", "CO2"],
             hint="Think photosynthesis.",
@@ -108,6 +110,7 @@ def test_cli_forwards_only_provided_optional_fields() -> None:
     with (
         patch("project_name.predict.load_checkpoint") as mock_load,
         patch("project_name.predict.predict_single", return_value="A") as mock_predict,
+        patch("project_name.predict.Image.open"),
     ):
         result = runner.invoke(
             app,
@@ -117,6 +120,8 @@ def test_cli_forwards_only_provided_optional_fields() -> None:
                 "Is water wet?",
                 "--choices",
                 "Yes,No",
+                "--image",
+                "dummy.png",
                 "--hint",
                 "A useful hint.",
             ],
@@ -133,16 +138,11 @@ def test_cli_forwards_only_provided_optional_fields() -> None:
     mock_load.assert_called_once()
 
 
-def test_cli_text_only_when_no_image() -> None:
-    """CLI runs text-only inference and echoes the prediction."""
-    with (
-        patch("project_name.predict.load_checkpoint"),
-        patch("project_name.predict.predict_single", return_value="C"),
-    ):
+def test_cli_rejects_missing_image() -> None:
+    """CLI exits with error when no image is provided."""
+    with patch("project_name.predict.load_checkpoint"):
         result = runner.invoke(
             app,
             ["fake.ckpt", "--question", "Q?", "--choices", "A,B,C"],
         )
-
-    assert result.exit_code == 0
-    assert "C" in result.stdout
+    assert result.exit_code != 0
