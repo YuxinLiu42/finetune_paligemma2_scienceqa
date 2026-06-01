@@ -6,13 +6,6 @@ nav_exclude: true
 
 ## Group information
 
-### Question 1
-> **Enter the group number you signed up**
->
-> Answer:
-
-1
-
 ### Question 2
 > **Enter the study number for each member in the group**
 >
@@ -24,22 +17,20 @@ Yuxin Liu
 
 
 ## Coding environment
-
 > In the following section we are interested in learning more about your local development environment.
 
-
-
-
 ### Question 3
 > **What framework did you choose to work with and did it help you complete the project?**
-
-We, as a team, successfully developed an image classifier that can accurately classify different varieties of rice. The classifier is able to distinguish between Arborio, Basmati, Ipsala, Jasmine, and Karacadag rice. To create the classifier, we utilized a deep learning model and utilized the PyTorch Images framework (Timm) to import a pre-trained ResNet50 model and a training script. We imported a large dataset of rice images from Kaggle.com to train our model. We found that by utilizing a deep learning model and a large dataset, we were able to achieve a high level of accuracy in classifying the different varieties of rice. Additionally, our pipeline involved using W&B, GCP, and GitHub for tracking our progress, storing our data, and deploying our model. Overall, this project was a great success and using TIMM made it easier to deploy the model and helped us put more focus on our pipeline.
-
-### Question 3
-> **What framework did you choose to work with and did it help you complete the project?**
-
 > Answer:
+We, as a team, successfully developed an image classifier that can accurately classify different varieties of rice. The classifier is able to distinguish between Arborio, Basmati, Ipsala, Jasmine, and Karacadag rice. 
 
+To create the classifier, we utilized a deep learning model and utilized the PyTorch Images framework (Timm) to import a pre-trained ResNet50 model and a training script. We imported a large dataset of rice images from Kaggle.com to train our model. 
+
+We found that by utilizing a deep learning model and a large dataset, we were able to achieve a high level of accuracy in classifying the different varieties of rice. Additionally, our pipeline involved using W&B, GCP, and GitHub for tracking our progress, storing our data, and deploying our model. Overall, this project was a great success and using TIMM made it easier to deploy the model and helped us put more focus on our pipeline.
+
+
+
+########
 In this project we utilized the [Transformers](https://github.com/huggingface/transformers) repository from the Huggingface group. This repository provides the [t5-small model](https://huggingface.co/t5-small), which is a natural language processing (NLP) model that can translate text from one language to another.
 
 In this project we have used the Trainer class in the pytorch lightning framework to train and test the t5-small model on a subset of the english/ german (en-de) subset of the [WMT19 dataset](https://huggingface.co/datasets/wmt19) (from the fourth conference on machine translation).
@@ -67,6 +58,9 @@ We have used Weights and biases (`wandb`) to both handle the configuration file 
 > *complete copy of our development enviroment, one would have to run the following commands*
 >
 > Answer:
+>
+> Construct one or multiple docker files for your code (M10)
+Build the docker files locally and make sure they work as intended (M10)
 
 Packages are mananged in conda environments. The packages required can be found in the requirements.txt file which is placed in the top folder in the cookiecutter structure. In this txt file we have a complete list of all used packages and relevant versions in this project. The requirement.txt file was auto-generated using the command pipreqs. To get a complete copy of our development enviroment, one would have to run the following commands (assuming they have git and Python 3.10 installed):
 ```
@@ -79,12 +73,13 @@ python setup.py install
 ```
 
 
-### Question 4
+#####################################################
 
-> **Explain how you managed dependencies in your project? Explain the process a new team member would have to go**
-> **through to get an exact copy of your environment.**
-
-We used (mini)conda, pipreqs, docker, and git to manage our dependencies. We created a conda environment to make sure that the dependencies of our project do not cross-contaminate with others. Requirements of both pip and conda were handled by package pipreqs. To get a complete copy of our development environment, one would have to build our docker file:
+We used 
+(mini)conda, 
+pipreqs, 
+docker, and 
+git to manage our dependencies. We created a conda environment to make sure that the dependencies of our project do not cross-contaminate with others. Requirements of both pip and conda were handled by package pipreqs. To get a complete copy of our development environment, one would have to build our docker file:
 
 docker build -f Docker.dockerfile . -t trainer:latest.
 
@@ -114,17 +109,13 @@ This file contains requirements.txt and environment.yml (generated wrespectively
 The overall structure is initialized with the cookiecutter template. In general we tried to follow the cookiecutter structure as much as possible.
 
 
-Since the original WMT19 dataset took up too much memory in both cloud and drive, we processed the data locally and only included a subset in the proccessed folder in the data folder. Thus we deleted the data/external/, data/interim/ and data/raw/ folders. We also deleted the folders notebooks/, references/, src/features/, src/visualization/, since we did not use these. We filled out the src/data/ folder and the src/models/ folder in which we also included a file src/models/evaluate_model.py for evaluating the model and a folder src/models/config/, with the configuration files.
+Since the original WMT19 dataset took up too much memory in both cloud and drive, we processed the data locally and only included a subset in the proccessed folder in the data folder. 
+
+Thus we deleted the data/external/, data/interim/ and data/raw/ folders. We also deleted the folders notebooks/, references/, src/features/, src/visualization/, since we did not use these. We filled out the src/data/ folder and the src/models/ folder in which we also included a file src/models/evaluate_model.py for evaluating the model and a folder src/models/config/, with the configuration files.
 We also included the tests/ folder which holds scripts for conducting different pytests.
 
+#############
 
-
-
-
-### Question 5
-
-> **We expect that you initialized your project using the cookiecutter template. Explain the overall structure of your**
-> **code. Did you fill out every folder or only a subset?**
 
 We used cookiecutter to create a template for our project. We mostly used it as a starting point for the creation of the project in order to have a more organized project.
 
@@ -149,19 +140,25 @@ From the original template we removed the LICENSE file, the notebooks, and refer
 > **Did you implement any rules for code quality and format? Additionally, explain with your own words why these**
 > **concepts matters in larger projects.**
 
-Our code is formatted to meet Pep8 standards via black editor. Import statements are taken care of with isort. Rules for code and quality format are important as they ensure consistency, maintainability, and readability in large projects. This improves collaboration and reduces errors, ultimately saving time and resources.
+Our code is formatted to meet Pep8 standards via black editor. 
+
+Import statements are taken care of with isort. 
+
+Rules for code and quality format are important as they ensure consistency, maintainability, and readability in large projects. This improves collaboration and reduces errors, ultimately saving time and resources.
 
 
-### Question 6
+############
 
-> **Did you implement any rules for code quality and format? Additionally, explain with your own words why these**
-> **concepts matters in larger projects.**
->
-> Answer length: 50-100 words.
->
-> Answer:
 
-In this project we have used typing and written comments when the code is not completly self explanatory, in addition to function docstrings. We tried to ensure that the code is pep8 compliant. To obtain this we have used black to format the code and flake8 to check. Lastly, we used isort to sort our imports. The code quality and format is tested in github actions, hence constantly ensuring the quality. Using these methods makes it much easier to share code and ensures the readability.
+In this project we have used typing and written comments when the code is not completly self explanatory, in addition to function docstrings. 
+
+We tried to ensure that the code is pep8 compliant. 
+
+To obtain this we have used black to format the code and flake8 to check. Lastly, we used isort to sort our imports. The code quality and format is tested in github actions, hence constantly ensuring the quality. 
+
+Using these methods makes it much easier to share code and ensures the readability.
+
+
 
 
 
@@ -180,27 +177,11 @@ In this project we have used typing and written comments when the code is not co
 
 
 
-
-
-
-
-
-
 ### Question 7
 
 > **How many tests did you implement?**
 >
 > Answer:
-
-7
-
-
-> In the following section we are interested in how version control was used in your project during development to
-> corporate and increase the quality of your code.
-
-### Question 7
-
-> **How many tests did you implement?**
 
 7
 
@@ -221,14 +202,7 @@ In this project we have used typing and written comments when the code is not co
 > **What is the total code coverage (in percentage) of your code? If you code had an code coverage of 100% (or close**
 > **to), would you still trust it to be error free? Explain you reasoning.**
 
-No, having a code coverage of 100% does not guarantee that the code is error-free. Code coverage measures the percentage of code that is executed during testing, but it does not take into account the quality of the tests or the correctness of the code logic. Even if all lines of code are executed, there may still be bugs or errors present in the code. Additionally, code coverage does not account for edge cases or unexpected inputs that may cause the code to fail. Therefore, it is important to also conduct thorough testing and code review to ensure the overall quality and reliability of the code. We have 100% code coverage on the prediction model (predict_model.py) and the API (main.py). We also have the TIMM training script and modules, but since we did not create those, we do not have tests for them.
 
-
-### Question 8
-
-> **What is the total code coverage (in percentage) of your code? If you code had a code coverage of 100% (or close**
-> **to), would you still trust it to be error free? Explain you reasoning.**
->
 > **Answer length: 100-200 words.**
 >
 > Example:
@@ -236,6 +210,18 @@ No, having a code coverage of 100% does not guarantee that the code is error-fre
 > *code and even if we were then...*
 >
 > Answer:
+
+No, having a code coverage of 100% does not guarantee that the code is error-free. Code coverage measures the percentage of code that is executed during testing, but it does not take into account the quality of the tests or the correctness of the code logic. Even if all lines of code are executed, there may still be bugs or errors present in the code. 
+
+Additionally, code coverage does not account for edge cases or unexpected inputs that may cause the code to fail. Therefore, it is important to also conduct thorough testing and code review to ensure the overall quality and reliability of the code. 
+
+
+
+We have 100% code coverage on the prediction model (predict_model.py) and the API (main.py). We also have the TIMM training script and modules, but since we did not create those, we do not have tests for them.
+
+
+
+###################
 
 The total code coverage of code is 93%, which includes all our source code.
 | Name                          | STMTS | Miss | Cover | Missing        |
@@ -267,15 +253,6 @@ In `predict_model.py`, the reason for the coverage being less than 100% is that 
 
 ### Question 9
 
-> **Did you workflow include using branches and pull requests? If yes, explain how. If not, explain how branches and**
-> **pull request can help improve version control.**
-
-We made use of both branches and PRs in our project. For each feature or change we created a new branch. Each branch worked on different tasks: on one we created a dedicated environment for the project to keep track of packages, filled out the requirements.txt file, checked code formatting, setup version control, wrote one configuration file for our experiments, created a data storage in GCP Bucket for our data and linked this with our data version control setup. On another one we used Weights & Biases to log training progress and other important metrics/artifacts in out code; another one was used to write unit tests related to the data part of our code, to model construction and or model training, calculate the coverage and finally another to create a FastAPI application that can do inference using our model, and create a trigger workflow for automatically building our docker images.
-
-
-
-### Question 9
-
 > **Did your workflow include using branches and pull requests? If yes, explain how. If not, explain how branches and**
 > **pull request can help improve version control.**
 >
@@ -286,27 +263,32 @@ We made use of both branches and PRs in our project. For each feature or change 
 > *addition to the main branch. To merge code we ...*
 >
 > Answer:
-We added branch protection on the main branch. Hence we created a feature branch where changes were made. We then used pull requests to merge with the main branch quite often. A pull request typically only concerned a few changes in a limited amount of scripts. Hence we avoided having an unmanageable amount of branches as well as reduced the number of merge conflicts. Before merging a branch with the main branch the tests are conducted to ensure that the merge will result in a working code. Furthermore when making major changes we assured that pull request were created and reviewed immediately.
+We added branch protection on the main branch.
+>
+> Hence we created a feature branch where changes were made. We then used pull requests to merge with the main branch quite often. A pull request typically only concerned a few changes in a limited amount of scripts. Hence we avoided having an unmanageable amount of branches as well as reduced the number of merge conflicts. Before merging a branch with the main branch the tests are conducted to ensure that the merge will result in a working code. Furthermore when making major changes we assured that pull request were created and reviewed immediately.
 
 
+#########
 
+We made use of both branches and PRs in our project. 
 
+For each feature or change we created a new branch. Each branch worked on different tasks: 
 
+on one we created a dedicated environment for the project to 
+   + keep track of packages, 
+   + filled out the requirements.txt file, 
+   + checked code formatting, 
+   + setup version control, 
+   + wrote one configuration file for our experiments, 
+   + created a data storage in GCP Bucket for our data and 
+   + linked this with our data version control setup. 
 
+On another one we used Weights & Biases to log training progress and other important metrics/artifacts in our code; 
 
+another one was used to write unit tests related to the data part of our code, to model construction and or model training, calculate the coverage 
 
+and finally another to create a FastAPI application that can do inference using our model, and create a trigger workflow for automatically building our docker images.
 
-
-
-
-
-
-### Question 10
-
-> **Did you use DVC for managing data in your project? If yes, then how did it improve your project to have version**
-> **control of your data. If no, explain a case where it would be beneficial to have version control of your data.**
-
-Yes, initially Google Drive, then GCP bucket, and finally Git Large File System. Although we set up data version control, our dataset was never modified. In general, DVC is beneficial in managing data in a project when multiple team members are working on the same data set. With data version control, team members can collaborate on the dataset and make changes without interfering with each other's work. It also allows for easy tracking of changes and rollbacks if necessary. Additionally, data version control makes it easy to reproduce results and maintain a clear history of changes to the data set, which is essential for transparency and reproducibility in research projects. Overall, data version control ensures efficient collaboration and accountability in data management.
 
 
 
@@ -326,10 +308,37 @@ Yes, initially Google Drive, then GCP bucket, and finally Git Large File System.
 > Example:
 > *We did make use of DVC in the following way: ... . In the end it helped us in ... for controlling ... part of our*
 > *pipeline*
->
+> Hint: Start out small! We recommend that you start out with less than 1GB of data. If the dataset you want to work with is larger, then subsample it. You can use dvc to version control your data and only download the full dataset when you are ready to train the model.
+
+Be aware of many smaller files. DVC does not handle many small files well, and can take a long time to download. If you have many small files, consider zipping them together and then unzip them at runtime.
+
+You do not need to use DVC for everything regarding data. You workflow is to just use DVC for version controlling the data, but when you need to get it you can just download it from the source. For example if you are storing your data in a GCP bucket, you can use the gsutil command to download the data or directly accessing the it using the cloud storage file system
+
+Setup version control for your data or part of your data (M8)
+Add pre-commit hooks to your version control setup (M18)
+Create a data storage in GCP Bucket for your data and link this with your data version control setup (M21)
+
 > Answer:
 
-The wmt19 dataset originally contained around 9GB of data. Hence we decided to create a subset of the dataset. Data version control hereby contributed to an easy update of the data. We initially created a bucket in Google Cloud and used dvc to manage this. However s194333 did not have enough credit to sustain this service hence we had to create another bucket containing the same data with a different billing account. However we also stored the data on google drive, in case we potentially would use all credits on cloud again. Hence the dvc package proved to be very usefull for switching between different data storage options. In addition, dvc was an easy update to implement on all our devices since it only required some simple terminal commands.
+The wmt19 dataset originally contained around 9GB of data. 
+
+Hence we decided to create a subset of the dataset. Data version control hereby contributed to an easy update of the data. 
+
+We initially created a bucket in Google Cloud and used dvc to manage this. 
+
+However s194333 did not have enough credit to sustain this service hence we had to create another bucket containing the same data with a different billing account. However we also stored the data on google drive, in case we potentially would use all credits on cloud again. Hence the dvc package proved to be very usefull for switching between different data storage options. In addition, dvc was an easy update to implement on all our devices since it only required some simple terminal commands.
+
+
+################
+
+
+
+
+Yes, initially Google Drive, then GCP bucket, and finally Git Large File System. Although we set up data version control, our dataset was never modified. In general, DVC is beneficial in managing data in a project when multiple team members are working on the same data set. With data version control, team members can collaborate on the dataset and make changes without interfering with each other's work. It also allows for easy tracking of changes and rollbacks if necessary. Additionally, data version control makes it easy to reproduce results and maintain a clear history of changes to the data set, which is essential for transparency and reproducibility in research projects. Overall, data version control ensures efficient collaboration and accountability in data management.
+
+
+
+
 
 
 
