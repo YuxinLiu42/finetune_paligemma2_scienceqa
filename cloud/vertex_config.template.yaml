@@ -1,0 +1,29 @@
+workerPoolSpecs:
+  - machineSpec:
+      machineType: g2-standard-8        # 8 vCPU / 32GB / 1×L4
+      acceleratorType: NVIDIA_L4
+      acceleratorCount: 1
+    replicaCount: 1
+    diskSpec:
+      bootDiskType: pd-ssd
+      bootDiskSizeGb: 100
+    containerSpec:
+      imageUri: europe-west4-docker.pkg.dev/paligemma-scienceqa/mlops-images/paligemma-train:latest
+      command: ["/bin/bash", "-c"]
+      args:
+        - >
+          dvc pull -v &&
+          python -m project_name.train
+          trainer.precision=bf16-mixed
+          data.batch_size=4
+          data.num_workers=4
+          trainer.max_epochs=3
+          trainer.wandb.enabled=true
+          trainer.wandb.run_name=vertex-l4-lora
+      env:
+        - name: WANDB_API_KEY
+          value: ${WANDB_API_KEY}
+        - name: HF_TOKEN
+          value: ${HF_TOKEN}
+baseOutputDirectory:
+  outputUriPrefix: gs://mlops-paligemma-west4/vertex-output/paligemma-lora

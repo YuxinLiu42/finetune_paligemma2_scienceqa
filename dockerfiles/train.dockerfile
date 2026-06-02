@@ -17,6 +17,11 @@ RUN mkdir -p models
 
 RUN uv sync --frozen
 RUN uv pip install torch==2.6.0 torchvision==0.21.0 \
-    --index-url https://download.pytorch.org/whl/cu124
+    --index-url https://download.pytorch.org/whl/cu124 \
+    --no-cache-dir
+
+RUN uv pip install --no-cache-dir "dvc[gs]"
+
+ENV PATH="/.venv/bin:$PATH"
 
 ENTRYPOINT ["bash", "entrypoint.sh"]
