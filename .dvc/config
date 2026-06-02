@@ -1,4 +1,6 @@
 [core]
-    remote = myremote
+    remote = gs-west4
 ['remote "myremote"']
     url = gs://mlops_paligemma
+['remote "gs-west4"']
+    url = gs://mlops-paligemma-west4/dvcstore
