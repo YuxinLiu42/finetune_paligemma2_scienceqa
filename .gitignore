@@ -188,3 +188,4 @@ make_tiny_ckpt.py
 /tiny-paligemma/
 cloud/vertex_config.yaml
 cloud/watch_job.sh
+.claude/
