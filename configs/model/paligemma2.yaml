@@ -5,7 +5,7 @@
 # checkpoint or freezing strategy without touching any code.
 
 model_name: google/paligemma2-3b-pt-224
-learning_rate: 2e-5
+learning_rate: 1e-4
 freeze_vision_encoder: true
 freeze_language_model: false
 gradient_checkpointing: true

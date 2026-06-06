@@ -6,7 +6,7 @@ workerPoolSpecs:
     replicaCount: 1
     diskSpec:
       bootDiskType: pd-ssd
-      bootDiskSizeGb: 100
+      bootDiskSizeGb: 300
     containerSpec:
       imageUri: europe-west4-docker.pkg.dev/paligemma-scienceqa/mlops-images/paligemma-train:latest
       command: ["/bin/bash", "-c"]

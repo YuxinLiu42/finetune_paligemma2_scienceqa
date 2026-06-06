@@ -84,10 +84,12 @@ class PredictionLogger(Callback):
 
         input_ids = batch["input_ids"]
         pixel_values = batch.get("pixel_values")
+        attention_mask = batch.get("attention_mask")
         labels = batch["labels"]
 
         generated_ids = pl_module.model.generate(  # type: ignore[misc]
             input_ids=input_ids,
+            attention_mask=attention_mask,  # avoid attending to padding
             pixel_values=pixel_values,
             max_new_tokens=10,
             do_sample=False,
@@ -237,11 +239,15 @@ def train(cfg: DictConfig) -> float:
     callbacks = [
         ModelCheckpoint(
             dirpath=cfg.trainer.ckpt_dir,
-            filename="paligemma2-{epoch:02d}-{val/loss:.4f}",
+            # auto_insert_metric_name=False so the "val/loss" metric's slash is
+            # NOT inserted literally (which made Lightning create a 'val/' subdir
+            # and mangled the uploaded path to '.../model//loss=...ckpt').
+            filename="paligemma2-ep{epoch:02d}-vl{val/loss:.4f}",
+            auto_insert_metric_name=False,
             monitor="val/loss",
             mode="min",
-            save_top_k=3,
-            save_last=True,
+            save_top_k=1,  # full Lightning ckpt is ~6GB; keep just the best
+            save_last=False,
             verbose=True,
         ),
         EarlyStopping(

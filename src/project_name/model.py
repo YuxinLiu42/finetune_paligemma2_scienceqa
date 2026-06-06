@@ -197,10 +197,12 @@ class PaliGemmaModule(L.LightningModule):
         """
         input_ids = batch["input_ids"]
         pixel_values = batch.get("pixel_values")
+        attention_mask = batch.get("attention_mask")
         labels = batch["labels"]
 
         generated_ids = self.model.generate(  # type: ignore[misc]
             input_ids=input_ids,
+            attention_mask=attention_mask,  # avoid attending to padding
             pixel_values=pixel_values,
             max_new_tokens=10,
             do_sample=False,

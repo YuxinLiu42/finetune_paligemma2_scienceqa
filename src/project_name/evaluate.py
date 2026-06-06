@@ -93,11 +93,15 @@ def evaluate(
         pixel_values = batch.get("pixel_values")
         if pixel_values is not None:
             pixel_values = pixel_values.to(model.device)
+        attention_mask = batch.get("attention_mask")
+        if attention_mask is not None:
+            attention_mask = attention_mask.to(model.device)
         labels = batch["labels"].to(model.device)
         subjects = batch.get("subjects", [])
 
         generated_ids = model.model.generate(  # type: ignore[misc]
             input_ids=input_ids,
+            attention_mask=attention_mask,  # avoid attending to padding
             pixel_values=pixel_values,
             max_new_tokens=10,
             do_sample=False,

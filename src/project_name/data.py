@@ -343,28 +343,44 @@ class DataModule(L.LightningDataModule):
             len(self.dataset["test"]),
         )
 
-    def _collate(self, samples: list[dict]) -> dict:
+    def _collate(self, samples: list[dict], for_train: bool = True) -> dict:
         """Collate a batch of samples into model-ready tensors.
 
-        For each sample, constructs the text prompt and retrieves the image.
-        Missing images are replaced with a blank RGB placeholder.
-        Label tokens corresponding to padding are masked with -100 so they
-        are ignored by the loss function.
+        Train/val (for_train=True): the answer is passed to the processor as
+        ``suffix=``. PaliGemma then builds ``labels`` with the image+prompt
+        prefix and padding masked to -100, so cross-entropy is computed ONLY on
+        the answer tokens (the correct seq2seq objective). Previously the answer
+        was never added and the mask was index-misaligned, so the loss sat at
+        ~ln(vocab) (random) and the model could not learn.
+
+        Test (for_train=False): no answer is placed in the input, so the model
+        must generate it; the answer is tokenized separately into ``labels``
+        only for exact-match target decoding in test_step.
 
         Args:
-            samples: List of dataset samples, each containing keys:
-                     'question', 'choices', 'answer_text', and 'image'.
+            samples: List of dataset samples with 'question', 'choices',
+                     'answer_text', and 'image'.
+            for_train: Build supervised labels via suffix (train/val) or a
+                       generation-only batch (test).
 
         Returns:
-            A dict of tensors ready for the model, including 'labels'.
+            A dict of tensors ready for the model.
         """
-        # Avoid circular import by importing processor here
+        # Avoid circular import by importing the prompt builder here
         from project_name.model import build_prompt
 
-        prompts, answer_texts, images = [], [], []
-        subjects = []
+        prompts, answer_texts, images, subjects = [], [], [], []
         for s in samples:
-            prompts.append(build_prompt(s["question"], s["choices"]))
+            # hint/lecture carry important context for ScienceQA accuracy; include
+            # them when present (they're retained by preprocess unless --drop-cols).
+            prompts.append(
+                build_prompt(
+                    s["question"],
+                    s["choices"],
+                    hint=s.get("hint", "") or "",
+                    lecture=s.get("lecture", "") or "",
+                )
+            )
             answer_texts.append(s["answer_text"])
             images.append(
                 s["image"] if s["image"] is not None else Image.new("RGB", (224, 224))
@@ -373,33 +389,49 @@ class DataModule(L.LightningDataModule):
 
         prompts_with_image = [f"<image> {p}" for p in prompts]
 
-        inputs = self.processor(
-            text=prompts_with_image,
-            images=images,
-            return_tensors="pt",
-            padding="longest",
-            truncation=True,
-            max_length=self.max_length,
-        )
+        if for_train:
+            # Processor masks image+prompt+padding in labels; loss only on suffix.
+            inputs = self.processor(
+                text=prompts_with_image,
+                images=images,
+                suffix=answer_texts,
+                return_tensors="pt",
+                padding="longest",
+                truncation=True,
+                max_length=self.max_length,
+            )
+        else:
+            # Generation batch: prompt only, answer must NOT leak into the input.
+            inputs = self.processor(
+                text=prompts_with_image,
+                images=images,
+                return_tensors="pt",
+                padding="longest",
+                truncation=True,
+                max_length=self.max_length,
+            )
+            # Answer-only labels, purely for exact-match target decoding in test.
+            answer_enc = self.processor.tokenizer(
+                answer_texts,
+                return_tensors="pt",
+                padding="longest",
+                truncation=True,
+                max_length=self.max_label_length,
+            )
+            label_ids = answer_enc["input_ids"].clone()
+            label_ids[label_ids == self.processor.tokenizer.pad_token_id] = -100
+            inputs["labels"] = label_ids
 
-        labels = inputs["input_ids"].clone()
-
-        prompt_encodings = self.processor.tokenizer(
-            prompts_with_image,
-            padding="longest",
-            truncation=True,
-            max_length=self.max_length,
-        )
-        for i, prompt_ids in enumerate(prompt_encodings["input_ids"]):
-            prompt_len = len(prompt_ids)
-            labels[i, :prompt_len] = -100  # mask prompt
-
-        labels[labels == self.processor.tokenizer.pad_token_id] = -100  # mask padding
-
-        inputs["labels"] = labels
         inputs["subjects"] = subjects  # for analysis, not used by model
-
         return dict(inputs)
+
+    def _collate_train(self, samples: list[dict]) -> dict:
+        """Collate for train/val: supervised labels via the answer suffix."""
+        return self._collate(samples, for_train=True)
+
+    def _collate_eval(self, samples: list[dict]) -> dict:
+        """Collate for test: generation-only input + answer labels for scoring."""
+        return self._collate(samples, for_train=False)
 
     def train_dataloader(self) -> DataLoader:
         """Return the DataLoader for the training split.
@@ -413,7 +445,7 @@ class DataModule(L.LightningDataModule):
             batch_size=self.batch_size,
             shuffle=True,
             num_workers=self.num_workers,
-            collate_fn=self._collate,
+            collate_fn=self._collate_train,
         )
 
     def val_dataloader(self) -> DataLoader:
@@ -428,7 +460,7 @@ class DataModule(L.LightningDataModule):
             batch_size=self.batch_size,
             shuffle=False,
             num_workers=self.num_workers,
-            collate_fn=self._collate,
+            collate_fn=self._collate_train,
         )
 
     def test_dataloader(self) -> DataLoader:
@@ -443,7 +475,7 @@ class DataModule(L.LightningDataModule):
             batch_size=self.batch_size,
             shuffle=False,
             num_workers=self.num_workers,
-            collate_fn=self._collate,
+            collate_fn=self._collate_eval,
         )
 
 
