@@ -126,8 +126,7 @@ class PaliGemmaModule(L.LightningModule):
 
         if use_lora:
             # Match the chosen projection layers of the language model only
-            # (vision tower stays frozen). Regex is anchored so it never wraps
-            # unrelated modules that happen to share a suffix.
+            # (vision tower stays frozen).
             target_re = rf".*language_model.*\.({'|'.join(lora_target_modules)})$"
             lora_config = LoraConfig(
                 r=lora_r,
