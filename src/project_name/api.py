@@ -2,6 +2,7 @@
 
 import base64
 import io
+import json
 import logging
 import os
 import tempfile
@@ -256,10 +257,22 @@ def predict(request: PredictRequest) -> PredictResponse:
         **prompt_kwargs,
     )
 
+    # Input-output collection (M27): one structured line per prediction ->
+    # Cloud Logging, queryable later for data-drift monitoring. The image bytes
+    # are not logged (size); its dimensions are.
     log.info(
-        "Prediction complete | question: %.60s | prediction: %s",
-        request.question,
-        prediction,
+        "prediction %s",
+        json.dumps(
+            {
+                "event": "prediction",
+                "question": request.question,
+                "n_choices": len(request.choices),
+                "hint": bool(request.hint),
+                "lecture": bool(request.lecture),
+                "image_px": list(image.size),
+                "prediction": prediction,
+            }
+        ),
     )
     return PredictResponse(prediction=prediction)
 
