@@ -5,6 +5,7 @@ import io
 import logging
 import os
 import tempfile
+import threading
 from contextlib import asynccontextmanager
 from pathlib import Path
 from urllib.parse import urlparse
@@ -25,6 +26,7 @@ logging.basicConfig(
 log = logging.getLogger(__name__)
 
 _module: PaliGemmaModule | None = None
+_load_lock = threading.Lock()
 
 
 def _fetch_gcs_dir(uri: str) -> Path:
@@ -64,36 +66,64 @@ def _fetch_gcs_dir(uri: str) -> Path:
     return dest_root
 
 
+def _load_module() -> PaliGemmaModule | None:
+    """Resolve ``CHECKPOINT_PATH`` and load the model, or return None.
+
+    The path may be a LoRA adapter directory, a full .ckpt file, or a gs://
+    directory (downloaded to a temp dir first). Returns None (rather than
+    raising) when the variable is unset or the path is missing, so the service
+    can still start and report its state via the health endpoint.
+    """
+    checkpoint_env = os.environ.get("CHECKPOINT_PATH", "")
+    if not checkpoint_env:
+        log.warning("CHECKPOINT_PATH not set — /predict will return 503.")
+        return None
+    if checkpoint_env.startswith("gs://"):
+        log.info("CHECKPOINT_PATH is a GCS uri — downloading %s", checkpoint_env)
+        checkpoint_path = _fetch_gcs_dir(checkpoint_env)
+    else:
+        checkpoint_path = Path(checkpoint_env)
+    if not checkpoint_path.exists():
+        log.warning("CHECKPOINT_PATH is set but path not found: %s", checkpoint_path)
+        return None
+    log.info("Loading model from %s ...", checkpoint_path)
+    module = load_model(checkpoint_path)
+    log.info("Model ready.")
+    return module
+
+
+def _ensure_loaded() -> PaliGemmaModule | None:
+    """Return the model, loading it once on first use (thread-safe).
+
+    Used by lazy loading: on Cloud Run, downloading + loading a 3B model can
+    exceed the startup-probe window, so we defer it to the first request
+    instead of blocking container startup.
+    """
+    global _module
+    if _module is None:
+        with _load_lock:
+            if _module is None:
+                _module = _load_module()
+    return _module
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """Load the PaliGemma2 checkpoint on startup and release it on shutdown.
+    """Load the model on startup, unless ``LAZY_LOAD`` defers it to first use.
 
-    The model path is resolved from the environment variable ``CHECKPOINT_PATH``
-    and may be a LoRA adapter directory, a full .ckpt file, or a gs:// directory
-    (downloaded to a temp dir first). If the variable is not set, or the path
-    does not exist, the service starts without a loaded model and every
-    /predict call will return 503 until the service is restarted with a valid
-    path.
+    Default (local, tests): eager load so the model is ready before serving.
+    With ``LAZY_LOAD=1`` (Cloud Run): skip the load so the container binds the
+    port immediately and passes the startup probe; the first /predict request
+    triggers the (slow) load via ``_ensure_loaded``.
 
     Args:
         app: The FastAPI application instance (required by the lifespan protocol).
     """
     global _module
-    checkpoint_env = os.environ.get("CHECKPOINT_PATH", "")
-    if checkpoint_env:
-        if checkpoint_env.startswith("gs://"):
-            log.info("CHECKPOINT_PATH is a GCS uri — downloading %s", checkpoint_env)
-            checkpoint_path = _fetch_gcs_dir(checkpoint_env)
-        else:
-            checkpoint_path = Path(checkpoint_env)
-        if checkpoint_path.exists():
-            log.info("Loading model from %s ...", checkpoint_path)
-            _module = load_model(checkpoint_path)
-            log.info("Model ready.")
-        else:
-            log.warning(
-                "CHECKPOINT_PATH is set but file not found: %s", checkpoint_path
-            )
+    if os.environ.get("LAZY_LOAD", "").lower() in ("1", "true", "yes"):
+        log.info("LAZY_LOAD set — deferring model load to the first request.")
+    elif os.environ.get("CHECKPOINT_PATH", ""):
+        _module = _load_module()
     else:
         log.warning("CHECKPOINT_PATH not set — /predict will return 503.")
 
@@ -191,7 +221,8 @@ def predict(request: PredictRequest) -> PredictResponse:
         HTTPException 503: Model checkpoint has not been loaded.
         HTTPException 400: Image decoding failed.
     """
-    if _module is None:
+    module = _ensure_loaded()
+    if module is None:
         raise HTTPException(
             status_code=503,
             detail="Model checkpoint not loaded. "
@@ -217,7 +248,7 @@ def predict(request: PredictRequest) -> PredictResponse:
         prompt_kwargs["lecture"] = request.lecture
 
     prediction = predict_single(
-        module=_module,
+        module=module,
         image=image,
         question=request.question,
         choices=request.choices,

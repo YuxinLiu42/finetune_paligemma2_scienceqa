@@ -1,0 +1,18 @@
+# Cloud Build config for the API/serving image (amd64-native — the laptop is
+# arm64, and Cloud Run runs amd64).
+# Usage:
+#   gcloud builds submit --async --config=cloud/cloudbuild.api.yaml \
+#     --project=paligemma-scienceqa .
+# Uploads are governed by .gcloudignore (data/, checkpoints, secrets excluded).
+steps:
+  - name: gcr.io/cloud-builders/docker
+    args:
+      - build
+      - -f
+      - dockerfiles/api.dockerfile
+      - -t
+      - europe-west4-docker.pkg.dev/paligemma-scienceqa/mlops-images/paligemma-api:latest
+      - .
+images:
+  - europe-west4-docker.pkg.dev/paligemma-scienceqa/mlops-images/paligemma-api:latest
+timeout: 1800s
