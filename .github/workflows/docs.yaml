@@ -1,0 +1,25 @@
+name: docs
+
+# Publish the MkDocs site to GitHub Pages on changes to docs or source.
+on:
+  push:
+    branches: [main]
+    paths:
+      - "docs/**"
+      - "src/**"
+      - ".github/workflows/docs.yaml"
+  workflow_dispatch:
+
+permissions:
+  contents: write  # mkdocs gh-deploy pushes to the gh-pages branch
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+      - name: Build & deploy docs
+        run: uv run --group dev mkdocs gh-deploy --force -f docs/mkdocs.yaml

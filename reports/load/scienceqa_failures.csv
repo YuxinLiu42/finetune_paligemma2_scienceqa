@@ -1,0 +1,3 @@
+Method,Name,Error,Occurrences,First Seen,Last Seen
+GET,/,HTTPError('429 Client Error: Too Many Requests for url: /'),8,2026-06-13T11:17:16Z,2026-06-13T11:21:00Z
+POST,/predict,CatchResponseError('bad response: 429 Rate exceeded.'),13,2026-06-13T11:17:38Z,2026-06-13T11:20:56Z

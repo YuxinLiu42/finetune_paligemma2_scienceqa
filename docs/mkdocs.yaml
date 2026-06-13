@@ -1,4 +1,4 @@
-site_name: project_name
+site_name: PaliGemma2 · ScienceQA MLOps
 site_author: Yuxin_Duc
 docs_dir: source
 
@@ -8,6 +8,7 @@ theme:
   features:
     - content.code.copy
     - content.code.annotate
+    - navigation.sections
 
 plugins:
   - search
@@ -19,5 +20,17 @@ plugins:
             separate_signature: true
             show_signature_annotations: true
 
+markdown_extensions:
+  - admonition
+  - pymdownx.highlight
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+
 nav:
   - Home: index.md
+  - Architecture: architecture.md
+  - Usage: usage.md
+  - API reference: reference.md
