@@ -1,13 +1,11 @@
 # Results — PaliGemma2-3B fine-tuned on ScienceQA (image subset)
 
-> **STATUS (2026-06-14).** The full-data r=16 retrain produced a **better model
-> — `autumn-sweep-2`, test 0.713 (W&B artifact v11)** — but the GCP billing
-> account closed mid-sweep, so it was **not yet promoted**. The **currently
-> deployed** model is still `vague-sweep-3` (test 0.641, r=8, old data). Once
-> billing is restored: promote `autumn-sweep-2`, re-run `evaluate.py` for the
-> canonical per-subject `eval_results.json`, and regenerate the figures. Both
-> adapters are backed up locally at `~/mlops-adapter-backup/` (W&B-sourced,
-> independent of GCP billing).
+> **STATUS (2026-06-14).** The full-data r=16 retrain completed (job
+> `3661126192938876928`, ~28.7 h, all 8 sweep trials). The winner
+> **`sandy-sweep-7` — test 72.19% (1456/2017)** — is now **promoted to
+> production** (GCS `models/production/` + W&B `:production` v16), replacing the
+> old `vague-sweep-3` (64.1%, r=8). All key adapters are backed up at
+> `~/mlops-adapter-backup/`.
 
 Self-contained results summary for the exam report (paste into Q12/Q14/Q17).
 All numbers are exact-match accuracy of the generated answer **letter** on the
@@ -19,28 +17,31 @@ held-out ScienceQA-IMG test split (2017 samples).
 |---|---|---|---|---|
 | Pre-fix baseline | old | r=8 | 42.9% | prompt truncated the choices |
 | Sweep #1 winner | old | r=8 | 58.85% | prompt fix; `base_lr` 1e-4 |
-| **`vague-sweep-3`** (sweep #2 winner) | old (1,677) | r=8 | **64.1%** (1293/2017) | **currently deployed** |
-| **`autumn-sweep-2`** (full-data retrain) | **full (6,218)** | **r=16** | **71.3%** | **best; pending promotion** (W&B v11) |
+| `vague-sweep-3` (sweep #2 winner) | old (1,677) | r=8 | 64.1% (1293/2017) | previous production |
+| **`sandy-sweep-7`** (full-data retrain winner) | **full (6,218)** | **r=16** | **72.19%** (1456/2017) | **deployed production** (W&B v16) |
+
+(2nd-best full-data trial: `autumn-sweep-2`, 71.3% — two trials at lr ≈ 1.33e-4
+both landing near ~72% indicates a robust optimum, not noise.)
 
 Headline finding: **fixing the data pipeline (1,677 → 6,218 train examples) +
-raising LoRA rank (8 → 16) lifted test accuracy 64.1% → 71.3% (+7.2 pts)** on the
-same 2017-sample test set. 80%+ would need higher resolution (448) / unfreezing
-the vision encoder / chain-of-thought — not attempted here.
+raising LoRA rank (8 → 16) lifted test accuracy 64.1% → 72.19% (+8.1 pts)** on the
+same 2017-sample test set, with the gains in the image-heavy subjects (natural
++7.6, social +9.1). 80%+ would need higher resolution (448) / unfreezing the
+vision encoder / chain-of-thought — not attempted here.
 
-The *deployed* adapter is still `vague-sweep-3` at
-`gs://mlops-paligemma-west4/models/production/` (W&B `:production`, v3); the
-better `autumn-sweep-2` (v11) awaits promotion once billing is restored.
+The deployed adapter is now `sandy-sweep-7` at
+`gs://mlops-paligemma-west4/models/production/` (W&B `:production`, v16).
 
-## Winning hyperparameters (`vague-sweep-3`)
+## Winning hyperparameters (`sandy-sweep-7`)
 
 | Hyperparameter | Value | Swept? |
 |---|---|---|
-| `model.base_learning_rate` | 1.89e-4 | yes (log-uniform 7e-5–2e-4) |
-| effective learning rate | 1.89e-4 | derived: `base × √(eff_batch/16)` |
+| `model.base_learning_rate` | 1.33e-4 | yes (log-uniform 7e-5–2e-4) |
+| effective learning rate | 1.33e-4 | derived: `base × √(eff_batch/16)` |
 | `data.batch_size` | 4 | fixed |
 | `trainer.accumulate_grad_batches` | 4 | yes ({2,4,8}) |
 | effective batch size | 16 | = batch_size × accum |
-| LoRA rank / alpha / dropout | 8 / 16 / 0.05 | fixed |
+| LoRA rank / alpha / dropout | 16 / 32 / 0.05 | fixed (rank raised 8→16) |
 | LoRA target modules | q,k,v,o\_proj | fixed |
 | vision encoder | frozen | fixed |
 | gradient checkpointing | on | fixed |
@@ -65,17 +66,19 @@ accumulation are compared at a comparable LR.
 | azure-sweep-8 | 0.6310 | 0.7022 | 8.31e-5 | 2 (8) |
 | dutiful-sweep-5 | 0.6190 | **0.4643** | 8.22e-5 | 8 (32) |
 
-## Per-subject accuracy (deployed model `vague-sweep-3`)
+## Per-subject accuracy (deployed model `sandy-sweep-7`)
 
 | Subject | Accuracy | n |
 |---|---|---|
-| social science | 76.2% | 764 |
-| natural science | 57.2% | 1209 |
-| language science | 45.5% | 44 |
+| social science | 85.3% (652/764) | 764 |
+| natural science | 64.8% (784/1209) | 1209 |
+| language science | 45.5% (20/44) | 44 |
 
-(Per-subject for the better `autumn-sweep-2` awaits the canonical re-eval —
-blocked on billing. Natural science is the weak split; it's the most
-diagram-dependent, which is why 224-resolution caps it.)
+Natural science is the weakest split — the most diagram-dependent, which is why
+224-resolution caps it — but it still gained +7.6 pts vs the old r=8 model
+(57.2% → 64.8%); social science gained +9.1 (76.2% → 85.3%). Source:
+`reports/eval/production_eval_results.json` (the chained-eval output for
+`sandy-sweep-7`).
 
 ## Methodology note — why we optimise `val/accuracy`, not `val/loss`
 
