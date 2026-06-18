@@ -1,4 +1,4 @@
-r"""BentoML service for PaliGemma2 ScienceQA (M25, specialized ML deployment).
+r"""BentoML service for PaliGemma2 ScienceQA (specialized ML deployment).
 
 A thin BentoML wrapper around the same model code the FastAPI app uses
 (``load_model`` + ``predict_single``). Chosen over ONNX because exporting a 3B

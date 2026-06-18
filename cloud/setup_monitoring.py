@@ -1,4 +1,4 @@
-"""Set up Cloud Monitoring alerting for the Cloud Run API (M28).
+"""Set up Cloud Monitoring alerting for the Cloud Run API.
 
 Cloud Run already streams system metrics (request count, latency, container
 CPU/memory utilization, instance count) to Cloud Monitoring with no code. This

@@ -1,4 +1,4 @@
-"""Inference optimization benchmark (M31): quantization + compilation.
+"""Inference optimization benchmark: quantization + compilation.
 
 Loads the fine-tuned adapter in a few configurations and measures load time,
 peak GPU memory, and per-generate latency on a fixed set of test samples:

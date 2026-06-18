@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Vertex entrypoint for the M31 optimization benchmark: download an adapter from
+# Vertex entrypoint for the optimization benchmark: download an adapter from
 # GCS and benchmark bf16 vs int4 vs bf16+compile on the L4.
 #
 # Env:

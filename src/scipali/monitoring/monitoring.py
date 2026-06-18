@@ -1,4 +1,4 @@
-"""Data-drift monitoring for ScienceQA inputs (M27).
+"""Data-drift monitoring for ScienceQA inputs.
 
 Builds an Evidently data-drift report comparing a reference split (train) with a
 current split (test, or live-collected inputs). We don't have raw tabular
@@ -37,7 +37,7 @@ REFERENCE_GCS = f"{_BUCKET}/reference.csv"
 # Held-out demo distribution used only until production data is collected.
 CURRENT_SAMPLE_GCS = f"{_BUCKET}/current_sample.csv"
 # Where `collect` writes the production feature table that /monitor/drift
-# compares against (the downstream consumer of the /predict logs, M27).
+# compares against (the downstream consumer of the /predict logs).
 PRODUCTION_GCS = f"{_BUCKET}/current_production.csv"
 
 
@@ -147,7 +147,7 @@ def collect(
 ) -> None:
     """Materialise the 'current' production feature table from /predict logs.
 
-    The missing downstream consumer (M27): /predict emits one structured
+    The missing downstream consumer: /predict emits one structured
     'prediction' line per request to Cloud Logging; ``collect`` reads those
     back, derives the SAME features as the training reference, and writes them
     to a GCS CSV that /monitor/drift compares against. Without this step the

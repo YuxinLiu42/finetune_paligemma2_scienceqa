@@ -70,15 +70,15 @@ dev = [
 serving = [
     "locust>=2.32.0",
     "evidently>=0.4,<0.7",  # stable Report/DataDriftPreset API
-    "bentoml>=1.2,<2",      # specialized ML deployment (M25)
-    "google-cloud-logging>=3.0",  # drift `collect`: read /predict logs (M27)
+    "bentoml>=1.2,<2",      # specialized ML deployment
+    "google-cloud-logging>=3.0",  # drift `collect`: read /predict logs
 ]
 # Drift detection (/monitor/drift) + Prometheus metrics (/metrics) in the
 # deployed API. Synced into the API image (api.dockerfile --group monitoring),
 # without the heavier frontend/load-test extras.
 monitoring = [
     "evidently>=0.4,<0.7",
-    "prometheus-fastapi-instrumentator>=7.0,<8",  # M28: /metrics instrumentation
+    "prometheus-fastapi-instrumentator>=7.0,<8",  # /metrics instrumentation
 ]
 # Data versioning (dvc + GCS remote). Only the training image needs the dvc CLI
 # (build-time `dvc config` + runtime `dvc pull`); kept out of base so api/predict

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# M21 — Continuous containers: auto-rebuild the training image on every push to
+# Continuous containers: auto-rebuild the training image on every push to
 # `main`, via a Cloud Build 2nd-gen GitHub trigger in europe-west4 (matching the
 # rest of the project). Reuses cloud/cloudbuild.train.yaml.
 #

@@ -4,7 +4,7 @@ COPY uv.lock uv.lock
 COPY pyproject.toml pyproject.toml
 
 # --group monitoring adds evidently (/monitor/drift) + the Prometheus
-# instrumentator (/metrics, M27/M28). --no-dev keeps test/docs/lint tooling out
+# instrumentator (/metrics). --no-dev keeps test/docs/lint tooling out
 # of the serving image (the API imports only base + monitoring deps at runtime).
 RUN uv sync --frozen --no-install-project --no-dev --group monitoring
 

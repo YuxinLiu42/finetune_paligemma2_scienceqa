@@ -1,6 +1,6 @@
 name: Data change checks
 
-# M19 — a continuous workflow that triggers when the DVC-tracked dataset
+# a continuous workflow that triggers when the DVC-tracked dataset
 # changes. The data itself is gitignored (DVC remote lives on GCS); what
 # actually changes in git is the *.dvc pointer file that `dvc add`/`dvc repro`
 # rewrites whenever the underlying data changes. When a pointer moves we re-run

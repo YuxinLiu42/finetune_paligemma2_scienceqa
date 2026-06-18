@@ -1,6 +1,6 @@
 name: Model registry change
 
-# M19 — a continuous workflow that reacts when the W&B model registry changes
+# a continuous workflow that reacts when the W&B model registry changes
 # (e.g. the `production` alias is moved to a newly promoted model). GitHub can't
 # watch W&B directly, so the trigger is a `repository_dispatch` event sent by a
 # W&B Automation/webhook (see SETUP below); `workflow_dispatch` runs it by hand.

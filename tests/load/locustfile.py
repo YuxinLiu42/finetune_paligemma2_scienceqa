@@ -1,4 +1,4 @@
-r"""Locust load test for the ScienceQA API (M24).
+r"""Locust load test for the ScienceQA API.
 
 Hits /predict with a fixed sample so we can measure latency/throughput under
 concurrency. A 3B model on CPU is seconds-per-request, so run with a small

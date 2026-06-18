@@ -1,4 +1,4 @@
-# M31 optimization-benchmark job: quantization + compilation on the L4.
+# optimization-benchmark job: quantization + compilation on the L4.
 # Submit via watch_job.sh AFTER the retrain frees the GPU (single L4):
 #   TEMPLATE=cloud/vertex_optimize.template.yaml RENDERED=cloud/vertex_optimize.yaml \
 #   DISPLAY_NAME=paligemma-optimize \

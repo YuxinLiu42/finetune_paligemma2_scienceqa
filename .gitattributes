@@ -1,0 +1,17 @@
+# Line-ending normalization — make it explicit so it's consistent across
+# machines/contributors instead of depending on each person's core.autocrlf.
+
+# Auto-detect text files and store them with LF in the repository.
+* text=auto
+
+# Always LF — shell scripts must be LF to run in the Linux build/serve
+# containers; data exports (e.g. locust load-test CSVs) stay LF too.
+*.sh   text eol=lf
+*.csv  text eol=lf
+
+# Binary assets — never convert line endings or attempt text diffs.
+*.png      binary
+*.jpg      binary
+*.pstats   binary
+*.prof     binary
+*.safetensors binary

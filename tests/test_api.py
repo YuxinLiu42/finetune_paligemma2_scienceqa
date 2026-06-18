@@ -115,7 +115,7 @@ def test_predict_returns_prediction() -> None:
 
 
 def test_metrics_endpoint_exposes_prometheus() -> None:
-    """/metrics exposes Prometheus metrics when the instrumentator is installed (M28).
+    """/metrics exposes Prometheus metrics when the instrumentator is installed.
 
     Skips when prometheus-fastapi-instrumentator isn't present (e.g. CI's --dev),
     matching the optional-deployed-dep pattern used by the drift tests.

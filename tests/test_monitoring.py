@@ -1,4 +1,4 @@
-"""Tests for the data-drift monitoring helpers (M27)."""
+"""Tests for the data-drift monitoring helpers."""
 
 from pathlib import Path
 

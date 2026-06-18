@@ -47,7 +47,7 @@ def _log_prediction_event(event: dict) -> None:
 _module: PaliGemmaModule | None = None
 _load_lock = threading.Lock()
 
-# Drift detection (M27): reference = training-input feature distribution,
+# Drift detection: reference = training-input feature distribution,
 # current_sample = a held-out distribution to compare against. Both live in GCS
 # so the container needs neither the dataset nor a rebuild to refresh them.
 _BUCKET = "gs://mlops-paligemma-west4/monitoring"
@@ -223,7 +223,7 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-# System metrics (M28): expose Prometheus metrics at /metrics — request counts,
+# System metrics: expose Prometheus metrics at /metrics — request counts,
 # latency histograms, in-progress requests, request/response sizes. Cloud Run /
 # Managed Prometheus can scrape it. Wrapped defensively so the API still imports
 # without the optional dependency (only the deployed image and the `monitoring`
@@ -372,7 +372,7 @@ def predict(request: PredictRequest) -> PredictResponse:
         **prompt_kwargs,
     )
 
-    # Input-output collection (M27): one structured JSON line per prediction ->
+    # Input-output collection: one structured JSON line per prediction ->
     # Cloud Logging, queryable later for data-drift monitoring. The image bytes
     # are not logged (size); its dimensions are.
     _log_prediction_event(
