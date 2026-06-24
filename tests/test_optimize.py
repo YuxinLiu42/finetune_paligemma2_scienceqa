@@ -5,6 +5,7 @@ tiny in-test network — no model files, no GPU, no network. The CUDA-only paths
 (merge_and_unload, generate, the prune-sweep loop) are exercised on Vertex.
 """
 
+import pytest
 import torch
 from typer.testing import CliRunner
 
@@ -29,18 +30,25 @@ def _linears(model: torch.nn.Module) -> list[torch.nn.Linear]:
     return [m for m in model.modules() if isinstance(m, torch.nn.Linear)]
 
 
-def test_prune_reaches_target_sparsity() -> None:
-    """Per-layer pruning zeros ~`amount` of the Linear weights and bakes it in."""
+@pytest.mark.parametrize("amount", [0.3, 0.5, 0.7])
+def test_prune_reaches_target_sparsity(amount: float) -> None:
+    """Global pruning zeros ~`amount` of the Linear weights and bakes it in.
+
+    Guards the global-threshold logic: a single cutoff must still land the
+    *actual* sparsity within 1% of the target at every level.
+    """
     model = _TinyNet()
-    achieved = prune_linear_layers(model, amount=0.5)
-    assert abs(achieved - 0.5) < 0.01
+    achieved = prune_linear_layers(model, amount=amount)
+    assert abs(achieved - amount) < 0.01, f"sparsity off: {achieved} vs {amount}"
 
     # prune.remove ran: no reparam buffers left, zeros live in the dense weight.
     linears = _linears(model)
     assert all(not hasattr(m, "weight_orig") for m in linears)
     zeros = sum(int((m.weight == 0).sum()) for m in linears)
     total = sum(m.weight.numel() for m in linears)
-    assert abs(zeros / total - 0.5) < 0.01
+    assert abs(zeros / total - amount) < 0.01, (
+        f"sparsity off: {zeros / total} vs {amount}"
+    )
 
 
 def test_prune_leaves_non_linear_params_untouched() -> None:

@@ -10,9 +10,9 @@ peak GPU memory, and per-generate latency on a fixed set of test samples:
 - ``int4``           : 4-bit weights via bitsandbytes (QLoRA-style) — CUDA only.
 - ``bf16+compile``   : ``torch.compile`` of the bf16 model.
 
-``prune-sweep`` merges the LoRA adapter into the base, then magnitude-prunes the
-Linear weights (per layer) to several sparsity levels and measures test accuracy
-at each. Latency is reported too, but it stays flat by design:
+``prune-sweep`` merges the LoRA adapter into the base, then global
+magnitude-prunes the Linear weights to several sparsity levels and measures test
+accuracy at each. Latency is reported too, but it stays flat by design:
 unstructured pruning only zeros weights, so the dense kernels still do the full
 matmul — there is no speedup without sparse kernels. The deliverable is the
 accuracy-vs-sparsity curve, not a latency win.
@@ -75,24 +75,42 @@ def _load(adapter_dir: Path, mode: str):
 
 
 def prune_linear_layers(model: torch.nn.Module, amount: float) -> float:
-    """Per-layer L1-unstructured prune of every ``nn.Linear`` weight to ``amount``.
+    """Global L1-unstructured prune of every ``nn.Linear`` weight to ``amount``.
 
-    Each Linear is pruned to ``amount`` independently. A single global
-    ``prune.global_unstructured`` pass instead concatenates every weight and runs
-    one top-k whose int64 indices alone are ~10GB on a 3B model — that OOMs the
-    24GB L4. Pruning per layer keeps peak scratch to a single layer's worth.
+    Uses a single global magnitude threshold across all Linear weights (so the
+    sparsity budget is allocated adaptively, like ``prune.global_unstructured``),
+    but finds the cutoff with ``torch.kthvalue`` on a pooled CPU copy of the
+    ``|weights|``. kthvalue returns just the scalar threshold, avoiding the
+    ~10GB int64 top-k *index* tensor that OOMs the 24GB L4 on a 3B model (the
+    boolean masks below are ~1 byte/elem, which is cheap). Each layer is masked
+    with ``|w| > threshold`` and baked in with ``prune.remove``.
 
-    Bakes the mask in with ``prune.remove`` so the weights are plain dense
-    tensors with zeros (this is exactly why pruning buys no speedup without
-    sparse kernels). Returns the achieved sparsity, i.e. the fraction of zero
-    weights across the pruned layers. ``amount == 0`` is a no-op.
+    Returns the ACHIEVED sparsity (fraction with ``|w| <= threshold``). With a
+    smooth magnitude distribution this matches ``amount`` to well within 1%; the
+    only deviation is weights tied exactly at the threshold, which can nudge it
+    up by at most the size of that one magnitude bin. The sweep records this
+    achieved value, so the curve is plotted against real sparsity. ``amount == 0``
+    is a no-op.
     """
     linears = [(m, "weight") for m in model.modules() if isinstance(m, torch.nn.Linear)]
-    if amount > 0:
-        for module, name in linears:
-            prune.l1_unstructured(module, name, amount=amount)
-            prune.remove(module, name)  # drop the reparam; keep the zeroed weight
     total = sum(m.weight.numel() for m, _ in linears)
+    if amount > 0:
+        # Pool |weights| into one preallocated CPU float32 buffer (so we never
+        # hold two ~10GB copies at once) and take the global magnitude cutoff.
+        pooled = torch.empty(total, dtype=torch.float32)
+        offset = 0
+        for module, _ in linears:
+            n = module.weight.numel()
+            pooled[offset : offset + n] = (
+                module.weight.detach().abs().float().flatten().cpu()
+            )
+            offset += n
+        threshold = pooled.kthvalue(int(amount * total)).values.item()
+        del pooled
+        for module, name in linears:
+            mask = (module.weight.detach().abs() > threshold).to(module.weight.dtype)
+            prune.custom_from_mask(module, name, mask)  # 1 = keep, 0 = prune
+            prune.remove(module, name)  # bake the zeros into the dense weight
     zeros = sum(int((m.weight == 0).sum()) for m, _ in linears)
     return zeros / total if total else 0.0
 
