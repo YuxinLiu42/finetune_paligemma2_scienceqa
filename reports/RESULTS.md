@@ -224,7 +224,8 @@ Quantization benchmark (bf16 vs int4 vs bf16+compile) on an L4 via
 Global L1-unstructured magnitude pruning of the merged model's `nn.Linear`
 weights, swept over four sparsity levels on the **full 2,017-sample test split**
 (`cloud/run_optimize.sh` with `SKIP_BENCHMARK=1`, job `6309659488739655680`,
-`reports/eval/prune_results.json`):
+`reports/eval/prune_results.json`; plotted in
+`reports/figures/prune_sparsity_curve.png`):
 
 | sparsity (target → achieved) | accuracy | correct/total | latency (s/batch) |
 |---|---|---|---|
@@ -268,6 +269,7 @@ weights, swept over four sparsity levels on the **full 2,017-sample test split**
 | `sweep2_comparison.png` | earlier sweep (`xptwdnis`, old data r=8) — same chart for the 64% era |
 | `prediction_length_dist.png` | predicted answer length (sanity: single letters) |
 | `error_samples.png` | qualitative grid of misclassified samples |
+| `prune_sparsity_curve.png` | M31 pruning sweep: accuracy vs. sparsity (left) and latency vs. sparsity / no speedup (right) |
 
 Reproduce with the committed source JSONs:
 

@@ -346,6 +346,75 @@ def plot_prediction_length_distribution(
     return out_path
 
 
+def plot_prune_sparsity_curve(
+    results_path: Path,
+    output_dir: Path = RESULTS_DIR,
+) -> Path:
+    """Plot the M31 pruning sweep as a two-panel accuracy/latency curve.
+
+    Left: test accuracy vs. achieved sparsity (the headline result). Right:
+    latency vs. achieved sparsity, showing unstructured pruning gives no
+    speedup (dense GEMM kernels still do the full matmul regardless of how
+    many weights are zeroed).
+
+    Args:
+        results_path: JSON produced by `scipali.models.optimize prune-sweep`
+            (`{"results": [{"sparsity_achieved", "accuracy",
+            "latency_s_per_batch", ...}, ...]}`).
+        output_dir: Directory where the figure is saved.
+
+    Returns:
+        Path to the saved figure.
+    """
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    with results_path.open() as f:
+        data = json.load(f)
+    results = sorted(data["results"], key=lambda r: r["sparsity_achieved"])
+    sparsity = [r["sparsity_achieved"] * 100 for r in results]
+    accuracy = [r["accuracy"] * 100 for r in results]
+    latency = [r["latency_s_per_batch"] for r in results]
+
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 5))
+
+    ax1.plot(sparsity, accuracy, marker="o", color="steelblue")
+    for x, y in zip(sparsity, accuracy):
+        ax1.annotate(
+            f"{y:.1f}%",
+            (x, y),
+            textcoords="offset points",
+            xytext=(0, 8),
+            ha="center",
+            fontsize=8,
+        )
+    ax1.set_xlabel("Achieved sparsity (%)")
+    ax1.set_ylabel("Test accuracy (%)")
+    ax1.set_title("Global magnitude pruning: accuracy vs. sparsity")
+    ax1.set_ylim(0, max(accuracy) * 1.15)
+
+    ax2.plot(sparsity, latency, marker="o", color="seagreen")
+    for x, y in zip(sparsity, latency):
+        ax2.annotate(
+            f"{y:.3f}s",
+            (x, y),
+            textcoords="offset points",
+            xytext=(0, 8),
+            ha="center",
+            fontsize=8,
+        )
+    ax2.set_xlabel("Achieved sparsity (%)")
+    ax2.set_ylabel("Latency (s/batch)")
+    ax2.set_title("No speedup: unstructured pruning stays dense")
+    ax2.set_ylim(0, max(latency) * 1.2)
+
+    fig.tight_layout()
+    out_path = output_dir / "prune_sparsity_curve.png"
+    fig.savefig(out_path, dpi=300)
+    plt.close(fig)
+    log.info("Saved prune sparsity curve plot to %s", out_path)
+    return out_path
+
+
 @app.command()
 def subject_accuracy(
     results_path: Path = typer.Argument(
@@ -407,6 +476,18 @@ def sweep_comparison(
 ) -> None:
     """Plot the sweep #2 trial comparison and the val-metric disagreement."""
     out = plot_sweep_comparison(summary_path, output_dir)
+    typer.echo(f"Saved to {out}")
+
+
+@app.command()
+def prune_curve(
+    results_path: Path = typer.Argument(
+        ..., help="Path to the prune-sweep JSON results."
+    ),
+    output_dir: Path = typer.Option(RESULTS_DIR, "--output-dir", "-o"),
+) -> None:
+    """Plot the M31 pruning accuracy/latency curve vs. sparsity."""
+    out = plot_prune_sparsity_curve(results_path, output_dir)
     typer.echo(f"Saved to {out}")
 
 
