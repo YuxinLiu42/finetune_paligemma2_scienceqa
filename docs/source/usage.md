@@ -152,8 +152,10 @@ gcloud run deploy paligemma-api \
 
 Notes: `concurrency 1` keeps one heavy inference per instance (avoids OOM on the
 3B model); `max-instances 3` lets overflow requests spin new instances instead
-of returning 429. First call to each instance is slow (~160 s) — it downloads
-the base model and loads on CPU; later calls are ~10–27 s.
+of returning 429. First call to each instance is slow — a direct `/predict` on a
+scaled-to-zero instance (container start + model download/load + inference, all
+bundled) runs **~150–230 s (typically ~160–175 s)**; once warm, calls run
+**~25–80 s (commonly ~35–50 s)**.
 
 ## Ops
 

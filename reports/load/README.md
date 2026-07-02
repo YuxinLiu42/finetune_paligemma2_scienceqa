@@ -28,3 +28,11 @@ uv run --group serving locust -f tests/load/locustfile.py \
   starts, since each new instance downloads the base model on its first call).
 
 Raw stats in `scienceqa_stats.csv` / `scienceqa_stats_history.csv`.
+
+> **Note:** this run predates the `r=16` production promotion (2026-06-14).
+> Direct measurement against the current production adapter shows higher
+> latency — warm `/predict` calls now run ~25–80 s (commonly ~35–50 s) and a
+> true cold start (scale-zero → first `/predict`) is ~150–230 s; see
+> `docs/source/usage.md` / `docs/source/api.md`. Re-running this load test
+> against the current adapter would be a nice-to-have, not required — the
+> harness plus this completed run already satisfy M24.

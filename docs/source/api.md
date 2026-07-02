@@ -71,9 +71,14 @@ flowchart LR
 - **On-demand, scale-to-zero serving (no always-on GPU).** Cloud Run runs the
   3B model on CPU (`--memory 32Gi --cpu 8`), `min-instances 0`, with **lazy
   loading** (`LAZY_LOAD=1`): the container passes the startup probe immediately
-  and loads the model on the first `/predict`. First call per instance is
-  ~160 s; warm calls ~10–27 s. Cheaper than a standing GPU endpoint for a
-  course-scale workload.
+  and loads the model on the first `/predict`. `GET /` never touches the model,
+  so it only measures container start (~45 s) — the number that matters is a
+  direct `/predict` from a scaled-to-zero instance, which bundles container
+  start + model load + inference into one figure: **~150–230 s (typically
+  ~160–175 s)**. Once warm, calls run **~25–80 s (commonly ~35–50 s)** — CPU-bound
+  generation length varies, and sustained back-to-back calls have shown a longer
+  tail, plausibly once `--startup-cpu-boost`'s window closes. Cheaper than a
+  standing GPU endpoint for a course-scale workload.
 - **The adapter is read from `gs://…/models/production` at startup**, not baked
   into the image, so promoting a new model needs no rebuild/redeploy — re-copy
   the adapter and move the W&B `production` alias.
