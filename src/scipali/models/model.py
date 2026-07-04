@@ -428,3 +428,8 @@ class PaliGemmaModule(L.LightningModule):
         module.to(device)
         log.info("Loaded base %s + adapter %s on %s", model_name, adapter_dir, device)
         return module
+
+
+if __name__ == "__main__":
+    module = PaliGemmaModule()
+    log.info("Architecture:\n%s", module.model)
