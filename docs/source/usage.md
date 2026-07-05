@@ -114,11 +114,26 @@ There is also a shell demo of the deployed API (health → predict → drift):
 ## Container images
 
 Three Dockerfiles live in `dockerfiles/`: `train.dockerfile`, `api.dockerfile`,
-and `predict.dockerfile`. Build them locally with the Invoke task:
+and `predict.dockerfile`. `train.dockerfile` installs scipali from a
+**prebuilt wheel** rather than building it in-image (see the comment in the
+Dockerfile), so generate that first:
 
 ```bash
-inv docker-build        # builds train + api images locally (see tasks.py)
+uv build --wheel -o wheelhouse
 ```
+
+Then build all three locally with the Invoke task:
+
+```bash
+inv docker-build        # builds train + api + predict images locally (see tasks.py)
+```
+
+All three were built and smoke-tested locally on 2026-07-05: `api:latest`
+serves `GET /` correctly under `LAZY_LOAD=1`; `predict:latest`'s CLI renders
+via `--help`; `train:latest` installs CUDA torch (`2.6.0+cu118`) and imports
+every `scipali` subpackage cleanly. `train.dockerfile` needs
+`--platform=linux/amd64`, so on Apple Silicon it builds under emulation
+(slow, ~15 min) — real GPU training still needs a CUDA host, same as Vertex.
 
 The images are **continuously built and verified in CI**: the Cloud Build
 triggers `mlops-ci-api` and `mlops-ci-train` rebuild `api.dockerfile` and
