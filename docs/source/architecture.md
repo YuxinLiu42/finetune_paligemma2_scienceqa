@@ -7,7 +7,7 @@ AI for GPU work, with artifacts in GCS / W&B and serving on Cloud Run.
 flowchart TD
     dev["Local dev<br/>(Hydra configs, Lightning)"] -->|git push| gh["GitHub"]
     gh -->|"CI: ruff + pytest"| ci["GitHub Actions"]
-    gh -->|"gcloud builds submit"| cb["Cloud Build<br/>(amd64 images)"]
+    gh -->|"push trigger (api) · manual submit (train)"| cb["Cloud Build<br/>(amd64 images)"]
     cb --> ar["Artifact Registry<br/>paligemma-train / paligemma-api"]
 
     subgraph data["Data (DVC)"]

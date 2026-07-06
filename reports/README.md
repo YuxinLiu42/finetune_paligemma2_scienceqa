@@ -10,172 +10,110 @@ nav_exclude: true
 > **Enter the study number for each member in the group**
 >
 > Answer:
-Duc-Anh Nguyen 12433139
-Yuxin Liu
 
-
-
+Yuxin Liu [TODO: student number]
+Duc-Anh Valentino Nguyen 12433139
 
 ## Coding environment
+
 > In the following section we are interested in learning more about your local development environment.
 
 ### Question 3
+
 > **What framework did you choose to work with and did it help you complete the project?**
 > Answer:
-We, as a team, successfully developed an image classifier that can accurately classify different varieties of rice. The classifier is able to distinguish between Arborio, Basmati, Ipsala, Jasmine, and Karacadag rice. 
 
-To create the classifier, we utilized a deep learning model and utilized the PyTorch Images framework (Timm) to import a pre-trained ResNet50 model and a training script. We imported a large dataset of rice images from Kaggle.com to train our model. 
+We used the Hugging Face **Transformers** framework with the **PaliGemma2-3B**
+vision-language model ([`google/paligemma2-3b-pt-224`](https://huggingface.co/google/paligemma2-3b-pt-224)), fine-tuned with **PEFT/LoRA**
+for parameter-efficient adaptation, **PyTorch Lightning** for the training loop,
+and **Hydra** for configuration management.
 
-We found that by utilizing a deep learning model and a large dataset, we were able to achieve a high level of accuracy in classifying the different varieties of rice. Additionally, our pipeline involved using W&B, GCP, and GitHub for tracking our progress, storing our data, and deploying our model. Overall, this project was a great success and using TIMM made it easier to deploy the model and helped us put more focus on our pipeline.
-
-
-
-########
-In this project we utilized the [Transformers](https://github.com/huggingface/transformers) repository from the Huggingface group. This repository provides the [t5-small model](https://huggingface.co/t5-small), which is a natural language processing (NLP) model that can translate text from one language to another.
-
-In this project we have used the Trainer class in the pytorch lightning framework to train and test the t5-small model on a subset of the english/ german (en-de) subset of the [WMT19 dataset](https://huggingface.co/datasets/wmt19) (from the fourth conference on machine translation).
-
-We have used Weights and biases (`wandb`) to both handle the configuration file with the hyperparameters for the model and for logging the training and validation loss.
-
-
-
-
-
-
-
-
-
+Transformers gave us a ready pretrained VLM and matching processor, so we could
+start from a strong checkpoint instead of training from scratch. LoRA made
+fine-tuning a 3B-parameter model tractable on a single L4 GPU (only ~6.4M of the
+~3B parameters are trainable). Lightning removed most of the training-loop
+boilerplate (checkpointing, early stopping, the test/validation loop, logging
+hooks), and Hydra let us compose and override hyperparameters from the CLI
+(`configs/data`, `configs/model`, `configs/trainer`, `configs/sweep`) without an
+ad-hoc argparser. All four were used as intended and materially sped up
+development.
 
 ### Question 4
 
 > **Explain how you managed dependencies in your project? Explain the process a new team member would have to go**
 > **through to get an exact copy of your environment.**
 >
-> Answer length: 100-200 words
->
-> Example:
-> *We used ... for managing our dependencies. The list of dependencies was auto-generated using ... . To get a*
-> *complete copy of our development enviroment, one would have to run the following commands*
->
 > Answer:
->
-> Construct one or multiple docker files for your code (M10)
-Build the docker files locally and make sure they work as intended (M10)
 
-Packages are mananged in conda environments. The packages required can be found in the requirements.txt file which is placed in the top folder in the cookiecutter structure. In this txt file we have a complete list of all used packages and relevant versions in this project. The requirement.txt file was auto-generated using the command pipreqs. To get a complete copy of our development enviroment, one would have to run the following commands (assuming they have git and Python 3.10 installed):
+We manage dependencies with **`uv`**, not conda/pip. `pyproject.toml` declares
+the dependencies and dependency-groups (`dev`, `serving`, `monitoring`, `data`),
+and `uv.lock` pins exact resolved versions; `.python-version` pins the
+interpreter. CI and Docker builds use `uv sync --frozen`/`--locked` so the
+locked versions are reproduced exactly, never re-resolved.
+
+To get an exact copy of the environment, a new team member would run:
+
+```bash
+git clone git@github.com:yuxinliu42/SS26_MLOps_Project_GroupA.git
+cd SS26_MLOps_Project_GroupA
+uv sync --locked --dev
+dvc pull   # fetch the processed dataset from the GCS remote
 ```
-git clone https://github.com/MikkelGodsk/dtu_mlops_exam_project.git
-cd dtu_mlops_exam_project
-conda create -n myenv
-pip install -r requirements.txt
-dvc pull
-python setup.py install
-```
 
-
-#####################################################
-
-We used 
-(mini)conda, 
-pipreqs, 
-docker, and 
-git to manage our dependencies. We created a conda environment to make sure that the dependencies of our project do not cross-contaminate with others. Requirements of both pip and conda were handled by package pipreqs. To get a complete copy of our development environment, one would have to build our docker file:
-
-docker build -f Docker.dockerfile . -t trainer:latest.
-
-This file contains requirements.txt and environment.yml (generated wrespectively with commands pipreqs and conda env export > environment.yml). Finally, version control was managed with Git. A new team member would be invited to join the github repository, clone it, and run the docker file.
-
-
-
-
-
-
-
-
-
+`uv lock --check` verifies the lockfile is still in sync with `pyproject.toml`
+before merging. Docker images (`dockerfiles/*.dockerfile`) use the same
+`uv sync --frozen` step, so the local, CI, and container environments are all
+built from the same lockfile.
 
 ### Question 5
 
 > **We expect that you initialized your project using the cookiecutter template. Explain the overall structure of your code. Did you fill out every folder or only a subset?**
 >
-> Answer length: 100-200 words
->
-> Example:
-> *From the cookiecutter template we have filled out the ... , ... and ... folder. We have removed the ... folder*
-> *because we did not use any ... in our project. We have added an ... folder that contains ... for running our*
-> *experiments.*
 > Answer:
 
-The overall structure is initialized with the cookiecutter template. In general we tried to follow the cookiecutter structure as much as possible.
+The project was initialized from
+[SkafteNicki/mlops_template](https://github.com/SkafteNicki/mlops_template).
+We filled out: `data/` (DVC-tracked pointers to the processed ScienceQA-IMG
+splits), `src/scipali/` — split into `data/` (download + preprocess),
+`models/` (model, train, evaluate, optimize, visualize), `serving/` (FastAPI
+app, predict CLI, Streamlit frontend, BentoML service), and `monitoring/`
+(drift detection); `configs/` (Hydra config groups); `dockerfiles/` (three
+images); `tests/` (pytest suite); `docs/` (MkDocs site, published to GitHub
+Pages).
 
-
-Since the original WMT19 dataset took up too much memory in both cloud and drive, we processed the data locally and only included a subset in the proccessed folder in the data folder. 
-
-Thus we deleted the data/external/, data/interim/ and data/raw/ folders. We also deleted the folders notebooks/, references/, src/features/, src/visualization/, since we did not use these. We filled out the src/data/ folder and the src/models/ folder in which we also included a file src/models/evaluate_model.py for evaluating the model and a folder src/models/config/, with the configuration files.
-We also included the tests/ folder which holds scripts for conducting different pytests.
-
-#############
-
-
-We used cookiecutter to create a template for our project. We mostly used it as a starting point for the creation of the project in order to have a more organized project.
-
-The project folder contains any configuration files necessary for the project, such as settings for a specific framework or environment. The data folder is used to store any data related to the project, such as training and validation data and make_dataset.py file.
-
-The models folder is used to store our imported model. The reports folder is used to store any reports generated by the project, such as performance metrics or analysis results. The src folder contains the source code for the project, including the training script under models/train_model.py
-
-The test folder is used to store any test cases and test scripts used to test the project. The test folder includes subfolders for unit tests, integration tests, and acceptance tests.
-
-From the original template we removed the LICENSE file, the notebooks, and references folders as not of interest to our project. We added the config folder.
-
-
-
-
-
-
-
-
+We removed `notebooks/` (all experimentation went through Hydra-configured
+scripts, not notebooks) and did not use a `references/` folder. We added two
+things not in the base template: `cloud/` (Vertex AI + Cloud Build + ops
+scripts) and a `monitoring/` subpackage under `src/scipali/`, since the
+template doesn't anticipate a deployed-model monitoring loop.
 
 ### Question 6
 
 > **Did you implement any rules for code quality and format? Additionally, explain with your own words why these**
 > **concepts matters in larger projects.**
+>
+> Answer:
 
-Our code is formatted to meet Pep8 standards via black editor. 
+Yes. We use **ruff** for both linting and formatting (replacing
+black/isort/flake8 with one faster tool), **mypy** for static type checking,
+and **pre-commit** hooks (`trailing-whitespace`, `end-of-file-fixer`,
+`check-yaml`, `check-added-large-files`, `ruff --fix`, `ruff-format`) that run
+on every commit. All three (ruff lint, ruff format check, mypy) are also
+enforced in CI (`.github/workflows/linting.yaml`), so a non-compliant change
+cannot be merged even if a hook was skipped locally. Public functions carry
+type hints and short Args/Returns docstrings.
 
-Import statements are taken care of with isort. 
-
-Rules for code and quality format are important as they ensure consistency, maintainability, and readability in large projects. This improves collaboration and reduces errors, ultimately saving time and resources.
-
-
-############
-
-
-In this project we have used typing and written comments when the code is not completly self explanatory, in addition to function docstrings. 
-
-We tried to ensure that the code is pep8 compliant. 
-
-To obtain this we have used black to format the code and flake8 to check. Lastly, we used isort to sort our imports. The code quality and format is tested in github actions, hence constantly ensuring the quality. 
-
-Using these methods makes it much easier to share code and ensures the readability.
-
-
-
-
-
-
-
-
-
-
-
+These rules matter more as a project grows because consistent formatting and
+typing remove an entire class of bikeshedding and reviewing friction — a
+reviewer can focus on logic instead of style, static types catch a class of
+bugs before runtime, and a shared, enforced style means any contributor
+(including a future one who wasn't on the original team) can read unfamiliar
+code without adapting to a different author's personal conventions.
 
 ## Version control
 
 > In the following section we are interested in how version control was used in your project during development to
 > corporate and increase the quality of your code.
-
-
-
 
 ### Question 7
 
@@ -183,183 +121,73 @@ Using these methods makes it much easier to share code and ensures the readabili
 >
 > Answer:
 
-7
-
-
-
-
-
-
-
-
-
-
-
-
+132 tests (`tests/`), covering the data pipeline, model/training code, the
+FastAPI serving endpoints, and the monitoring/drift logic.
 
 ### Question 8
 
 > **What is the total code coverage (in percentage) of your code? If you code had an code coverage of 100% (or close**
 > **to), would you still trust it to be error free? Explain you reasoning.**
-
-
-> **Answer length: 100-200 words.**
->
-> Example:
-> *The total code coverage of code is X%, which includes all our source code. We are far from 100% coverage of our **
-> *code and even if we were then...*
 >
 > Answer:
 
-No, having a code coverage of 100% does not guarantee that the code is error-free. Code coverage measures the percentage of code that is executed during testing, but it does not take into account the quality of the tests or the correctness of the code logic. Even if all lines of code are executed, there may still be bugs or errors present in the code. 
+Total coverage is **~71%** of `src/scipali` (`uv run coverage report`),
+computed in CI on every push and uploaded to Codecov. CI installs the
+optional monitoring extras (`--group monitoring`) so the import-guarded
+lines — the Prometheus `/metrics` instrumentation and the Evidently
+drift-report body — are exercised there too, keeping the local number and
+the Codecov badge in agreement.
 
-Additionally, code coverage does not account for edge cases or unexpected inputs that may cause the code to fail. Therefore, it is important to also conduct thorough testing and code review to ensure the overall quality and reliability of the code. 
-
-
-
-We have 100% code coverage on the prediction model (predict_model.py) and the API (main.py). We also have the TIMM training script and modules, but since we did not create those, we do not have tests for them.
-
-
-
-###################
-
-The total code coverage of code is 93%, which includes all our source code.
-| Name                          | STMTS | Miss | Cover | Missing        |
-|-------------------------------|-------|------|-------|----------------|
-| ./src/\_\_init\_\_.py         | 0     | 0    | 100%  | -              |
-| ./src/models/\_\_init\_\_.py  | 2     | 0    | 100%  | -              |
-| ./src/models/model.py         | 48    | 4    | 92%   | 45, 47, 49, 51 |
-| ./src/models/predict_model.py | 21    | 7    | 67%   | 21, 29-37      |
-| ./tests/\_\_init\_\_.py       | 5     | 0    | 100%  | -              |
-| ./tests/test_api.py           | 11    | 0    | 100%  | -              |
-| ./tests/test_dataset.py       | 18    | 0    | 100%  | -              |
-| ./tests/test_model.py         | 43    | 0    | 100%  | -              |
-| TOTAL                         | 148   | 11   | 93%   | -              |
-
-The reason for the code coverage less than 100% in the file `model.py` is that we deemed some of the checks in the constructor (`__init__`) too trivial to test. These are just checking for the data type and non-negativity of learning-rate and batch size.
-
-In `predict_model.py`, the reason for the coverage being less than 100% is that we do not test with loading in a checkpoint. Unless we transfered this to GitHub, it would not be able to run in actions. Lastly, we have tested the code run in the `if __name__ == '__main__':`-block. In order to do so we had to open a pipe to another cmd using `os.popen` doing so, so the code is simply not counted here.
-
-
-
-
-
-
-
-
-
-
-
+No — 100% coverage would only mean every line *executed* at least once during
+testing, not that the code is correct. It says nothing about whether the
+*assertions* are meaningful, whether edge cases and unusual inputs are
+exercised, or whether two covered lines interact incorrectly together. A test
+that calls a function and checks nothing meaningful still counts as "covered."
+We treat coverage as a floor that flags obviously-untested code, not a
+correctness guarantee — e.g. our own gaps are concentrated in `train.py`
+(GPU-only training loop, not exercised by the fast CPU unit-test suite) and
+parts of `model.py`/`monitoring.py`, which are covered by integration-level
+checks (a real Vertex AI run, a real drift report) rather than unit tests.
 
 ### Question 9
 
 > **Did your workflow include using branches and pull requests? If yes, explain how. If not, explain how branches and**
 > **pull request can help improve version control.**
 >
-> Answer length: 100-200 words.
->
-> Example:
-> *We made use of both branches and PRs in our project. In our group, each member had a branch that they worked on in*
-> *addition to the main branch. To merge code we ...*
->
 > Answer:
-We added branch protection on the main branch.
->
-> Hence we created a feature branch where changes were made. We then used pull requests to merge with the main branch quite often. A pull request typically only concerned a few changes in a limited amount of scripts. Hence we avoided having an unmanageable amount of branches as well as reduced the number of merge conflicts. Before merging a branch with the main branch the tests are conducted to ensure that the merge will result in a working code. Furthermore when making major changes we assured that pull request were created and reviewed immediately.
 
-
-#########
-
-We made use of both branches and PRs in our project. 
-
-For each feature or change we created a new branch. Each branch worked on different tasks: 
-
-on one we created a dedicated environment for the project to 
-   + keep track of packages, 
-   + filled out the requirements.txt file, 
-   + checked code formatting, 
-   + setup version control, 
-   + wrote one configuration file for our experiments, 
-   + created a data storage in GCP Bucket for our data and 
-   + linked this with our data version control setup. 
-
-On another one we used Weights & Biases to log training progress and other important metrics/artifacts in our code; 
-
-another one was used to write unit tests related to the data part of our code, to model construction and or model training, calculate the coverage 
-
-and finally another to create a FastAPI application that can do inference using our model, and create a trigger workflow for automatically building our docker images.
-
-
-
-
-
-
-
-
-
+Yes. Changes went into feature branches and were merged into `main` via pull
+requests rather than pushed directly — the repository history shows PR merges
+(e.g. `Merge pull request #9 from DucAnhValentinoNguyen/test`). Since `main` is
+wired to CI (tests + linting on every push/PR) and to automatic deployment
+(Cloud Build rebuilds the API image, and later in the project a
+model-registry-change workflow rolls a promoted model out to Cloud Run), a
+broken `main` has real consequences beyond code review — so keeping changes in
+a branch until CI is green before merging was the main practical benefit,
+alongside the usual review/diff-visibility benefit of a PR.
 
 ### Question 10
 
 > **Did you use DVC for managing data in your project? If yes, then how did it improve your project to have version**
 > **control of your data. If no, explain a case where it would be beneficial to have version control of your data.**
 >
-> Answer length: 100-200 words.
->
-> Example:
-> *We did make use of DVC in the following way: ... . In the end it helped us in ... for controlling ... part of our*
-> *pipeline*
-> Hint: Start out small! We recommend that you start out with less than 1GB of data. If the dataset you want to work with is larger, then subsample it. You can use dvc to version control your data and only download the full dataset when you are ready to train the model.
-
-Be aware of many smaller files. DVC does not handle many small files well, and can take a long time to download. If you have many small files, consider zipping them together and then unzip them at runtime.
-
-You do not need to use DVC for everything regarding data. You workflow is to just use DVC for version controlling the data, but when you need to get it you can just download it from the source. For example if you are storing your data in a GCP bucket, you can use the gsutil command to download the data or directly accessing the it using the cloud storage file system
-
-Setup version control for your data or part of your data (M8)
-Add pre-commit hooks to your version control setup (M18)
-Create a data storage in GCP Bucket for your data and link this with your data version control setup (M21)
-
 > Answer:
 
-The wmt19 dataset originally contained around 9GB of data. 
+Yes. DVC tracks the processed ScienceQA-IMG splits, with a GCS remote
+(`gs://mlops-paligemma-west4/dvcstore`). `.dvc/config` sets `no_scm=true`
+because the training/optimize Docker images ship the `.dvc` pointer files
+without a `.git` directory (so DVC can't detect a git repo inside the
+container), and `dvc pull` needs to work in that no-SCM mode.
 
-Hence we decided to create a subset of the dataset. Data version control hereby contributed to an easy update of the data. 
-
-We initially created a bucket in Google Cloud and used dvc to manage this. 
-
-However s194333 did not have enough credit to sustain this service hence we had to create another bucket containing the same data with a different billing account. However we also stored the data on google drive, in case we potentially would use all credits on cloud again. Hence the dvc package proved to be very usefull for switching between different data storage options. In addition, dvc was an easy update to implement on all our devices since it only required some simple terminal commands.
-
-
-################
-
-
-
-
-Yes, initially Google Drive, then GCP bucket, and finally Git Large File System. Although we set up data version control, our dataset was never modified. In general, DVC is beneficial in managing data in a project when multiple team members are working on the same data set. With data version control, team members can collaborate on the dataset and make changes without interfering with each other's work. It also allows for easy tracking of changes and rollbacks if necessary. Additionally, data version control makes it easy to reproduce results and maintain a clear history of changes to the data set, which is essential for transparency and reproducibility in research projects. Overall, data version control ensures efficient collaboration and accountability in data management.
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+DVC let us keep the (large, binary) image data out of git entirely while still
+versioning exactly which processed split a given training run used — the
+pointer files are tiny and diff cleanly in git, while the actual bytes live in
+GCS and are pulled on demand (locally, in CI, and inside Vertex AI training
+jobs). It also meant switching data sources mid-project (we initially targeted
+`lmms-lab/ScienceQA`, then switched to
+[`derek-thomas/ScienceQA`](https://huggingface.co/datasets/derek-thomas/ScienceQA)
+because the former ships no train split) didn't require any special handling — `dvc add` +
+`dvc push` and the new processed split was versioned the same way.
 
 ### Question 11
 
@@ -367,179 +195,71 @@ Yes, initially Google Drive, then GCP bucket, and finally Git Large File System.
 > **multiple operating systems, python version etc. Do you make use of caching? Feel free to insert a link to one of**
 > **your github actions workflow.**
 >
-> Answer length: 200-300 words.
->
-> Example:
-> *We have organized our continuous integration into 3 separate files: one for doing ..., one for running ... testing and one for running*
-> *... . In particular for our ..., we used ... .An example of a triggered workflow can be seen here: <weblink>*
->
 > Answer:
 
-We have organized our continues integration into three separate files: 
-one for doing unittesting, 
-one for running isort testing and 
-one for running flake8. 
+CI is split across several GitHub Actions workflows:
 
+- **`tests.yaml`** — runs `pytest` + `coverage` across a **3 × 2 matrix**
+  (`ubuntu-latest` / `windows-latest` / `macos-latest` × Python `3.11` /
+  `3.12`, six combinations total), using `astral-sh/setup-uv` with
+  `enable-cache: true` for dependency caching. Coverage is uploaded to Codecov
+  from the ubuntu/3.11 cell.
+- **`linting.yaml`** — `ruff check`, `ruff format --check`, and `mypy`, run on
+  every push/PR to `main`.
+- **`docs.yaml`** — builds and publishes the MkDocs site to GitHub Pages
+  (`mkdocs gh-deploy`) on changes to `docs/`/`src/`.
+- **`data-change.yaml`** and **`model-registry-change.yaml`** — two additional
+  continuous workflows: the first runs data-integrity checks when the DVC
+  pointer files change, the second reacts to a real Weights & Biases webhook
+  when the `production` model alias moves, and automatically rolls the newly
+  promoted adapter out to Cloud Run plus smoke-tests the live endpoint.
 
-The isort test and the flake8 test are only run on the Ubuntu operating system and the python version 3.8. 
-
-The unittesting is also run on the windows operating system and python version 3.10. 
-
-Here we also make use of caching to speed up the process. Testing the dataset consists of loading the data and checking whether the format is correct. More precicely we check if the data (en-de) is given as a string and a label. When testing the model the following things must be satisfied
-- The model is in torch
-- The model outputs the translated sentence as a list containing a string
-- In both training, validation and test the model outputs a torch tensor containing a float (not NaN)
-
-Link to github actions:
-https://github.com/MikkelGodsk/dtu_mlops_exam_project/actions/runs/3961726045/workflow
-
-
-
-#######################################
-
-
-
-To control the testing and deploying we used git workflow. The test suite that we use consists of validation testing and unit testing. We use two git hub triggers, one for pull request on the main, which runs the validation test and unit test suite, and one for pushing/merging to main, which runs  the build and deployment suite after having passed all tests. The tests suite tests various versions of python, but only on linux(ubuntu) which the docker container is built on.
-
-The validation tests consist of checking if the newest module gives the correct inference on some custom data. We also verify the data used to train the model, by checking if the format of the training data is correct. 
-
-The unit testing consists of testing the front end api, to ensure excellent user experience.
-
-
-Overall, our use of git workflow and a comprehensive test suite allowed us to efficiently and effectively test and deploy our project, ensuring the highest quality for our users.
-
-The workflows can be found here:
-
-<https://github.com/Snirpurin/MLOPS_group3/tree/main/.github/workflows>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+Example: <https://github.com/yuxinliu42/SS26_MLOps_Project_GroupA/actions/workflows/tests.yaml>
 
 ## Running code and tracking experiments
 
 > In the following section we are interested in learning more about the experimental setup for running your code and
 > especially the reproducibility of your experiments.
 
-
-
-
-
-
-
-
 ### Question 12
 
 > **How did you configure experiments? Did you make use of config files? Explain with coding examples of how you would**
 > **run an experiment.**
 >
-> Answer length: 50-100 words.
->
-> Example:
-> *We used a simple argparser, that worked in the following way: python my_script.py --lr 1e-3 --batch_size 25*
->
 > Answer:
 
-When training the model the hyperparameters are by default loaded from the configuration file src/models/config/default_params.yaml. It is also possible to pass a different path using the argparser. The configuration file contains the learning rate, number of epochs, the batch size of the model and a seed if reproducability is desired. The configuration file is passed to the wandb.init() function and the hyperparameters are loaded into the training script with the following code:
+We used **Hydra** configs under `configs/` (`data/`, `model/`, `trainer/`,
+`sweep/` groups), composed at runtime by the `train` entry point. Any nested
+key can be overridden from the CLI, e.g.:
 
-lr = wandb.config.lr
-epochs = wandb.config.epochs
-batch_size = wandb.config.batch_size
+```bash
+uv run train trainer.wandb.enabled=true trainer.wandb.run_name=local-test \
+  model.lora_r=16 data.batch_size=4 trainer.accumulate_grad_batches=4
+```
 
-We utilized the *sweep* functionality of `wandb` in an attempt to optimize hyperparamters. Through `wandb` the hyperparameter configuration was logged. The hyperparameters for the different experiments are then set to the hyperparameters resulting in the best validation loss.
-
-When using the src/models/predict_model.py we use a simple argparser to give the input string to be translated along with the checkpoint file containing the trained model weights.
-
-###
-
-As a first apporoach, we used a simple argparser, that worked in the following way:
-
-python train.py --lr 1e-4 --batch_size 50 --seed 1337.
-
-Hyperparameters were stored under config/config.yaml. 
-
-In general, a configuration file contains desired experiment settings, such as hyperparameters, data paths, and run options. 
-
-A developer uses a library or script to read the file and set the corresponding values in the code before running the experiment. 
-
-Further on, we built and run several images locally, varying the initialisation of the LR.
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+The learning rate is derived from `model.base_learning_rate` via a
+√-batch-size rule unless overridden explicitly, so trials at different
+gradient-accumulation settings are compared at an equivalent effective
+learning rate.
 
 ### Question 13
 
 > **Reproducibility of experiments are important. Related to the last question, how did you secure that no information**
 > **is lost when running experiments and that your experiments are reproducible?**
 >
-> Answer length: 100-200 words.
->
-> Example:
-> *We made use of config files. Whenever an experiment is run the following happens: ... . To reproduce an experiment*
-> *one would have to do ...*
->
 > Answer:
-When we load the config file the hyperparameters of the model is set to the values provided in the file.
->
-> Hence one can easily see which parameters are used to train.
->
-> However, when conducting experiments it is important to track which parameters are used. By ensuring commits between changes in config file we make sure that experiments are logged in the git commit history.
->
-> In order to reproduce the experiments we included a seed in the configuration file. Hereby we ensure that the exact same results are obtained when training a model with a specific set of hyperparameters. Furthermore we created docker images, which ensures that our models can be run on all computers. By running multiple experiments in W&B we ensure that hyperparameters are kept in W&B.
 
-
-
-###
-
-We made use of config files in our experiments. Whenever we ran an experiment, several metrics were logged to W&B, as shown in the images below. 
-
-The graphs demonstrate that the val and train loss reduce over time. To reproduce an experiment, one would need to select the desired set of hyperparameters from the config/name_of_the_experiment file. 
-
-In this file, all the hyperparameters are listed, which made the training deterministic. These include the batch size, learning rate, seed split, seed train, image size, and train-val split. Having all these hyperparameters listed in one place allowed us to easily reproduce our experiments and ensure consistency in our results. It also allowed us to easily compare different sets of hyperparameters and determine which ones were the most effective for our particular problem. Overall, the use of config files was a crucial aspect of our experimentation process and helped us to achieve more accurate and reliable results.
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+Every run logs its fully-resolved Hydra config to Weights & Biases as part of
+the run's config, so the exact hyperparameters behind any result are always
+recoverable from the W&B run page, not just from whatever config file existed
+locally at the time. Dependency versions are pinned via `uv.lock` (`--frozen`
+installs in CI/Docker/Vertex), so package drift can't silently change results
+between runs. A seed is set for the training run, and the produced LoRA
+adapter, its evaluation metrics, and the W&B run config travel together (the
+adapter is uploaded as a W&B artifact and can be pulled back down alongside
+the config that produced it). To reproduce a specific result: pull the same
+DVC data revision, read the hyperparameters off the corresponding W&B run, and
+re-run `uv run train` with those same Hydra overrides.
 
 ### Question 14
 
@@ -548,673 +268,345 @@ In this file, all the hyperparameters are listed, which made the training determ
 > **inspiration from [this figure](figures/wandb.png). Explain what metrics you are tracking and why they are**
 > **important.**
 >
-> Answer length: 200-300 words + 1 to 3 screenshots.
->
-> Example:
-> *As seen in the first image when have tracked ... and ... which both inform us about ... in our experiments.*
-> *As seen in the second image we are also tracking ... and ...*
->
 > Answer:
 
-In W&B we track the training loss as seen on the figure below.
+![Full-data sweep comparison](figures/sweep3_comparison.png)
+![Earlier sweep comparison](figures/sweep2_comparison.png)
 
-![Training loss](figures/train_loss.png)
-
-We see a small descrease of the loss. This metric is essential for showing whether the model is learning from the data during the training.
-
-We also track the validation loss as seen on the figure below.
-
-![Validation loss](figures/val_loss.png)
-
-The validation loss is very important to monitor the models performance when presented to unknown data.
-
-We also perform a sweep in an attempt to optimize hyperparamters based on obtaining the lowest possible validation loss.
-
-![Sweep hyperparameters](figures/hyperparams.png)
-
-This did however show us that with the best hyperparameterse the validation loss remains constant.
-
-#####################
-
-![timma1_exp](figures/timma1_exp.png)
-![timmh_exp](figures/timmh_exp.png)
-
-We utilized loss and accuracy as metrics in W&B to monitor the performance of our machine learning models. Loss is a measure of how well a model is able to predict the target variable, and it is calculated by comparing the predicted values to the actual values. In other words, it represents the error of the model, and the goal is to minimize it. In contrast, accuracy is a measure of how well the model is able to correctly classify the target variable. It is calculated by comparing the number of correctly classified instances to the total number of instances.
-
-During the training process, we used W&B to track and visualize the evolution of these metrics. This helped us to identify when the model was overfitting or underfitting, and to make adjustments accordingly. By monitoring the loss and accuracy, we were able to optimize the model's performance and fine-tune the parameters to achieve the best results.
-
-We also compared the performance of different models by comparing the metrics in W&B. For example, as can be seen from the images above, in timma1_exp the eval_top1 reaches 87.5% accuracy, whereas timmh_exp reached eval_top1 99.3% accuracy. This allowed us to determine which model performed better (we are currently deployin a model that reached 99.7% accuracy at test time) and to make decisions on which model to use for further analysis.
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+We track both `val/loss` and a generation-based `val/accuracy` (exact-match on
+the extracted answer letter) every epoch, and select/early-stop on
+`val/accuracy` rather than `val/loss`. This turned out to matter concretely:
+in our sweep, the trial with the *best* `val/loss` (0.464) had nearly the
+*worst* `val/accuracy` (0.619), while the actual best-test-accuracy trial had a
+*higher* loss (0.511) but the *best* accuracy (0.702) — see
+[`reports/RESULTS.md`](RESULTS.md#methodology-note--why-we-optimise-valaccuracy-not-valloss)
+for the full table. Since the task is graded on exact-match accuracy, not
+log-likelihood, optimising the metric that's actually reported avoided
+promoting a model that looked good on loss but was measurably worse on the
+metric we actually care about.
 
 ### Question 15
 
 > **Docker is an important tool for creating containerized applications. Explain how you used docker in your**
 > **experiments? Include how you would run your docker images and include a link to one of your docker files.**
 >
-> Answer length: 100-200 words.
->
-> Example:
-> *For our project we developed several images: one for training, inference and deployment. For example to run the*
-> *training docker image: `docker run trainer:latest lr=1e-3 batch_size=64`. Link to docker file: <weblink>*
->
 > Answer:
 
-In our project, reproducablity is very important, hence we utilize Docker in order to ensure that the application can be run on all devices. Hence we created docker images for training and deploying the model. 
+We built three images (`dockerfiles/`): `train.dockerfile` (CUDA/amd64, used
+for Vertex AI training/eval/optimize jobs — installs the project from a
+prebuilt wheel rather than building it in-image, see the comment in the
+Dockerfile for why), `api.dockerfile` (CPU, the FastAPI serving image deployed
+to Cloud Run), and `predict.dockerfile` (CPU, a standalone single-prediction
+CLI image). The API image is rebuilt in the cloud on every push (Cloud Build
+trigger `mlops-ci-api`); the train image is cloud-built manually (it needs the
+locally-built wheel injected into the build context); and all three were also
+built and smoke-tested locally via `inv docker-build`.
 
-Since building docker images are a time consuming task, we prefred google cloud for building the dockerimages in cloud using a dockerfile and triggers. 
+Example — running the predict image (the adapter and input image are mounted
+in, and the gated base model needs a Hugging Face token):
 
-After being build the docker images are run using google cloud Run.
+```bash
+docker run --rm -v "$(pwd)/checkpoints:/checkpoints" -v "$(pwd)/img.png:/img.png" \
+  -e HF_TOKEN=<token> predict:latest /checkpoints/adapter-production \
+  -q "What gas do plants absorb?" -c "oxygen,carbon dioxide,nitrogen" -i /img.png
+```
 
-
-A link to the training docker file is provided in the following:
-https://github.com/MikkelGodsk/dtu_mlops_exam_project/blob/main/trainer.dockerfile
-
-
-
-############################################
-
-In the training phase, Docker is used to create a containerized environment for the training dataset and the training script. This ensures that the training process is consistent and reproducible across different environments. 
-
-In the inference phase, a containerized environment is created for the trained model and the inference script, which can be deployed to different environments. 
-
-In the deployment phase, the containerized environment is deployed to a production environment, such as a cloud service or a local server, to ensure that the model is running in a consistent environment. This allows for easy scaling and management of the deployed model.
-
-
-
-building docker image:
-docker build -f wandb.dockerfile . -t train_wandb
-
-taining docker image:
-docker run -e WANDB_API_KEY=b4ad9544b66bcfec7dfd8aeb858fbcf3bf701c98 train_wandb:latest
-
-Link to docker file:
-
-<https://github.com/Snirpurin/MLOPS_group3/blob/main/Dockerfile>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+Link: [`dockerfiles/api.dockerfile`](https://github.com/yuxinliu42/SS26_MLOps_Project_GroupA/blob/main/dockerfiles/api.dockerfile)
 
 ### Question 16
 
 > **When running into bugs while trying to run your experiments, how did you perform debugging? Additionally, did you**
 > **try to profile your code or do you think it is already perfect?**
 >
-> Answer length: 100-200 words.
->
-> Example:
-> *Debugging method was dependent on group member. Some just used ... and others used ... . We did a single profiling*
-> *run of our main code at some point that showed ...*
->
 > Answer:
 
-When locally executing code we used the build in debugger in visual studio code and when this was not enough we used simple print statements. 
+Debugging was a mix of the VS Code debugger, logging/print statements, and — for
+several genuinely tricky bugs — careful inspection of intermediate tensors and
+logs. Two concrete examples: (1) training loss stayed stuck early on because of
+a stale `subjects`/`max_length` handling bug in the data pipeline; (2) a prompt
+that put the Hint/Lecture text *before* the answer Choices silently truncated
+the choices once the token budget ran out, which cost roughly **16 points** of
+test accuracy until we traced it by inspecting the actual tokenized prompts and
+reordered `build_prompt` to put Choices first.
 
-The debugging mode in visual studio is in general quite informative and helpfull when erros occured. 
-
-When for example building images in google cloud a lot of errors occured. 
-
-Hence debugging needed to be performed locally before building in cloud.
-
-
-
-
-We used the inbuild tool from pytorch lightning for profiling the training, but we did not really do anything to improve the code based on the profilling. 
-
-
-However we are aware that the code might be edible for improvements. For example, we considered saving the tokenized dataset, which would probably speed up the training processes, such that the tokenisation is not necessary every time the training function is called.
-
-
-
-########################################
-
-
-When running into bugs while trying to run experiments, we first tried to identify the source of the problem by reviewing the code and any error messages that are displayed. 
-
-Next, we used the TIMM documentation to understand why the trainig was failing. We also made sure to test small sections of the code at a time to ensure that the problem was not caused by an interaction between multiple sections. 
-
-
-Additionally, we consulted online resources to see if similar bugs have been reported and if there were any known solutions. 
-
-
-
-We did not perform any profiling of our main code.
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+We profiled in two ways: PyTorch Lightning's built-in profiler
+(`trainer.profiler`, configurable via Hydra) for the training loop, and a
+dedicated `cProfile`-based profiling script (`scipali.data.profile_data`) for
+the `DataLoader`. The latter found data loading is **image-decode-bound**
+(~45% PIL decode, ~28% resize) but *not* the training bottleneck — at ~11 ms
+per batch single-process it's far below a single LoRA training step, so it
+fully overlaps with GPU compute (see
+[`reports/profiling/dataloader_profile.md`](profiling/dataloader_profile.md)).
+So no, the code wasn't already perfect, but profiling told us specifically
+*which* inefficiency (image decode) would matter if we ever needed to optimize
+it, and confirmed we didn't currently need to.
 
 ## Working in the cloud
 
 > In the following section we would like to know more about your experience when developing in the cloud.
 
-
 ### Question 17
 
 > **List all the GCP services that you made use of in your project and shortly explain what each service does?**
 >
-> Answer length: 50-200 words.
->
-> Example:
-> *We used the following two services: Engine and Bucket. Engine is used for... and Bucket is used for...*
->
 > Answer:
 
-Google Cloud Platform's Engine and Bucket are two separate services that work together to provide a comprehensive solution for cloud computing and storage. 
-
-
-Engine is a powerful and flexible platform that allows users to create and run virtual machines, containers, and other applications on the cloud. It provides a wide range of features and tools for managing and scaling resources, including automatic load balancing, automatic backups, and automatic scaling. This makes it easy for users to create and manage their applications and services on the cloud, without having to worry about the underlying infrastructure.
-
-Buckets:
-Bucket is a cloud-based storage service that allows users to store and manage data in the cloud. It provides a simple and cost-effective way to store and access data, including large files, images, videos, and other types of data. Bucket also provides a range of security and access controls, so users can control who has access to their data and how it is used. We used GCP buckets for initally storing the data. However we quickly ran out of credits and hence had to create a new bucket containg the same data but with a different billing account. Furthermore we also used buckets for storring checkpoints. 
-
-Together, Engine and Bucket provide a powerful and reliable solution for cloud computing and storage, making it easy for users to create and manage their applications and services on the cloud.
-
-
-
-
-Build:
-Images are build using cloud build.
-
-Triggers:
-In order to automatically build images triggers are used to connect the github repository to google cloud
-
-Containers:
-Images are stored in containers
-
-Run:
-Models are deployed using google Run
-
-Vertex AI:
-Training framework where we run the docker image
-
-
-
-
-
-
-
-
-
-
-
-
+- **Cloud Storage (GCS)** — the DVC remote for versioned data, the model
+  registry's artifact store (`models/production/`), and the drift-monitoring
+  reference/production tables.
+- **Vertex AI** — runs all GPU work as custom jobs (training, hyperparameter
+  sweeps, standalone evaluation, quantization/pruning) on single-L4 machines.
+- **Cloud Build** — builds the Docker images; a trigger auto-rebuilds the API
+  image on every push to `main`.
+- **Artifact Registry** — stores the built container images.
+- **Cloud Run** — serves the FastAPI inference app: CPU-only, scale-to-zero,
+  lazy model loading.
+- **Secret Manager** — holds the Hugging Face token and W&B API key, fetched
+  at container start rather than baked into images.
+- **Cloud Monitoring** — an alert policy on repeated 5xx responses, with a
+  verified email notification channel.
+- **IAM / Workload Identity Federation** — keyless GCP auth for the GitHub
+  Actions workflow that rolls a newly-promoted model out to Cloud Run.
 
 ### Question 18
 
 > **The backbone of GCP is the Compute engine. Explained how you made use of this service and what type of VMs**
 > **you used?**
 >
-> Answer length: 50-100 words.
->
-> Example:
-> *We used the compute engine to run our ... . We used instances with the following hardware: ... and we started the*
-> *using a custom container: ...*
->
 > Answer:
 
-
-We are using Cloud Run to deploy the docker images of our application, and scale it.
-
-
-
-
-
-
-
-
-
-
-
-
+We did not provision or manage Compute Engine VMs directly. All GPU work runs
+as **Vertex AI custom jobs**, which provision the underlying VM for us
+(`g2-standard-8`: 8 vCPU / 32 GB RAM / 1× NVIDIA L4, via the Flex Start queue,
+in `europe-west4` — the only region where we had both G2 machine availability
+and L4 quota). Serving uses Cloud Run instead of a hand-managed VM. So our use
+of "Compute Engine" is indirect, through the managed services built on top of
+it, by design — we didn't need raw VM control for either training or serving.
 
 ### Question 19
 
 > **Insert 1-2 images of your GCP bucket, such that we can see what data you have stored in it.**
-> **You can take inspiration from [this figure](figures/bucket.png).**
 >
 > Answer:
 
-The bucket can be seen in the following
-```markdown
-![my_image](figures/cloud_bucket.png)
+*[TODO: screenshot — open
+<https://console.cloud.google.com/storage/browser/mlops-paligemma-west4?project=paligemma-scienceqa>,
+save the capture as `figures/gcs_bucket.png`, then replace this TODO with the
+commented image line below.]*
+<!-- ![GCS bucket](figures/gcs_bucket.png) -->
+
+Verifiable from the CLI:
+
+```bash
+$ gsutil ls gs://mlops-paligemma-west4/
+gs://mlops-paligemma-west4/dvcstore/
+gs://mlops-paligemma-west4/models/
+gs://mlops-paligemma-west4/monitoring/
+gs://mlops-paligemma-west4/vertex-output/
 ```
-Here the bucket wmt19-de-en refers to the full dataset whereas 30k-dataset refers to the smaller dataset.
 
-
-![bucket](figures/bucket_.png)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+`dvcstore/` holds the DVC-versioned ScienceQA-IMG splits, `models/` holds the
+LoRA adapters (with `models/production/` being the one the API serves),
+`monitoring/` holds the drift reference/production tables, and
+`vertex-output/` holds Vertex AI job outputs. Total bucket size: ~14.2 GiB.
 
 ### Question 20
 
 > **Upload one image of your GCP container registry, such that we can see the different images that you have stored.**
-> **You can take inspiration from [this figure](figures/registry.png).**
 >
 > Answer:
 
-![GCP Registry](figures/gcp_registry.png)
+*[TODO: screenshot — open
+<https://console.cloud.google.com/artifacts/docker/paligemma-scienceqa/europe-west4/mlops-images?project=paligemma-scienceqa>
+(shows the `paligemma-api` and `paligemma-train` images), save as
+`figures/artifact_registry.png`, then replace this TODO with the commented
+image line below.]*
+<!-- ![Artifact Registry](figures/artifact_registry.png) -->
 
-![registry](figures/registry_.png)
+Verifiable from the CLI:
 
-
-
-
-
-
-
-
-
+```bash
+gcloud artifacts docker images list \
+  europe-west4-docker.pkg.dev/paligemma-scienceqa/mlops-images
+```
 
 ### Question 21
 
 > **Upload one image of your GCP cloud build history, so we can see the history of the images that have been build in**
-> **your project. You can take inspiration from [this figure](figures/build.png).**
+> **your project.**
+>
+> Answer:
 
-![build](figures/build_.png)
+*[TODO: screenshot — open
+<https://console.cloud.google.com/cloud-build/builds;region=europe-west4?project=paligemma-scienceqa>,
+save as `figures/cloud_build_history.png`, then replace this TODO with the
+commented image line below.]*
+<!-- ![Cloud Build history](figures/cloud_build_history.png) -->
 
-![Build history](figures/build_history_cloud.png)
-
-
-
-
-
-
-
-
-
-
-
-
-
+Verifiable from the CLI: `gcloud builds list --region=europe-west4`. Trigger
+`mlops-ci-api` auto-builds the API image on every push to `main` that touches
+`src/scipali/**`; the train image's trigger (`mlops-ci-train`) exists but is
+disabled, because that image needs a locally-built wheel injected into the
+build context (see Question 15), so it's built manually rather than from a
+bare git checkout.
 
 ### Question 22
 
 > **Did you manage to deploy your model, either in locally or cloud? If not, describe why. If yes, describe how and**
 > **preferably how you invoke your deployed service?**
 >
-> Answer length: 100-200 words.
->
-> Example:
-> *For deployment we wrapped our model into application using ... . We first tried locally serving the model, which*
-> *worked. Afterwards we deployed it in the cloud, using ... . To invoke the service an user would call*
-> *`curl -X POST -F "file=@file.json"<weburl>`*
->
 > Answer:
 
-Deploying the model locally was quite straight forward. Inputs to the model can easily be given through the terminal. 
+Yes, both locally and in the cloud. The model is wrapped in a FastAPI app
+(`scipali.serving.api`) and deployed to **Cloud Run** (`paligemma-api`,
+`europe-west4`): CPU-only, 8 vCPU / 32 GB, scale-to-zero
+(`min-instances 0` / `max-instances 3`), with lazy model loading so the
+container passes its startup probe immediately and only loads the model on
+the first `/predict` call. The adapter is read from a `gs://` path at
+startup, so promoting a new model needs no rebuild or redeploy.
 
+Invoke it directly:
 
-However deploying in google cloud caused a lot more complication. For deployment we wrapped our model into an application using FastAPI and used cloud run. We were heavily challenged by the fact that after training the model the checkpoint could not be saved to a bucket on cloud without authentication, which we did not manage to implement. Hence we did not use the finetuned model for deployment directly trough cloud.
+```bash
+curl -X POST https://paligemma-api-581237630637.europe-west4.run.app/predict \
+  -H 'Content-Type: application/json' \
+  -d '{"question": "...", "choices": ["a","b","c"], "image_b64": "<base64>"}'
+```
 
-We did however manage to finetune the model on the hypatia cluster at DTU and uploading a checkpoint to bucket, however we had issues with downloading he checkpoint from within the python code (again due to authentication issues). 
-
-
-Given a little more time, it would have been easy to setup DVC such that the model weights would be store alongside the dataset, whence we should have been able to get the finetuned model to deploy.
-
-In the training file, we used distributed data loading and multiple workers implemented through pytorch-lightning.
-
-Link to our model:
-https://translation-gcp-app-jc4crsqeca-lz.a.run.app/translate/How are you doing?
-
-
-
-
-
-###############################
-
-We successfully deployed our model in the cloud using Google Cloud Platform's Cloud Run service. We wrapped our model into an application and made it accessible to users via a specific URL. It can be accessed via <https://riceclassifier-375010-zhexeh6bxa-uc.a.run.app/> . User is required to load a 224x224, black and white image in jpg format of a grain of rice among Arborio, Basmati, Ipsala, Jasmine, and Karacadag rice varieties for recognition.
-
-It can also be accessed using `curl -X POST -F "file=@file.json" <  11:05 AM
-https://riceclassifier-375010-zhexeh6bxa-uc.a.run.app/>`
-
-
-
-
-
-
-
-
-
-
-
-
-
+A direct `/predict` on a cold (scaled-to-zero) instance takes ~150–230s
+(container start + model load + inference bundled together); once warm,
+calls run ~25–80s. There is also a Streamlit frontend and a shell demo script
+(`cloud/demo_api.sh`) that exercise the same live endpoint end-to-end.
 
 ### Question 23
 
 > **Did you manage to implement monitoring of your deployed model? If yes, explain how it works. If not, explain how**
 > **monitoring would help the longevity of your application.**
 >
-> Answer length: 100-200 words.
->
-> Example:
-> *We did not manage to implement monitoring. We would like to have monitoring implemented such that over time we could*
-> *measure ... and ... that would inform us about this ... behaviour of our application.*
->
 > Answer:
 
-We did not manage to implement monitoring. We would like to have monitoring implemented such that over time we could measure translation accuracy (based e.g on user rating) that would inform us about the performance and hence usefullness of our model. 
-
-Provided we modelled the german and english language perfectly, our model would be quite prone to data-drifting. 
-
-The only real issue would be words having new meanings or new words being adapted to the languages. 
-
-
-However, this *perfect* modelling is rarely the case in real life as the dataset for a given translation task, will ultimately only be a subset of the distribution modelling the language. 
-
-This means that our model will be context dependent. 
-
-A weakness derived from this could e.g. be if the training dataset was exceedingly formal and we received an input which was very informal. As such, monitoring a user-based translation accuracy score could inform when our model becomes outdated.
-
-
-
-
-################################################
-
-![monitoring](figures/monitoring.png)
-
-We monitored our model in terms of 
-   application errors, 
-   billing,
-   memory usage, and 
-   uptime check uptime failure. 
-
-This allowed us to keep track of any issues that may have arisen during the operation of our application. By monitoring for errors, we were able to quickly identify and fix any bugs that were causing the application to malfunction. 
-
-We also monitored billing to ensure that we were not incurring any unnecessary costs. Keeping an eye on memory usage helped us optimize the performance of our model, and uptime checks allowed us to detect and fix any issues that were causing the application to go down.
-
-By monitoring our model in these ways, we were able to ensure the longevity of our application. By catching and fixing errors early on, we were able to prevent them from causing more significant problems down the line.
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+Yes, three layers. **Data drift**: `monitoring.py` derives lightweight features
+per request (question length, number of choices, hint/lecture presence, image
+dimensions), and `GET /monitor/drift` compares a reference distribution
+(training inputs) against a production distribution (collected from real
+`/predict` traffic via Cloud Logging) using Evidently's `DataDriftPreset`.
+**System metrics**: `prometheus-fastapi-instrumentator` exposes request
+counts/latency/size at `/metrics`, scrapeable by Managed Prometheus.
+**Alerting**: a Cloud Monitoring alert policy fires on repeated 5xx responses,
+delivered to a verified email notification channel — we deliberately verified
+the channel end-to-end (triggered the verification code, confirmed
+`verificationStatus: VERIFIED`) rather than assuming an unverified channel
+would actually deliver anything.
 
 ### Question 24
 
 > **How many credits did you end up using during the project and what service was most expensive?**
 >
-> Answer length: 25-100 words.
->
-> Example:
-> *Group member 1 used ..., Group member 2 used ..., in total ... credits was spend during development. The service*
-> *costing the most was ... due to ...*
->
 > Answer:
 
-s194333 did not use any credit for this project, since she managed to use all her credit on the project created for M21. In total on this project together we used around 5 dollars. Google cloud was not very transparent about billing account or money usage.
+Total spend: *[TODO: read the exact figure from
+<https://console.cloud.google.com/billing> → Reports. Check **both** education
+billing accounts — the first closed mid-project (2026-06-14, mid-sweep) and
+the project was re-attached to a second. No BigQuery billing export was set
+up, so the figure isn't queryable from the CLI.]*
 
-
-
-
-In total, 2 credits at the time of writing were spend during development. The most expensive service was github LFS which had "significant" bandwidth costs.
-
-![billing](figures/billing.png)
-
-
-
-
-
-
-
-
-
-
-
-
-
+The most expensive service was **Vertex AI** by a wide margin. The Custom Jobs
+API records **73 jobs** on `g2-standard-8` (1× NVIDIA L4): **47.3 h of
+succeeded runtime** (definitely billed), plus a share of the ~168 h attributed
+to failed/cancelled jobs — much of that is *unbilled* Flex-Start queue wait
+(e.g. the exact-24 h capacity-stockout failures), though the OOM-crashed
+pruning attempts did bill real runtime. At europe-west4 G2 rates (~$1/h
+on-demand, less under the Flex-Start discount), GPU compute lands roughly in
+the tens of dollars; Cloud Storage (~14 GiB), Cloud Build, and scale-to-zero
+Cloud Run add only a few dollars more.
 
 ## Overall discussion of project
 
 > In the following section we would like you to think about the general structure of your project.
 
-
-
-
-
-
-
-
-
-
-
-
-
-
 ### Question 25
 
 > **Include a figure that describes the overall architecture of your system and what services that you make use of.**
-> **You can take inspiration from [this figure](figures/overview.png). Additionally in your own words, explain the**
-> **overall steps in figure.**
->
-> Answer length: 200-400 words
->
-> Example:
->
-> *The starting point of the diagram is our local setup, where we integrated ... and ... and ... into our code.*
-> *Whenever we commit code and push to github, it auto triggers ... and ... . From there the diagram shows ...*
+> **Additionally in your own words, explain the overall steps in figure.**
 >
 > Answer:
 
-![Graphical reprsentation of architecture](figures/graphical_representation_of_architecture.png)
-The starting point of the diagram is our local pytorch application, which we wrapped in the **pytorch lightning** framework. 
+See the [Architecture diagram in the main README](../README.md#architecture)
+(reproduced in [`docs/source/architecture.md`](../docs/source/architecture.md)).
 
-This served as the inital steps of creating the mlops pipeline. We version-controled our project using **git** via **Github**. 
-
-
-A new environment can be initialized using either **Conda** or **pip**. We opted to use `pipreqs` for finding the package requirements of our project, which made for seamless instantiation of the projects *requirements.txt*. We utilized `wandb` in conjunction with **pytorch lightning** for logging the 'experiments'/ training of our *NLP* model. For training configuration `wandb` performed satisfactory, hence `hydra` was omited from this project. These are the essential parts which are contained into a **docker** container. Locally the project follows the codestructure of **Cookiecutter**.
-
-In order to utilize the **GPC** git and dvc both provides a link from the local machine. Git furthermore enabled **Github actions** for testing the code before uploading to a remote storage. Using a **trigger** connected to the github repository we created **docker images** in **docker containers** in the cloud.
-
-When training a dataset stored in a **GCP bucket** was utilized. Information sharing and version control of the dataset was handled by utilizing **dvc**. We interfaced with our application through **Cloud Run** by using the **Fast API** framework. Finally, we didn't utilize monitoring as we had plenty of work on our hands, trying to interface with and getting our model to run on cloud.
-
-
-####################################################
-
-
-
-
-![overview](figures/overview.jpg)
-
-We, as a team, used GitHub Actions to run multiple tests on our code every time we committed and pushed it to GitHub. This included using tools such as CodeCov to measure code coverage. If all tests passed, we then integrated the code into our single docker image and pushed it to the Google Container Registry. This registry allowed us to easily access, download, and use pre-built images for our applications, as well as upload and share our own images with others.
-We also used GitHub Actions to push the deployment version to Google Cloud Platform's Cloud Run. This allowed us to deploy our containerized, stateless HTTP-based service in a highly scalable and cost-effective manner. Users were able to upload images on our API interface and the query would return the label and accuracy of the prediction. We made sure that all source code was available on GitHub for users to clone. Additionally, we utilized the Weights and Biases (W&B) tool for tracking, analyzing, and visualizing our experiments. We ran experiments on our local machines and chose the best set of parameters for deployment.
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+Starting point: the raw `derek-thomas/ScienceQA` dataset is downloaded and
+preprocessed (`data.py`), then versioned with DVC into a GCS store. Hydra
+configs feed a Vertex AI training job (LoRA fine-tuning on PaliGemma2-3B,
+wrapped in PyTorch Lightning); results — adapters, metrics, sweep runs — are
+logged to Weights & Biases, and `evaluate.py` computes test accuracy. When a
+run is promoted, its adapter is copied to `gs://…/models/production/` and the
+W&B `production` alias is moved to point at it. The FastAPI service reads
+that `gs://` path at startup (locally or on Cloud Run), so promoting a new
+model needs no redeploy; a Streamlit frontend sits on top of the API for
+interactive use. `monitoring.py` closes the drift loop (collect production
+inputs → compare against a reference distribution), and `optimize.py` runs
+quantization/pruning benchmarks on Vertex as a separate, offline workload.
+Gluing all of this together, GitHub Actions runs tests/linting/docs on every
+push, Cloud Build rebuilds the API image automatically, and two further
+continuous workflows react to data changes and to model-registry changes
+(automatically rolling a newly-promoted model out to Cloud Run and
+smoke-testing it).
 
 ### Question 26
 
 > **Discuss the overall struggles of the project. Where did you spend most time and what did you do to overcome these**
 > **challenges?**
 >
-> Answer length: 200-400 words.
->
-> Example:
-> *The biggest challenges in the project was using ... tool to do ... . The reason for this was ...*
->
 > Answer:
 
-Our first time consuming task was to download the data. 
+The single biggest accuracy bug was a **prompt-ordering mistake**: placing the
+optional Hint/Lecture text before the answer Choices meant the tokenizer's
+`max_length` sometimes truncated the choices themselves — worth roughly **16
+points** of test accuracy once diagnosed and fixed by reordering the prompt
+builder.
 
-This was downloaded from huggingface which took a long time. 
+**Vertex AI GPU availability** cost real time: L4 quota and G2 machine
+availability only lined up in `europe-west4` (a region with quota elsewhere had
+no G2 machines at all), and Flex Start's default `maxWaitDuration` silently
+meant a 24-hour stockout cutoff unless explicitly overridden. A GCP billing
+account also closed mid-sweep, killing several in-flight trials — we treated
+W&B's "failed" (but actually completed) runs as valid since their artifacts
+were intact.
 
-We also spent an excessive amount of time trying to train our model on cloud. Some main factors contributing to this issue, was our funding running short and having to authenticate multiple frameworks within a docker container. s194333 created the project on GCP, however she quickly (within 48 hours) ran short on funding (complementary of the course) due to operations ineracting with the *bucket* storing our data. 
+**The pruning sweep** failed repeatedly on Vertex before it worked — capacity
+errors, a CUDA out-of-memory during pruning, a packaging bug that dropped
+subpackages from an in-image-built wheel (fixed by building the wheel outside
+the image and shipping it in), and a host-RAM OOM from naively pooling ~3B
+weights to float32 (fixed with a histogram-based global threshold instead).
 
-
-We aren't entirely certain as to what depleted the grants, however this greatly restricted our work. 
-
-From docker we needed to authenticate dvc, GCP, in addition to `wandb`. This proved tremendously cumbersome as the authentication requires certfication, which we would preferably avoid storing in the docker image. 
-
-
-During this process we spent a lot of time debugging. Due to long building times errors didn't occur immediatly, which resulted in a lot of reapeated idle time.
-
-In general most of the tools and frameworks were relativly new for us, which resulted in a lot of google searches and unknown errors. The exercises significantly prepared us for conducting the project, however we still had a lot to learn when making the project. This challenged us in many ways, however we ultimately managed to overcome these.
-
-
-
-##################
-
-One of the main struggles our team faced during the project was managing multiple branches on our git repository. 
-
-As we progressed through the project, we encountered multiple challenges that required us to create new branches to fix bugs or implement new features. 
-
-However, this led to confusion and difficulty in merging the branches back into the main branch. To overcome this challenge, we implemented a strict branching strategy where we designated specific team members as branch managers to ensure that merging was done in an organised and timely manner.
-
-Another struggle we faced was installing the necessary tools for the project. The project required us to use several new technologies that we were not familiar with, such as GCP and Weights & Biases. This led to a significant amount of time spent on researching and learning how to use these tools effectively.
-
-Integrating our model into the cookie cutter structure was another challenge we faced. The cookie cutter structure provided a clear and organized file structure for the project, but it was difficult for us to understand how to properly integrate our model into it. This led to a lot of time spent on understanding the structure and determining the best way to integrate our model. To overcome this challenge, we discussed regularly to brainstorm solutions.
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+A live production bug: Rich's fixed-width log wrapping shredded the
+drift-monitoring JSON payload once it hit Cloud Logging, silently breaking the
+collect → drift loop — fixed by logging structured JSON straight to stdout
+instead of through the Rich logger. Separately, a GCP org policy disabling
+service-account key creation forced the model-registry-change CI workflow's
+auth to be redesigned around keyless Workload Identity Federation partway
+through the project. And on the dev-environment side, this project's working
+directory being iCloud-synced meant files were sometimes evicted mid-operation,
+intermittently stalling `git diff`, `gcloud builds submit`, and even local
+`docker build` — which looked like tool bugs at first until root-caused to the
+sync behaviour.
 
 ### Question 27
 
 > **State the individual contributions of each team member. This is required information from DTU, because we need to**
 > **make sure all members contributed actively to the project**
 >
-> Answer length: 50-200 words.
->
-> Example:
-> *Student sXXXXXX was in charge of developing of setting up the initial cookie cutter project and developing of the*
-> *docker containers for training our applications.*
-> *Student sXXXXXX was in charge of training our models in the cloud and deploying them afterwards.*
-> *All members contributed to code by...*
->
 > Answer:
 
-
-Student 12433130 created github repository with the cookiecutter structure. Furthermore the student was in charge of testing the models using unittesting and other previously mentioned tests. Furthermore he also contributed to building the docker images in the cloud and deploying the model.
-
-
-Student s185231 was in charge of building the docker images in the cloud. Furthermore the student helped downloading the data and creating the scripts for training and testing the model.
-
-Student s183319 heavily contributed to the report and was in charge of managing the dependencies and set up of version control as well as a lot of debugging.
-
-Student 194333 was responsible for creating the scripts for training and prediction as well as afterwards training the model. Furthermore the student analysed the results and performed a sweep in W&B.
-
-Student s194245 was in charge of handeling the data -all the way from downloading to utilizing. Furthermore the student was in charge of utilizing google cloud for training.
-
-
-
-Student s164397: used Weights & Biases to log training progress and other important metrics/artifacts in our code.
-
-Student s221813: Main responsible for the Report, created the inital DVC implementation, and later Google Cloud Storage. In particular, created a dedicated environment for the project to keep track of packages, filled out the requirements.txt file, setup version control, wrote one configuration file for our experiments, created a data storage in GCP Bucket for our data and linked this with our data version control setup.
-
-Student s174261: was responsible for version control, structure of the repositoy, version control on the data and for the creating the test suite.
-
-Student s174250: Tested, selected and trained the base model for the project. Created the inference routine, and the API/website to interact with it. Setup github actions and the deployment pipeline. Setup Google Cloud and Cloud Run to run our containers. Setup Monitoring and Alerts in Google Cloud.
-
-All members contributed to code by performing experiments locally. This includes creating and updating dockerfiles and making changes to the package requirements file. All members also contributed to writing and finalizing the report.
-
->>>>>>> 9a348b05162ab0f56881a8e7e5c15eef1eaaeb2c
-
-
-
-
-
-
-
-
+Based on the repository's commit history: **Duc-Anh Valentino Nguyen** set up
+the initial repository scaffold (the cookiecutter-based initial commit) and
+early iterations of the project README (framework overview, team-member
+listing). **Yuxin Liu** implemented the data pipeline and DVC setup, the
+model/training code and Hydra configs, the Vertex AI training/sweep/
+evaluation/optimization jobs, the FastAPI serving app, Streamlit frontend and
+BentoML service, the CI/CD workflows (tests, linting, docs, and the two
+continuous data/model-registry-triggered workflows), the Cloud Run deployment,
+the drift-monitoring and Cloud Monitoring alerting setup, the documentation
+site, and this results write-up. By commit count this is 142 commits under
+Yuxin Liu versus 13 under Duc-Anh Valentino Nguyen (of 164 total, the
+remainder from Dependabot).

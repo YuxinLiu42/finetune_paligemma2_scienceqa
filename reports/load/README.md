@@ -1,4 +1,4 @@
-# Load test (M24)
+# Load test
 
 `tests/load/locustfile.py` run against the Cloud Run service
 (`https://paligemma-api-...europe-west4.run.app`), 2 users, 4 minutes:
@@ -35,4 +35,4 @@ Raw stats in `scienceqa_stats.csv` / `scienceqa_stats_history.csv`.
 > true cold start (scale-zero → first `/predict`) is ~150–230 s; see
 > `docs/source/usage.md` / `docs/source/api.md`. Re-running this load test
 > against the current adapter would be a nice-to-have, not required — the
-> harness plus this completed run already satisfy M24.
+> harness plus this completed run already satisfy the load-testing requirement.

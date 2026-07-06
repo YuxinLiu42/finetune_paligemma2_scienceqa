@@ -1,4 +1,4 @@
-# Results — PaliGemma2-3B fine-tuned on ScienceQA (image subset)
+# Results — [PaliGemma2-3B](https://huggingface.co/google/paligemma2-3b-pt-224) fine-tuned on [ScienceQA](https://huggingface.co/datasets/derek-thomas/ScienceQA) (image subset)
 
 > **STATUS (2026-06-14).** The full-data r=16 retrain completed (job
 > `3661126192938876928`, ~28.7 h, all 8 sweep trials). The winner
@@ -7,7 +7,7 @@
 > old `vague-sweep-3` (64.1%, r=8). All key adapters are backed up at
 > `~/mlops-adapter-backup/`.
 
-Self-contained results summary for the exam report (paste into Q12/Q14/Q17).
+Self-contained results summary backing the exam report (`reports/README.md`).
 All numbers are exact-match accuracy of the generated answer **letter** on the
 held-out ScienceQA-IMG test split (2017 samples).
 
@@ -124,7 +124,7 @@ which is why sweep #2 raised the LR floor above sweep #1's dead zone.
 
 ## Full-data retrain (r=16, W&B sweep `win9arpw`)
 
-After switching the data source to `derek-thomas/ScienceQA` (the lmms-lab mirror
+After switching the data source to [`derek-thomas/ScienceQA`](https://huggingface.co/datasets/derek-thomas/ScienceQA) (the lmms-lab mirror
 ships no train split, which had forced carving "train" out of validation), the
 real splits are train 6,218 / val 2,097 / test 2,017, and LoRA rank was raised
 8 → 16. A baseline + Bayesian sweep (metric `val/accuracy`) ran; the GCP billing
@@ -150,14 +150,14 @@ Winner `autumn-sweep-2`: r=16, alpha=32, base_lr 1.33e-4, accum 4 (eff. batch
 setup. `sandy-sweep-7` had the highest *val* (0.714) but was cut off before its
 test eval, so `autumn-sweep-2` is the best *completed* model.
 
-## Distributed training & data loading (M29 / M30)
+## Distributed training & data loading
 
 Both are "if applicable" and are **not applicable** at this scale:
-- **M30 (distributed training):** training runs on a **single L4**. LoRA on
+- **Distributed training:** training runs on a **single L4**. LoRA on
   PaliGemma2-3B (~6.4 M trainable params, ~3 B frozen) fits one GPU, so
   multi-GPU DDP would add complexity with no benefit. PyTorch-Lightning would
   enable it via `Trainer(devices=…, strategy="ddp")` if more GPUs were available.
-- **M29 (distributed data loading):** we use a **multi-worker `DataLoader`**
+- **Distributed data loading:** we use a **multi-worker `DataLoader`**
   (`data.num_workers`) — the relevant loading optimisation here; sharded
   loading is unnecessary for a single-GPU job over a ~700 MB processed dataset.
   Profiling confirms this empirically: loading is image-bound (~45% PIL
@@ -165,7 +165,7 @@ Both are "if applicable" and are **not applicable** at this scale:
   training step, so it overlaps with compute and is not the bottleneck. See
   [`profiling/dataloader_profile.md`](profiling/dataloader_profile.md).
 
-## Data-drift monitoring (M27)
+## Data-drift monitoring
 
 We monitor the **input** distribution the served model sees (there are no
 ground-truth labels in production). `monitoring.py` derives lightweight features
@@ -197,7 +197,7 @@ prediction logging) are documented on the **API design** page,
 [`docs/source/api.md`](../docs/source/api.md). OpenAPI/Swagger is also
 auto-served at `/docs` (and ReDoc at `/redoc`).
 
-## Inference optimization (M31)
+## Inference optimization
 
 Quantization benchmark (bf16 vs int4 vs bf16+compile) on an L4 via
 `cloud/run_optimize.sh` (job `4445297885868720128`, n = 8 samples,
@@ -254,7 +254,7 @@ weights, swept over four sparsity levels on the **full 2,017-sample test split**
 | Folder | Contents |
 |---|---|
 | `figures/` | `.png` visualizations (below) |
-| `eval/` | eval data: `production_eval_results.json`, `sweep2_summary.json`, `sweep3_summary.json`, `optimize_results.json` + `prune_results.json` (M31) |
+| `eval/` | eval data: `production_eval_results.json`, `sweep2_summary.json`, `sweep3_summary.json`, `optimize_results.json` + `prune_results.json` |
 | `monitoring/` | `drift_report.html` (Evidently) |
 | `load/` | load-test summary + locust CSVs |
 | `profiling/` | `dataloader_profile.md` + cProfile (`.pstats`/`.txt`) + `dataloader_summary.json` |
@@ -269,7 +269,7 @@ weights, swept over four sparsity levels on the **full 2,017-sample test split**
 | `sweep2_comparison.png` | earlier sweep (`xptwdnis`, old data r=8) — same chart for the 64% era |
 | `prediction_length_dist.png` | predicted answer length (sanity: single letters) |
 | `error_samples.png` | qualitative grid of misclassified samples |
-| `prune_sparsity_curve.png` | M31 pruning sweep: accuracy vs. sparsity (left) and latency vs. sparsity / no speedup (right) |
+| `prune_sparsity_curve.png` | Pruning sweep: accuracy vs. sparsity (left) and latency vs. sparsity / no speedup (right) |
 
 Reproduce with the committed source JSONs:
 
@@ -310,9 +310,6 @@ Notes:
   accepts a `gs://` path, so promoting a new adapter needs no redeploy.
 
 ## Retrospective — did the project turn out as planned?
-
-> _Draft for the group to personalise — the facts are grounded in the repo; add
-> your own reflection on what you'd do differently._
 
 **The initial goal** (README): _"develop techniques that improve reasoning
 accuracy using the PaliGemma foundation model,"_ with the Transformers

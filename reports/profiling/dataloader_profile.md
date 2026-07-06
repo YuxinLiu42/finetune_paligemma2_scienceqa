@@ -67,6 +67,6 @@ ranking above, not the exact best worker count.
    The training default `num_workers=4` is a safe choice with headroom; raising
    it would not speed up training.
 
-3. **This empirically supports the M29 decision** (no distributed data loading):
+3. **This empirically supports the decision not to use distributed data loading**:
    loading is cheap relative to compute and is not the limiting factor, so
    sharded/distributed loading would add complexity with no throughput benefit.

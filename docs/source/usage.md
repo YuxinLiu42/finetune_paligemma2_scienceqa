@@ -40,7 +40,7 @@ TEMPLATE=cloud/vertex_eval.template.yaml RENDERED=cloud/vertex_eval.yaml \
   bash cloud/watch_job.sh
 ```
 
-## Optimize: quantization + pruning (M31)
+## Optimize: quantization + pruning
 
 Inference-optimization experiments on an L4 (results feed `reports/RESULTS.md`).
 Run on Vertex via `cloud/run_optimize.sh` + `watch_job.sh`:
@@ -135,13 +135,13 @@ every `scipali` subpackage cleanly. `train.dockerfile` needs
 `--platform=linux/amd64`, so on Apple Silicon it builds under emulation
 (slow, ~15 min) — real GPU training still needs a CUDA host, same as Vertex.
 
-The images are **continuously built and verified in CI**: the Cloud Build
-triggers `mlops-ci-api` and `mlops-ci-train` rebuild `api.dockerfile` and
-`train.dockerfile` (amd64) on every push to `main` that touches
-`src/scipali/**` or the build configs. A failing Dockerfile breaks the
-build, so "the Dockerfiles build and work as intended" is enforced on
-every change — no manual local build is required, though `inv docker-build`
-remains available for local iteration.
+The API image is **continuously built and verified in CI**: the Cloud Build
+trigger `mlops-ci-api` rebuilds `api.dockerfile` (amd64) on every push to
+`main` that touches `src/scipali/**` or the build configs, so a failing
+Dockerfile breaks the build. `mlops-ci-train` exists but is **disabled** (see
+the build note above — it needs the locally-built wheel injected, which a
+bare CI checkout doesn't have), so `train.dockerfile` is built manually. All
+three images were also verified with a real local build, per above.
 
 ## Deploy to Cloud Run
 

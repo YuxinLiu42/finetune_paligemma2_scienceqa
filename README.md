@@ -33,10 +33,10 @@ flowchart TD
     OPT --> REP
 
     subgraph CICD["CI/CD"]
-        GHA["GitHub Actions<br/>tests · lint · docs"]
+        GHA["GitHub Actions<br/>tests · lint · docs · model rollout"]
         CB["Cloud Build<br/>API image"]
     end
-    GHA -.-> TRAIN
+    GHA -.-> API
     CB -.-> API
 ```
 
@@ -57,14 +57,16 @@ pretrained models — by starting from a pretrained PaliGemma2 checkpoint and
 fine-tuning it on our data, then improving from there.
 
 ### What data are you going to run on (initially, may change)
-We use **`derek-thomas/ScienceQA`** (the image subset, "ScienceQA-IMG"). We
+We use **[`derek-thomas/ScienceQA`](https://huggingface.co/datasets/derek-thomas/ScienceQA)**
+(the image subset, "ScienceQA-IMG"). We
 initially planned `lmms-lab/ScienceQA`, but that mirror ships no train split, so
 we switched. Splits: train 6,218 / val 2,097 / test 2,017. Each sample has an
 image, a question, answer choices, the answer index, and optional hint / lecture
 plus a subject label.
 
 ### What deep learning models do you expect to use
-The **PaliGemma2-3B** vision-language model (`google/paligemma2-3b-pt-224`),
+The **PaliGemma2-3B** vision-language model
+([`google/paligemma2-3b-pt-224`](https://huggingface.co/google/paligemma2-3b-pt-224)),
 LoRA-adapted on the language-model attention projections with the vision encoder
 frozen.
 
@@ -103,14 +105,22 @@ CHECKPOINT_PATH=gs://mlops-paligemma-west4/models/production \
   uvicorn scipali.serving.api:app --host 0.0.0.0 --port 8000
 ```
 
-**Deployment decision (2026-06-12):** demo-grade serving runs locally or as a
-container on demand, NOT as an always-on cloud endpoint. Rationale: PaliGemma2-3B
-needs a GPU for interactive latency; an always-on L4 endpoint (Vertex endpoint or
-Cloud Run w/ GPU) costs more than this course project justifies, and Cloud Run CPU
-inference (~minutes/request) times out for real use. The `gs://` startup fetch
-keeps the container cloud-ready: `gcloud run deploy --image <api image>
---set-env-vars CHECKPOINT_PATH=gs://mlops-paligemma-west4/models/production`
-is the documented path if an always-on endpoint is ever needed.
+**Deployment.** The API is deployed to **Cloud Run** (`paligemma-api`,
+`europe-west4`): CPU-only (8 vCPU / 32 GB), `min-instances 0` / `max-instances 3`
+(scale-to-zero when idle), with lazy model loading — the container passes its
+startup probe immediately and only loads the model on the first `/predict`.
+Rationale for CPU over an always-on GPU endpoint: PaliGemma2-3B needs a GPU for
+interactive latency, but an always-on L4 endpoint (Vertex endpoint or Cloud Run
+w/ GPU) costs more than this course project justifies. In practice this means a
+direct `/predict` on a cold (scaled-to-zero) instance takes ~150–230s (container
+start + model load + inference bundled), while warm calls run ~25–80s — see
+[`docs/source/api.md`](docs/source/api.md) for the full latency breakdown.
+Promoting a new adapter needs **no image rebuild**: copy it to
+`gs://…/models/production` and move the W&B `production` alias — the
+model-registry-change workflow then rolls out a fresh Cloud Run revision and
+smoke-tests the live endpoint automatically. The full deploy command (memory,
+concurrency, and secret flags) lives in
+[`docs/source/usage.md`](docs/source/usage.md#deploy-to-cloud-run).
 
 ---
 
