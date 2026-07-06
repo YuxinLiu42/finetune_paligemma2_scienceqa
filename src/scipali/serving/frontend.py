@@ -37,7 +37,7 @@ import random
 
 import requests  # type: ignore[import-untyped]
 import streamlit as st
-from PIL import Image
+from PIL import Image, UnidentifiedImageError
 
 API_URL = os.environ.get("API_URL", "http://localhost:8000").rstrip("/")
 DATASET_PATH = os.environ.get("DATASET_PATH", "data/processed/ScienceQA-IMG")
@@ -154,15 +154,38 @@ st.caption(f"Backend: {API_URL}")
 st.session_state.setdefault("history", [])
 st.session_state.setdefault("replay", None)
 
+
 # Health badge so it's obvious whether the backend is up and the model loaded.
-try:
-    health = requests.get(f"{API_URL}/", timeout=5).json()
-    if health.get("model_loaded") == "True":
-        st.success("Backend up: model loaded")
-    else:
-        st.warning("Backend up: model not loaded yet (loads on first prediction)")
-except requests.RequestException as exc:
-    st.error(f"Backend unreachable: {exc}")
+# Cached with a TTL: Streamlit reruns this whole script on every widget
+# interaction (including the rerun right after a file upload finishes), and an
+# uncached probe — up to its full 5s timeout while the Cloud Run instance is
+# cold — would freeze the UI on every keystroke and upload.
+@st.cache_data(ttl=60, show_spinner=False)
+def check_backend(url: str) -> tuple[bool, str, str]:
+    """Probe GET / at most once per minute; returns (ok, model_loaded, error)."""
+    try:
+        health = requests.get(f"{url}/", timeout=5).json()
+        return True, str(health.get("model_loaded")), ""
+    except requests.RequestException as exc:
+        return False, "", str(exc)
+
+
+ok, model_loaded, err = check_backend(API_URL)
+if not ok:
+    st.error(f"Backend unreachable: {err}")
+elif model_loaded == "True":
+    st.success("Backend up: model loaded on this instance")
+else:
+    # model_loaded is per-INSTANCE: on Cloud Run (concurrency 1, scale to
+    # zero) this health check almost never lands on the instance that
+    # served a prediction, so "not loaded" here is the normal steady state
+    # and not an error. Locally (single process) it turns green after the
+    # first prediction.
+    st.info(
+        "Backend up — the model loads per instance on its first "
+        "prediction (on Cloud Run this check usually reaches a different "
+        "instance than the one serving predictions, so this is normal)."
+    )
 
 # --- sidebar: mode switch + history --------------------------------------
 with st.sidebar:
@@ -207,7 +230,13 @@ if st.session_state.replay is not None:
 # --- mode: ask your own ---------------------------------------------------
 if mode == "✍️ Ask your own":
     with st.form("ask"):
-        image_file = st.file_uploader("Image", type=["png", "jpg", "jpeg"])
+        image_file = st.file_uploader(
+            "Image",
+            type=["png", "jpg", "jpeg", "webp", "bmp"],
+            help="Wait for the upload bar to finish before pressing Predict. "
+            "Switching modes clears the attached file. HEIC (iPhone) is not "
+            "supported — export as JPEG/PNG first.",
+        )
         question = st.text_input(
             "Question", "Which property do these objects have in common?"
         )
@@ -224,8 +253,17 @@ if mode == "✍️ Ask your own":
         if len(choices) < 2:
             st.error("Provide at least two choices.")
             st.stop()
+        image_file.seek(0)  # a re-submit reuses the buffer; rewind before decoding
+        try:
+            img = Image.open(image_file).convert("RGB")
+        except UnidentifiedImageError:
+            st.error(
+                "Could not decode that file as an image — re-export it as "
+                "PNG or JPEG and upload again."
+            )
+            st.stop()
         buf = io.BytesIO()
-        Image.open(image_file).convert("RGB").save(buf, format="PNG")
+        img.save(buf, format="PNG")
         run_prediction(
             question=question,
             choices=choices,
