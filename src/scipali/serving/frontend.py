@@ -147,8 +147,8 @@ def run_prediction(
 
 
 # --- page setup -----------------------------------------------------------
-st.set_page_config(page_title="ScienceQA · PaliGemma2", page_icon="🔬")
-st.title("🔬 ScienceQA — PaliGemma2")
+st.set_page_config(page_title="ScienceQA - PaliGemma2", page_icon="🔬")
+st.title("🔬 Answer Science Questions")
 st.caption(f"Backend: {API_URL}")
 
 st.session_state.setdefault("history", [])
@@ -158,9 +158,9 @@ st.session_state.setdefault("replay", None)
 try:
     health = requests.get(f"{API_URL}/", timeout=5).json()
     if health.get("model_loaded") == "True":
-        st.success("Backend up · model loaded")
+        st.success("Backend up: model loaded")
     else:
-        st.warning("Backend up · model not loaded yet (loads on first prediction)")
+        st.warning("Backend up: model not loaded yet (loads on first prediction)")
 except requests.RequestException as exc:
     st.error(f"Backend unreachable: {exc}")
 
