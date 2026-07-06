@@ -105,6 +105,24 @@ CHECKPOINT_PATH=gs://mlops-paligemma-west4/models/production \
   uvicorn scipali.serving.api:app --host 0.0.0.0 --port 8000
 ```
 
+### Try a prediction
+
+Two demo paths — a terminal script and a browser UI (full details in
+[`docs/source/usage.md`](docs/source/usage.md#predict--serve)):
+
+```bash
+# terminal: health → predict → drift against the live Cloud Run service
+# (first call on a scaled-to-zero instance takes ~2–4 min while the model loads)
+./cloud/demo_api.sh
+
+# browser UI: Streamlit frontend over the same API — "Ask your own" mode types a
+# free question; "Pick from ScienceQA" browses the local processed test split
+# and compares the prediction to ground truth
+API_URL=https://paligemma-api-581237630637.europe-west4.run.app \
+  uvx --with requests --with pillow --with datasets \
+  streamlit run src/scipali/serving/frontend.py
+```
+
 **Deployment.** The API is deployed to **Cloud Run** (`paligemma-api`,
 `europe-west4`): CPU-only (8 vCPU / 32 GB), `min-instances 0` / `max-instances 3`
 (scale-to-zero when idle), with lazy model loading — the container passes its
