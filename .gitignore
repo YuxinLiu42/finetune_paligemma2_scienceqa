@@ -198,5 +198,4 @@ import_time.log
 
 # Local presentation guide — kept out of the repo on request
 PROJECT_GUIDE.md
-node_modules/
-node_modules/
+scipali_demo/

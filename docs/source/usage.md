@@ -82,9 +82,11 @@ python -m scipali.models.optimize prune-sweep <adapter_dir> \
 ## Predict / serve
 
 ```bash
-# single prediction
+# single prediction (also accepts --hint, --lecture, and --max-new-tokens —
+# the same optional fields the API's /predict body takes)
 uv run python -m scipali.serving.predict checkpoints/adapter-production \
-  -q "What gas do plants absorb?" -c "oxygen,carbon dioxide,nitrogen" -i img.png
+  -q "What gas do plants absorb?" -c "oxygen,carbon dioxide,nitrogen" -i img.png \
+  --hint "Plants need sunlight to grow." --lecture "Photosynthesis converts CO2..."
 
 # API (local; PREDICT_DEVICE=cpu since MPS crashes on PaliGemma matmuls)
 CHECKPOINT_PATH=checkpoints/adapter-production PREDICT_DEVICE=cpu \

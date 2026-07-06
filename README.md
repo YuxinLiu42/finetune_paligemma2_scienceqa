@@ -113,7 +113,8 @@ Two demo paths — a terminal script and a browser UI (full details in
 ```bash
 # terminal: health → predict → drift against the live Cloud Run service
 # (first call on a scaled-to-zero instance takes ~2–4 min while the model loads)
-./cloud/demo_api.sh
+./cloud/demo_api.sh                                        # auto-uses test sample 0
+./cloud/demo_api.sh img.png "Your question?" "choice a,choice b,choice c"
 
 # browser UI: Streamlit frontend over the same API — "Ask your own" mode types a
 # free question; "Pick from ScienceQA" browses the local processed test split
