@@ -21,11 +21,12 @@ its own environment (Streamlit's Starlette server pins a newer ``starlette``
 than the FastAPI API does, so they can't share one venv):
 
     API_URL=http://localhost:8000 \\
-      uvx --with requests --with pillow --with datasets \\
+      uvx --with streamlit==1.53.0 --with requests --with pillow --with datasets \\
       streamlit run src/scipali/serving/frontend.py
 
 (``--with datasets`` is only needed for the "Pick from ScienceQA" mode; "Ask
-your own" works without it.)
+your own" works without it. Use Chrome — Safari's cookie handling is known to
+wedge Streamlit's file uploader.)
 """
 
 from __future__ import annotations

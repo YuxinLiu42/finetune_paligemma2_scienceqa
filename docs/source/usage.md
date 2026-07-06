@@ -100,7 +100,7 @@ CHECKPOINT_PATH=checkpoints/adapter-production PREDICT_DEVICE=cpu \
 # dataset picker needs `--with datasets` + the local processed split; "Ask your
 # own" works without either.
 API_URL=http://localhost:8000 \
-  uvx --with requests --with pillow --with datasets \
+  uvx --with streamlit==1.53.0 --with requests --with pillow --with datasets \
   streamlit run src/scipali/serving/frontend.py
 ```
 

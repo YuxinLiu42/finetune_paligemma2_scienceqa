@@ -11,7 +11,7 @@ nav_exclude: true
 >
 > Answer:
 
-Yuxin Liu [TODO: student number]
+Yuxin Liu 12660585
 Duc-Anh Valentino Nguyen 12433139
 
 ## Coding environment
@@ -389,11 +389,7 @@ it, by design — we didn't need raw VM control for either training or serving.
 >
 > Answer:
 
-*[TODO: screenshot — open
-<https://console.cloud.google.com/storage/browser/mlops-paligemma-west4?project=paligemma-scienceqa>,
-save the capture as `figures/gcs_bucket.png`, then replace this TODO with the
-commented image line below.]*
-<!-- ![GCS bucket](figures/gcs_bucket.png) -->
+![GCS bucket](figures/gcs_bucket.png)
 
 Verifiable from the CLI:
 
@@ -416,12 +412,9 @@ LoRA adapters (with `models/production/` being the one the API serves),
 >
 > Answer:
 
-*[TODO: screenshot — open
-<https://console.cloud.google.com/artifacts/docker/paligemma-scienceqa/europe-west4/mlops-images?project=paligemma-scienceqa>
-(shows the `paligemma-api` and `paligemma-train` images), save as
-`figures/artifact_registry.png`, then replace this TODO with the commented
-image line below.]*
-<!-- ![Artifact Registry](figures/artifact_registry.png) -->
+![Artifact Registry — paligemma-api image versions](figures/artifact_api.png)
+
+![Artifact Registry — paligemma-train image versions](figures/artifact_train.png)
 
 Verifiable from the CLI:
 
@@ -437,11 +430,7 @@ gcloud artifacts docker images list \
 >
 > Answer:
 
-*[TODO: screenshot — open
-<https://console.cloud.google.com/cloud-build/builds;region=europe-west4?project=paligemma-scienceqa>,
-save as `figures/cloud_build_history.png`, then replace this TODO with the
-commented image line below.]*
-<!-- ![Cloud Build history](figures/cloud_build_history.png) -->
+![Cloud Build history](figures/cloud_build_history.png)
 
 Verifiable from the CLI: `gcloud builds list --region=europe-west4`. Trigger
 `mlops-ci-api` auto-builds the API image on every push to `main` that touches
@@ -504,21 +493,32 @@ would actually deliver anything.
 >
 > Answer:
 
-Total spend: *[TODO: read the exact figure from
-<https://console.cloud.google.com/billing> → Reports. Check **both** education
-billing accounts — the first closed mid-project (2026-06-14, mid-sweep) and
-the project was re-attached to a second. No BigQuery billing export was set
-up, so the figure isn't queryable from the CLI.]*
+Total usage across the project's **two** education billing accounts was
+**≈ $70, fully covered by education credits ($0.00 out of pocket)**. The first
+account closed mid-project (2026-06-14, mid-sweep) and the project was
+re-attached to a second:
 
-The most expensive service was **Vertex AI** by a wide margin. The Custom Jobs
-API records **73 jobs** on `g2-standard-8` (1× NVIDIA L4): **47.3 h of
-succeeded runtime** (definitely billed), plus a share of the ~168 h attributed
-to failed/cancelled jobs — much of that is *unbilled* Flex-Start queue wait
-(e.g. the exact-24 h capacity-stockout failures), though the OOM-crashed
-pruning attempts did bill real runtime. At europe-west4 G2 rates (~$1/h
-on-demand, less under the Flex-Start discount), GPU compute lands roughly in
-the tens of dollars; Cloud Storage (~14 GiB), Cloud Build, and scale-to-zero
-Cloud Run add only a few dollars more.
+![Billing — first education account](figures/billing_Yuxin.png)
+
+![Billing — second education account](figures/billing_duc.png)
+
+- **First account: $50.15** — Compute Engine $33.25 + AI Platform Training
+  $13.06 (together: the Vertex L4 training stack — the GPU VMs bill as
+  Compute Engine SKUs under the job orchestration), Cloud Build $1.31,
+  non-product charges $1.33, Artifact Registry $0.86, Cloud Storage $0.19,
+  Cloud Run $0.15.
+- **Second account: $19.77** — Vertex AI $6.79 + Compute Engine $4.18,
+  Artifact Registry $7.07 (storing the ~3.4 GB train images), Cloud Run
+  $1.46, Cloud Storage $0.27.
+
+The most expensive service was therefore the **Vertex AI training stack
+(≈ $57 of the ≈ $70)** — consistent with the Custom Jobs API record of **73
+jobs** on `g2-standard-8` (1× NVIDIA L4) totalling **47.3 h of succeeded
+runtime**, plus some genuinely billed runtime inside failed jobs (the
+OOM-crashed pruning attempts), while most of the ~168 h attributed to
+failed/cancelled jobs was *unbilled* Flex-Start queue wait (e.g. the
+exact-24 h capacity-stockout failures). Everything else — storage, builds,
+scale-to-zero serving — added only a few dollars combined.
 
 ## Overall discussion of project
 

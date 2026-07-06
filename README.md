@@ -120,7 +120,7 @@ Two demo paths — a terminal script and a browser UI (full details in
 # free question; "Pick from ScienceQA" browses the local processed test split
 # and compares the prediction to ground truth
 API_URL=https://paligemma-api-581237630637.europe-west4.run.app \
-  uvx --with requests --with pillow --with datasets \
+  uvx --with streamlit==1.53.0 --with requests --with pillow --with datasets \
   streamlit run src/scipali/serving/frontend.py
 ```
 
