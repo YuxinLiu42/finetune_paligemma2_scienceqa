@@ -265,7 +265,7 @@ re-run `uv run train` with those same Hydra overrides.
 
 > **Upload 1 to 3 screenshots that show the experiments that you have done in W&B (or another experiment tracking**
 > **service of your choice). This may include loss graphs, logged images, hyperparameter sweeps etc. You can take**
-> **inspiration from [this figure](figures/wandb.png). Explain what metrics you are tracking and why they are**
+> **inspiration from the course template's example figure. Explain what metrics you are tracking and why they are**
 > **important.**
 >
 > Answer:
@@ -607,6 +607,6 @@ evaluation/optimization jobs, the FastAPI serving app, Streamlit frontend and
 BentoML service, the CI/CD workflows (tests, linting, docs, and the two
 continuous data/model-registry-triggered workflows), the Cloud Run deployment,
 the drift-monitoring and Cloud Monitoring alerting setup, the documentation
-site, and this results write-up. By commit count this is 142 commits under
-Yuxin Liu versus 13 under Duc-Anh Valentino Nguyen (of 164 total, the
-remainder from Dependabot).
+site, and this results write-up. By commit count this is 143 commits under
+Yuxin Liu's git identities versus 13 under Duc-Anh Valentino Nguyen (of 164
+total; 7 are Dependabot's and one is an unattributed merge).

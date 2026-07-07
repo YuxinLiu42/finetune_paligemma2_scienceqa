@@ -277,7 +277,11 @@ Reproduce with the committed source JSONs:
 python -m scipali.models.visualize subject-accuracy reports/eval/production_eval_results.json
 python -m scipali.models.visualize sweep-comparison  reports/eval/sweep3_summary.json   # full-data
 python -m scipali.models.visualize sweep-comparison  reports/eval/sweep2_summary.json   # earlier
-python -m scipali.models.visualize pred-lengths       reports/eval/production_eval_results.json
+python -m scipali.models.visualize pred-lengths      reports/eval/production_eval_results.json
+python -m scipali.models.visualize prune-curve       reports/eval/prune_results.json
+# these two also read the DVC-pulled processed split (per-topic labels / images):
+python -m scipali.models.visualize topic-accuracy    reports/eval/production_eval_results.json
+python -m scipali.models.visualize error-samples     reports/eval/production_eval_results.json
 ```
 
 ## Cloud workload inventory (what runs where, and why)

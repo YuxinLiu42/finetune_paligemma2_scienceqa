@@ -350,7 +350,7 @@ def plot_prune_sparsity_curve(
     results_path: Path,
     output_dir: Path = RESULTS_DIR,
 ) -> Path:
-    """Plot the M31 pruning sweep as a two-panel accuracy/latency curve.
+    """Plot the pruning sweep as a two-panel accuracy/latency curve.
 
     Left: test accuracy vs. achieved sparsity (the headline result). Right:
     latency vs. achieved sparsity, showing unstructured pruning gives no
@@ -486,7 +486,7 @@ def prune_curve(
     ),
     output_dir: Path = typer.Option(RESULTS_DIR, "--output-dir", "-o"),
 ) -> None:
-    """Plot the M31 pruning accuracy/latency curve vs. sparsity."""
+    """Plot the pruning accuracy/latency curve vs. sparsity."""
     out = plot_prune_sparsity_curve(results_path, output_dir)
     typer.echo(f"Saved to {out}")
 
