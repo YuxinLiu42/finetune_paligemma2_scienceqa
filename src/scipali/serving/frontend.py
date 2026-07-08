@@ -238,10 +238,10 @@ if mode == "✍️ Ask your own":
             "Switching modes clears the attached file. HEIC (iPhone) is not "
             "supported — export as JPEG/PNG first.",
         )
-        question = st.text_input(
-            "Question", "Which property do these objects have in common?"
+        question = st.text_input("Question", "What is the capital of Delaware?")
+        choices_raw = st.text_input(
+            "Choices (comma-separated)", "Montpelier, Trenton, Dover, Georgetown"
         )
-        choices_raw = st.text_input("Choices (comma-separated)", "soft, salty, sticky")
         hint = st.text_area("Hint (optional)", "")
         lecture = st.text_area("Lecture (optional)", "")
         submitted = st.form_submit_button("Predict")
