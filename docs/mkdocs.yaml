@@ -1,5 +1,5 @@
-site_name: PaliGemma2 · ScienceQA MLOps
-site_author: Yuxin_Duc
+site_name: Answer Your Science Questions
+site_author: Yuxin Liu
 docs_dir: source
 
 theme:
