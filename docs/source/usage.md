@@ -28,6 +28,19 @@ bash cloud/watch_job.sh                         # full run
 SKIP_BASELINE=1 bash cloud/watch_job.sh         # sweep only
 ```
 
+Explicit method (what the script wraps, minus retries, image digest-pinning,
+and log streaming):
+
+```bash
+envsubst < cloud/vertex_config.template.yaml > cloud/vertex_config.yaml
+gcloud ai custom-jobs create --region=europe-west4 --project=paligemma-scienceqa \
+  --display-name=paligemma-train --config=cloud/vertex_config.yaml
+gcloud ai custom-jobs stream-logs <job-id> --region=europe-west4
+```
+
+The eval and optimize jobs below use the same method with their own templates
+(`vertex_eval.template.yaml`, `vertex_optimize.template.yaml`).
+
 ## Evaluate an adapter
 
 ```bash
@@ -111,6 +124,20 @@ There is also a shell demo of the deployed API (health → predict → drift):
 ```bash
 ./cloud/demo_api.sh                              # auto-uses test sample 0
 ./cloud/demo_api.sh img.png "Question?" "a,b,c"  # bring your own sample
+```
+
+Under the hood, the demo is three raw calls — the API takes JSON with a
+base64-encoded image:
+
+```bash
+API=https://paligemma-api-581237630637.europe-west4.run.app
+curl "$API/"                       # health — model_loaded flips true after the 1st predict
+curl -s -X POST "$API/predict" -H 'Content-Type: application/json' -d '{
+  "question": "What is the capital of Wyoming?",
+  "choices": ["Phoenix", "Baton Rouge", "Honolulu", "Cheyenne"],
+  "image_b64": "'"$(base64 < img.png | tr -d '\n')"'"}'
+curl "$API/monitor/drift"          # Evidently drift check vs the seeded reference
+curl -s "$API/metrics" | head      # Prometheus metrics
 ```
 
 ## Container images

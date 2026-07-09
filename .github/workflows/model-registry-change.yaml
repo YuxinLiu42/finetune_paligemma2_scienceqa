@@ -11,7 +11,7 @@ name: Model registry change
 # ── SETUP (one-time) ──
 # 1. W&B Automation (W&B UI -> Registry -> Automations): on a new version / alias
 #    change, add a Webhook action POSTing to
-#       https://api.github.com/repos/yuxinliu42/SS26_MLOps_Project_GroupA/dispatches
+#       https://api.github.com/repos/yuxinliu42/finetune_paligemma2_scienceqa/dispatches
 #    headers  Accept: application/vnd.github+json
 #             Authorization: Bearer <GitHub PAT with 'repo' scope>   (a W&B secret)
 #    body     {"event_type": "model-registry-updated"}

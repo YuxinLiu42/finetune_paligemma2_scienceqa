@@ -13,7 +13,7 @@ held-out ScienceQA-IMG test split (2017 samples).
 **Pipeline.** The end-to-end MLOps pipeline that produced these numbers — data
 versioning, training, evaluation, model registry, serving, drift monitoring, and
 the inference optimization reported below — is diagrammed in
-[`figures/architecture.png`](figures/architecture.png).
+[`figures/architecture.jpg`](figures/architecture.jpg).
 
 **Answer matching.** Accuracy is exact match on the *extracted answer letter*:
 we take the first letter of the model's greedy generation — tolerating the rare

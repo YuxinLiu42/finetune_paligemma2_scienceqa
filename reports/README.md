@@ -54,8 +54,8 @@ locked versions are reproduced exactly, never re-resolved.
 To get an exact copy of the environment, a new team member would run:
 
 ```bash
-git clone git@github.com:yuxinliu42/SS26_MLOps_Project_GroupA.git
-cd SS26_MLOps_Project_GroupA
+git clone git@github.com:yuxinliu42/finetune_paligemma2_scienceqa.git
+cd finetune_paligemma2_scienceqa
 uv sync --locked --dev
 dvc pull   # fetch the processed dataset from the GCS remote
 ```
@@ -214,7 +214,7 @@ CI is split across several GitHub Actions workflows:
   when the `production` model alias moves, and automatically rolls the newly
   promoted adapter out to Cloud Run plus smoke-tests the live endpoint.
 
-Example: <https://github.com/yuxinliu42/SS26_MLOps_Project_GroupA/actions/workflows/tests.yaml>
+Example: <https://github.com/yuxinliu42/finetune_paligemma2_scienceqa/actions/workflows/tests.yaml>
 
 ## Running code and tracking experiments
 
@@ -311,7 +311,7 @@ docker run --rm -v "$(pwd)/checkpoints:/checkpoints" -v "$(pwd)/img.png:/img.png
   -q "What gas do plants absorb?" -c "oxygen,carbon dioxide,nitrogen" -i /img.png
 ```
 
-Link: [`dockerfiles/api.dockerfile`](https://github.com/yuxinliu42/SS26_MLOps_Project_GroupA/blob/main/dockerfiles/api.dockerfile)
+Link: [`dockerfiles/api.dockerfile`](https://github.com/yuxinliu42/finetune_paligemma2_scienceqa/blob/main/dockerfiles/api.dockerfile)
 
 ### Question 16
 
@@ -531,7 +531,7 @@ scale-to-zero serving — added only a few dollars combined.
 >
 > Answer:
 
-<img src="figures/architecture.png" alt="System architecture" width="700" height="332">
+<img src="figures/architecture.jpg" alt="System architecture" width="700" height="332">
 
 **Figure: System architecture.** End-to-end MLOps pipeline for fine-tuning and
 serving PaliGemma2-3B on ScienceQA-IMG. Solid arrows show the main artifact

@@ -8,8 +8,7 @@ alerts, and two automation loops — **A** auto-deploy (W&B webhook → GitHub
 Actions → new Cloud Run revision + smoke test) and **B** drift feedback (live
 predictions → Evidently drift check).
 
-The full system diagram is `reports/figures/architecture.png` in the
-repository (embedded in the exam report, `reports/README.md`).
+<img src="../../reports/figures/architecture.jpg" alt="System architecture" width="700" height="332">
 
 ## Key design choices
 

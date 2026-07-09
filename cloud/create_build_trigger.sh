@@ -23,7 +23,7 @@ REGION="${REGION:-europe-west4}"            # 2nd-gen trigger lives in this regi
 CONNECTION="${CONNECTION:-paligemma-gh}"
 REPO_RES="${REPO_RES:-paligemma-repo}"
 REPO_OWNER="${REPO_OWNER:-yuxinliu42}"
-REPO_NAME="${REPO_NAME:-SS26_MLOps_Project_GroupA}"
+REPO_NAME="${REPO_NAME:-finetune_paligemma2_scienceqa}"
 REMOTE_URI="https://github.com/${REPO_OWNER}/${REPO_NAME}.git"
 
 # 1. Host connection (GitHub App OAuth).
