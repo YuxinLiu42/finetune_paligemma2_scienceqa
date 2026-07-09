@@ -716,6 +716,16 @@ Two modes: "Ask your own" (type a free question) and "Pick from ScienceQA"
 The first call on a scaled-to-zero instance takes ~2–4 min while the container
 starts and the model loads.
 
+The service is public, so a prediction works from **any machine with zero
+setup** — no repo, no Python env, no credentials:
+
+- **Browser only:** open the live Swagger UI at
+  <https://paligemma-api-581237630637.europe-west4.run.app/docs> and fire
+  `POST /predict` via "Try it out".
+- **Any terminal:** the raw calls below need only `curl` + `base64`
+  (preinstalled on macOS/Linux) — deployment is the point: a client needs
+  `curl`, not CUDA.
+
 Under the hood — the three raw calls (the API takes JSON with a
 base64-encoded image):
 
