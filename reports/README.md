@@ -467,6 +467,13 @@ A direct `/predict` on a cold (scaled-to-zero) instance takes ~150–230s
 calls run ~25–80s. There is also a Streamlit frontend and a shell demo script
 (`cloud/demo_api.sh`) that exercise the same live endpoint end-to-end.
 
+Both invocation paths, shown live — the local CLI prediction and the deployed
+API answering the same kind of request:
+
+![Local prediction via the CLI](figures/predict_cli_local.png)
+
+![Invoking the deployed API](figures/predict_api.png)
+
 ### Question 23
 
 > **Did you manage to implement monitoring of your deployed model? If yes, explain how it works. If not, explain how**

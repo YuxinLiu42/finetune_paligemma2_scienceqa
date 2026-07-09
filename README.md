@@ -371,6 +371,8 @@ and the end-of-training test pass), configured by Hydra:
 uv run train trainer.wandb.enabled=true trainer.wandb.run_name=local-test
 # smoke run — Lightning's fast_dev_run: 1 train + 1 val batch, then exit:
 uv run train trainer.fast_dev_run=true trainer.wandb.enabled=false
+# print the full model architecture (loads the HF-cached base model):
+uv run python -m scipali.models.model
 ```
 
 #### Run training in a docker container
@@ -682,6 +684,9 @@ CHECKPOINT_PATH=gs://mlops-paligemma-west4/models/production PREDICT_DEVICE=cpu 
   uv run uvicorn scipali.serving.api:app --port 8000
 # BentoML alternative:
 uv run --group serving bentoml serve scipali.serving.bento_service:ScienceQAService
+# direct-run variant (module's own __main__ starts uvicorn on :8000):
+CHECKPOINT_PATH=checkpoints/adapter-production PREDICT_DEVICE=cpu \
+  uv run python -m scipali.serving.api
 ```
 
 Once up: `curl localhost:8000/` for health, or open <http://localhost:8000/docs>

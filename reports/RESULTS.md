@@ -298,6 +298,19 @@ after training.
   threshold, which lands on the same sparsity but a marginally different weight
   set than the sweep's `kthvalue` threshold.
 
+## Serving demonstration
+
+The deployed model answering through each of its serving paths (all four are
+real screenshots of the working system):
+
+![Local prediction via the CLI](figures/predict_cli_local.png)
+
+![Invoking the deployed API](figures/predict_api.png)
+
+![Streamlit UI — ask a free question](figures/askQ_ui.png)
+
+![Streamlit UI — pick a ScienceQA sample, prediction vs ground truth](figures/randomQ_ui.png)
+
 ## Artifact layout (`reports/`)
 
 | Folder | Contents |
@@ -319,6 +332,10 @@ after training.
 | `prediction_length_dist.png` | predicted answer length (sanity: single letters) |
 | `error_samples.png` | qualitative grid of misclassified samples |
 | `prune_sparsity_curve.png` | Pruning sweep: accuracy vs. sparsity (left) and latency vs. sparsity / no speedup (right) |
+| `predict_cli_local.png` | serving demo: local CLI prediction (correct answer on a test sample) |
+| `predict_api.png` | serving demo: invoking the deployed API |
+| `askQ_ui.png` | serving demo: Streamlit "Ask your own" mode |
+| `randomQ_ui.png` | serving demo: Streamlit ScienceQA picker, prediction vs ground truth |
 
 Reproduce with the committed source JSONs:
 
