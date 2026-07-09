@@ -131,7 +131,7 @@ FastAPI serving endpoints, and the monitoring/drift logic.
 >
 > Answer:
 
-Total coverage is **~71%** of `src/scipali` (`uv run coverage report`),
+Total coverage is **~72%** of `src/scipali` (`uv run coverage report`),
 computed in CI on every push and uploaded to Codecov. CI installs the
 optional monitoring extras (`--group monitoring`) so the import-guarded
 lines — the Prometheus `/metrics` instrumentation and the Evidently
@@ -157,8 +157,7 @@ checks (a real Vertex AI run, a real drift report) rather than unit tests.
 > Answer:
 
 Yes. Changes went into feature branches and were merged into `main` via pull
-requests rather than pushed directly — the repository history shows PR merges
-(e.g. `Merge pull request #9 from DucAnhValentinoNguyen/test`). Since `main` is
+requests rather than pushed directly — the repository history shows PR merges. Since `main` is
 wired to CI (tests + linting on every push/PR) and to automatic deployment
 (Cloud Build rebuilds the API image, and later in the project a
 model-registry-change workflow rolls a promoted model out to Cloud Run), a
@@ -276,8 +275,9 @@ re-run `uv run train` with those same Hydra overrides.
 We track both `val/loss` and a generation-based `val/accuracy` (exact-match on
 the extracted answer letter) every epoch, and select/early-stop on
 `val/accuracy` rather than `val/loss`. This turned out to matter concretely:
-in our sweep, the trial with the *best* `val/loss` (0.464) had nearly the
-*worst* `val/accuracy` (0.619), while the actual best-test-accuracy trial had a
+in our sweep, the trial with the *best* `val/loss` (0.464) had the
+*worst* `val/accuracy` (0.619), while the trial we actually selected (best
+`val/accuracy`, and the eventual production model at 64.1% test) had a
 *higher* loss (0.511) but the *best* accuracy (0.702) — see
 [`reports/RESULTS.md`](RESULTS.md#methodology-note--why-we-optimise-valaccuracy-not-valloss)
 for the full table. Since the task is graded on exact-match accuracy, not
@@ -629,6 +629,6 @@ evaluation/optimization jobs, the FastAPI serving app, Streamlit frontend and
 BentoML service, the CI/CD workflows (tests, linting, docs, and the two
 continuous data/model-registry-triggered workflows), the Cloud Run deployment,
 the drift-monitoring and Cloud Monitoring alerting setup, the documentation
-site, and this results write-up. By commit count this is 143 commits under
-Yuxin Liu's git identities versus 13 under Duc-Anh Valentino Nguyen (of 164
-total; 7 are Dependabot's and one is an unattributed merge).
+site, and this results write-up. By commit count this is 157 commits under
+Yuxin Liu's git identities versus 13 under Duc-Anh Valentino Nguyen (of 170
+total on `main`, per `git shortlog -sn main`).

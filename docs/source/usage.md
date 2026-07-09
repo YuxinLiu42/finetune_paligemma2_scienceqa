@@ -1,6 +1,9 @@
 # Usage
 
-All commands assume the project environment is synced (`uv sync`).
+All commands assume the project environment is synced (`uv sync`). A fuller
+command catalog — including CI, debugging, billing, and teardown, with
+expected outputs — is the
+[README's command guide](https://github.com/yuxinliu42/finetune_paligemma2_scienceqa#command-guide).
 
 ## Data
 
@@ -15,6 +18,10 @@ dvc push   # publish processed data to the GCS remote
 
 ```bash
 uv run train trainer.wandb.enabled=true trainer.wandb.run_name=local-test
+# smoke run — 1 train + 1 val batch, then exit:
+uv run train trainer.fast_dev_run=true trainer.wandb.enabled=false
+# profile the training loop (Lightning profiler, report printed at run end):
+uv run train trainer.profiler=simple trainer.fast_dev_run=true trainer.wandb.enabled=false
 ```
 
 Hyperparameters live in `configs/` (Hydra). The learning rate is derived from
@@ -161,6 +168,17 @@ Then build all three locally with the Invoke task:
 inv docker-build        # builds train + api + predict images locally (see tasks.py)
 ```
 
+Pushing to Artifact Registry
+(`europe-west4-docker.pkg.dev/paligemma-scienceqa/mlops-images/`) — normally
+done by Cloud Build (`gcloud builds submit --config=cloud/cloudbuild.*.yaml .`,
+which also builds amd64 remotely); the manual path needs one-time docker auth:
+
+```bash
+gcloud auth configure-docker europe-west4-docker.pkg.dev   # once
+docker tag api:latest europe-west4-docker.pkg.dev/paligemma-scienceqa/mlops-images/paligemma-api:latest
+docker push europe-west4-docker.pkg.dev/paligemma-scienceqa/mlops-images/paligemma-api:latest
+```
+
 All three were built and smoke-tested locally on 2026-07-05: `api:latest`
 serves `GET /` correctly under `LAZY_LOAD=1`; `predict:latest`'s CLI renders
 via `--help`; `train:latest` installs CUDA torch (`2.6.0+cu118`) and imports
@@ -205,11 +223,14 @@ scaled-to-zero instance (container start + model download/load + inference, all
 bundled) runs **~150–230 s (typically ~160–175 s)**; once warm, calls run
 **~25–80 s (commonly ~35–50 s)**.
 
-## Ops
+## Monitoring & operations
 
 ```bash
-# data-drift report (Evidently)
-uv run --group serving python -m scipali.monitoring.monitoring
+# data-drift report (Evidently) -> reports/monitoring/drift_report.html
+uv run --group serving python -m scipali.monitoring.monitoring drift
+# production drift loop: collect real traffic / rebuild the reference
+uv run --group serving python -m scipali.monitoring.monitoring collect --project paligemma-scienceqa
+uv run --group serving python -m scipali.monitoring.monitoring seed-reference
 # load test the deployed API (locust)
 uv run --group serving locust -f tests/load/locustfile.py \
   --headless -u 5 -r 1 -t 1m --host <cloud-run-url>

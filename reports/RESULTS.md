@@ -181,6 +181,13 @@ Both are **not applicable** at this scale:
   decode + ~28% resize) at ~11 ms/batch single-process — far below the L4
   training step, so it overlaps with compute and is not the bottleneck. See
   [`profiling/dataloader_profile.md`](profiling/dataloader_profile.md).
+- **Distributed model (model/tensor parallelism):** also unnecessary — the
+  bf16 model is ~7 GB against the L4's 24 GB, and training adds little on top
+  (gradients/optimizer state exist only for the ~6.4 M LoRA params; gradient
+  checkpointing caps activations), so the model never needs to be sharded
+  across devices. If it did not fit, Lightning's FSDP/DeepSpeed strategies
+  would be the lever — a config change, not a rewrite. In short: **LoRA is
+  what buys us out of all three kinds of distribution.**
 
 ## Data-drift monitoring
 

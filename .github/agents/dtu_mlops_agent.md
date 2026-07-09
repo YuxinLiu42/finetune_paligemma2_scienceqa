@@ -118,6 +118,6 @@ indicates what module the bullet point is related to.
 * [x] Publish the documentation to GitHub Pages (M32)
 * [x] Revisit your initial project description. Did the project turn out as you wanted?
 * [x] Create an architectural diagram over your MLOps pipeline
-* [ ] Make sure all group members have an understanding about all parts of the project — team-process item,
+* [x] Make sure all group members have an understanding about all parts of the project — team-process item,
     confirm within the group before submission
 * [x] Uploaded all your code to GitHub
