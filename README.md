@@ -81,45 +81,46 @@ Copy-paste commands for every routine operation. Details and variants live in
 
 **Contents**
 
-- **[Setup & data](#setup--data--contents)**
+- **[Setup & data](#zone-setup-data)**
   - [Get the repo](#get-the-repo)
   - [Set up the environment](#set-up-the-environment)
   - [Get the data](#get-the-data)
   - [Recreate the dataset from scratch](#recreate-the-dataset-from-scratch)
   - [Publish a new data version](#publish-a-new-data-version)
   - [Change hyperparameters (Hydra)](#change-hyperparameters-hydra)
-- **[Quality & CI](#quality--ci--contents)**
+- **[Quality & CI](#zone-quality-ci)**
   - [Pre-commit hooks](#pre-commit-hooks)
   - [Run tests and coverage](#run-tests-and-coverage)
   - [Lint and type-check](#lint-and-type-check)
   - [What CI runs on every push](#what-ci-runs-on-every-push)
-- **[Docker](#docker--contents)**
+- **[Docker](#zone-docker)**
   - [Build the docker images](#build-the-docker-images)
   - [Run the API in a docker container](#run-the-api-in-a-docker-container)
-- **[Training & evaluation](#training--evaluation--contents)**
+- **[Training & evaluation](#zone-training-evaluation)**
   - [Train locally](#train-locally)
   - [Train on Vertex AI](#train-on-vertex-ai)
   - [Evaluate an adapter](#evaluate-an-adapter)
   - [Profile the dataloader](#profile-the-dataloader)
   - [Distributed training](#distributed-training)
-- **[Inference optimization](#inference-optimization--contents)**
+- **[Inference optimization](#zone-inference-optimization)**
   - [Quantization and compile benchmark](#quantization-and-compile-benchmark)
   - [Pruning sweep](#pruning-sweep)
-- **[Serving & deployment](#serving--deployment--contents)**
+- **[Serving & deployment](#zone-serving-deployment)**
   - [Predict on a single sample](#predict-on-a-single-sample)
   - [Serve the API locally](#serve-the-api-locally)
   - [Launch the Streamlit UI](#launch-the-streamlit-ui)
   - [Demo the live API](#demo-the-live-api)
   - [Deploy to Cloud Run](#deploy-to-cloud-run)
   - [Promote a new model to production](#promote-a-new-model-to-production)
-- **[Monitoring & ops](#monitoring--ops--contents)**
+- **[Monitoring & ops](#zone-monitoring-ops)**
   - [Data-drift report](#data-drift-report)
   - [Load test](#load-test)
   - [Set up the 5xx alert](#set-up-the-5xx-alert)
   - [Serve the docs site](#serve-the-docs-site)
   - [Regenerate the result figures](#regenerate-the-result-figures)
 
-### Setup & data [↑ Contents](#command-guide)
+<a id="zone-setup-data"></a>
+### Setup & data [[Back To Contents]](#command-guide)
 
 #### Get the repo
 
@@ -176,7 +177,8 @@ uv run train model.base_learning_rate=1.33e-4 trainer.max_epochs=2
 The effective LR is derived from `model.base_learning_rate` via a sqrt
 batch-size rule (`resolve_learning_rate` in `train.py`).
 
-### Quality & CI [↑ Contents](#command-guide)
+<a id="zone-quality-ci"></a>
+### Quality & CI [[Back To Contents]](#command-guide)
 
 #### Pre-commit hooks
 
@@ -217,7 +219,8 @@ uv run mypy .                # static types
   `main` touching `src/scipali/**`. (`mlops-ci-train` is disabled — the train
   image needs a locally-built wheel, so it is built manually.)
 
-### Docker [↑ Contents](#command-guide)
+<a id="zone-docker"></a>
+### Docker [[Back To Contents]](#command-guide)
 
 #### Build the docker images
 
@@ -252,7 +255,14 @@ startup), and W&B logging. On Vertex AI all of this is prepared automatically:
 W&B/HF keys are fetched from Secret Manager and GCS access comes from the job's
 service account. To run it anywhere else, prepare the env yourself — an NVIDIA
 GPU (`docker run --gpus all …`), `WANDB_API_KEY`, `HF_TOKEN`, and GCS
-credentials for the DVC pull.
+credentials for the DVC pull. The single-run path, `entrypoint.sh`, is three
+specific commands:
+
+```bash
+. cloud/fetch_secrets.sh                                  # W&B/HF keys from Secret Manager
+uv run --no-sync dvc pull data/processed/ScienceQA-IMG.dvc
+uv run --no-sync train "$@"
+```
 
 #### Run the API in a docker container
 
@@ -264,9 +274,8 @@ curl localhost:8000/             # health check — serves immediately, model lo
 Real predictions in the container need `CHECKPOINT_PATH` (e.g. a `gs://` adapter
 path) and GCP/HF credentials, as in [Serve the API locally](#serve-the-api-locally).
 
-### Training & evaluation
-
-[↑ Contents](#command-guide)
+<a id="zone-training-evaluation"></a>
+### Training & evaluation [[Back To Contents]](#command-guide)
 
 #### Train locally
 
@@ -294,6 +303,19 @@ envsubst < cloud/vertex_config.template.yaml > cloud/vertex_config.yaml
 gcloud ai custom-jobs create --region=europe-west4 --project=paligemma-scienceqa \
   --display-name=paligemma-train --config=cloud/vertex_config.yaml
 gcloud ai custom-jobs stream-logs <job-id> --region=europe-west4
+```
+
+Inside the container, the job spec runs `bash cloud/run_baseline_and_sweep.sh`,
+whose specific steps are:
+
+```bash
+. cloud/fetch_secrets.sh    # W&B/HF keys from Secret Manager (google-auth REST;
+                            # manual equivalent: gcloud secrets versions access latest --secret=wandb-api-key)
+python -c "import torch; assert torch.cuda.is_available()"          # fail fast on a bad image
+python -m scipali.models.train trainer.wandb.enabled=true trainer.wandb.run_name=baseline
+wandb sweep --project "$WANDB_PROJECT" configs/sweep.yaml           # register the Bayesian sweep
+wandb agent <entity/project/sweep-id> --count "$SWEEP_COUNT"        # run N trials
+python -m scipali.models.evaluate <best-adapter> --by-subject      # test the best trial
 ```
 
 Picking the GPU: accelerators are not available in every region — this is how
@@ -324,7 +346,10 @@ TEMPLATE=cloud/vertex_eval.template.yaml RENDERED=cloud/vertex_eval.yaml \
 The Vertex variant is the same explicit method as
 [Train on Vertex AI](#train-on-vertex-ai), just rendering
 `cloud/vertex_eval.template.yaml` instead — as are the two optimization jobs
-below (`cloud/vertex_optimize.template.yaml`).
+below (`cloud/vertex_optimize.template.yaml`). Inside the container the eval
+job runs `cloud/run_eval.sh`: download the adapter from GCS, then the same
+`python -m scipali.models.evaluate <adapter> --by-subject` as above, then
+upload the results JSON.
 
 #### Profile the dataloader
 
@@ -335,9 +360,8 @@ uv run python -m scipali.data.profile_data --workers 0,2,4
 cProfile + per-worker-count timings; results in `reports/profiling/`.
 
 
-### Inference optimization
-
-[↑ Contents](#command-guide)
+<a id="zone-inference-optimization"></a>
+### Inference optimization [[Back To Contents]](#command-guide)
 
 #### Quantization and compile benchmark
 
@@ -347,6 +371,12 @@ TEMPLATE=cloud/vertex_optimize.template.yaml RENDERED=cloud/vertex_optimize.yaml
   DISPLAY_NAME=paligemma-optimize \
   ADAPTER_GCS=gs://mlops-paligemma-west4/models/production \
   bash cloud/watch_job.sh
+```
+
+Inside the container, `cloud/run_optimize.sh` runs the underlying CLI:
+
+```bash
+python -m scipali.models.optimize benchmark <adapter_dir> --output-path optimize_results.json
 ```
 
 #### Pruning sweep
@@ -360,12 +390,18 @@ SKIP_BENCHMARK=1 PRUNE_SPARSITIES=0.0,0.3,0.5,0.7 PRUNE_N_BATCHES=0 \
   bash cloud/watch_job.sh
 ```
 
+Inside the container, `cloud/run_optimize.sh` runs the underlying CLI:
+
+```bash
+python -m scipali.models.optimize prune-sweep <adapter_dir> \
+  --sparsities 0.0,0.3,0.5,0.7 --output-path prune_results.json
+```
+
 A `prune-finetune` command (masked fine-tune to recover accuracy) also exists —
 see the note in [`docs/source/usage.md`](docs/source/usage.md#optimize-quantization--pruning).
 
-### Serving & deployment
-
-[↑ Contents](#command-guide)
+<a id="zone-serving-deployment"></a>
+### Serving & deployment [[Back To Contents]](#command-guide)
 
 #### Predict on a single sample
 
@@ -469,9 +505,8 @@ Then move the W&B `production` alias to the new version (W&B UI). The registry
 webhook fires the `model-registry-change` workflow, which rolls out a fresh
 Cloud Run revision and smoke-tests it — **no image rebuild needed**.
 
-### Monitoring & ops
-
-[↑ Contents](#command-guide)
+<a id="zone-monitoring-ops"></a>
+### Monitoring & ops [[Back To Contents]](#command-guide)
 
 #### Data-drift report
 

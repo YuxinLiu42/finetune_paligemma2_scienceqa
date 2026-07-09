@@ -39,7 +39,11 @@ gcloud ai custom-jobs stream-logs <job-id> --region=europe-west4
 ```
 
 The eval and optimize jobs below use the same method with their own templates
-(`vertex_eval.template.yaml`, `vertex_optimize.template.yaml`).
+(`vertex_eval.template.yaml`, `vertex_optimize.template.yaml`). Inside the
+container the job runs `cloud/run_baseline_and_sweep.sh`: fetch W&B/HF secrets
+from Secret Manager (`cloud/fetch_secrets.sh`) → baseline
+`python -m scipali.models.train` → `wandb sweep configs/sweep.yaml` →
+`wandb agent <sweep> --count N` → evaluate the best trial `--by-subject`.
 
 ## Evaluate an adapter
 
