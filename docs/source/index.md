@@ -1,4 +1,4 @@
-# PaliGemma2 · ScienceQA MLOps
+# Scipali - Answer Your Science Questions
 
 Fine-tuning **[PaliGemma2-3B](https://huggingface.co/google/paligemma2-3b-pt-224)**
 (LoRA) on the **[ScienceQA](https://huggingface.co/datasets/derek-thomas/ScienceQA)**

@@ -8,7 +8,7 @@ alerts, and two automation loops — **A** auto-deploy (W&B webhook → GitHub
 Actions → new Cloud Run revision + smoke test) and **B** drift feedback (live
 predictions → Evidently drift check).
 
-<img src="figures/architecture.jpg" alt="System architecture" width="700" height="332">
+![System architecture](figures/architecture.jpg)
 
 ## Key design choices
 
