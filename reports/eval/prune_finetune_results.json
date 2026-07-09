@@ -1,0 +1,11 @@
+{
+  "sparsity_requested": 0.5,
+  "sparsity_achieved": 0.5005,
+  "steps": 300,
+  "batch_size": 1,
+  "lr": 1e-05,
+  "accuracy_oneshot": 0.3356,
+  "accuracy_finetuned": 0.3461,
+  "recovery_points": 1.04,
+  "total": 2017
+}

@@ -1,29 +1,15 @@
 # Architecture
 
 The pipeline goes from local development through CI and Cloud Build into Vertex
-AI for GPU work, with artifacts in GCS / W&B and serving on Cloud Run.
+AI for GPU work, with artifacts in GCS / W&B and serving on Cloud Run: data
+versioning (DVC), LoRA training with Hydra configs, experiment tracking and
+model registry in W&B, model release to GCS, FastAPI serving, monitoring with
+alerts, and two automation loops — **A** auto-deploy (W&B webhook → GitHub
+Actions → new Cloud Run revision + smoke test) and **B** drift feedback (live
+predictions → Evidently drift check).
 
-```mermaid
-flowchart TD
-    dev["Local dev<br/>(Hydra configs, Lightning)"] -->|git push| gh["GitHub"]
-    gh -->|"CI: ruff + pytest"| ci["GitHub Actions"]
-    gh -->|"push trigger (api) · manual submit (train)"| cb["Cloud Build<br/>(amd64 images)"]
-    cb --> ar["Artifact Registry<br/>paligemma-train / paligemma-api"]
-
-    subgraph data["Data (DVC)"]
-        hf["derek-thomas/ScienceQA<br/>(image subset)"] --> proc["processed splits<br/>train 6218 / val 2097 / test 2017"]
-        proc --> gcs[("GCS DVC remote")]
-    end
-
-    ar -->|digest-pinned image| vertex["Vertex AI custom job (L4)<br/>baseline + W&B sweep + by-subject eval"]
-    gcs -->|dvc pull| vertex
-    vertex -->|adapters + metrics| wandb["W&B<br/>runs + model registry"]
-    vertex -->|LoRA adapter| models[("GCS models/production/")]
-
-    models -->|CHECKPOINT_PATH gs://| run["Cloud Run<br/>FastAPI /predict"]
-    run --> ui["Streamlit frontend"]
-    run --> mon["Cloud monitoring + alerts"]
-```
+The full system diagram is `reports/figures/architecture.png` in the
+repository (embedded in the exam report, `reports/README.md`).
 
 ## Key design choices
 

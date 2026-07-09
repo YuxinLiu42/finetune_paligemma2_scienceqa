@@ -1,10 +1,9 @@
 # Results — [PaliGemma2-3B](https://huggingface.co/google/paligemma2-3b-pt-224) fine-tuned on [ScienceQA](https://huggingface.co/datasets/derek-thomas/ScienceQA) (image subset)
 
-> **STATUS (2026-06-14).** The full-data r=16 retrain completed (job
+> The full-data r=16 retrain completed (job
 > `3661126192938876928`, ~28.7 h, all 8 sweep trials). The winner
 > **`sandy-sweep-7` — test 72.19% (1456/2017)** — is now **promoted to
-> production** (GCS `models/production/` + W&B `:production` v16), replacing the
-> old `vague-sweep-3` (64.1%, r=8). All key adapters are backed up at
+> production** (GCS `models/production/` + W&B `:production` v16). All key adapters are backed up at
 > `~/mlops-adapter-backup/`.
 
 Self-contained results summary backing the exam report (`reports/README.md`).
@@ -13,8 +12,8 @@ held-out ScienceQA-IMG test split (2017 samples).
 
 **Pipeline.** The end-to-end MLOps pipeline that produced these numbers — data
 versioning, training, evaluation, model registry, serving, drift monitoring, and
-the inference optimization reported below — is diagrammed in the
-[README architecture section](../README.md#architecture).
+the inference optimization reported below — is diagrammed in
+[`figures/architecture.png`](figures/architecture.png).
 
 **Answer matching.** Accuracy is exact match on the *extracted answer letter*:
 we take the first letter of the model's greedy generation — tolerating the rare
@@ -150,9 +149,27 @@ Winner `autumn-sweep-2`: r=16, alpha=32, base_lr 1.33e-4, accum 4 (eff. batch
 setup. `sandy-sweep-7` had the highest *val* (0.714) but was cut off before its
 test eval, so `autumn-sweep-2` is the best *completed* model.
 
+**How `sandy-sweep-7` wins without a sweep-time test score.** Its 72.19% was
+measured *after* the sweep, on the saved adapter (the chained eval behind
+`production_eval_results.json`, reproduced exactly by the standalone Vertex
+eval `6466991906093006848` above) — and it was promoted on that basis. Two
+footnotes on why this is sound rather than a gap:
+
+- **The interruption accidentally enforced the textbook protocol.** The trial
+  was *selected* on validation alone (`val/accuracy` — the sweep metric — where
+  it led with 0.714), and the test split was consulted exactly once, afterwards,
+  as the final report card. The test set never took part in the selection.
+- **The promotion doesn't hinge on a noise-level test gap.** `sandy-sweep-7` and
+  `autumn-sweep-2` differ by 0.9 pts on the 2,017-sample test split (1456 vs
+  1438 correct — 18 answers), well within the ~±2 pt 95% CI of either estimate,
+  so the test gap alone would not be decisive. But validation (0.714 vs 0.699)
+  and test (72.19% vs 71.29%) rank the two trials the same way, and the
+  standalone re-eval reproduced the figure exactly — the choice is consistent
+  across every measurement rather than a lucky draw on one.
+
 ## Distributed training & data loading
 
-Both are "if applicable" and are **not applicable** at this scale:
+Both are **not applicable** at this scale:
 - **Distributed training:** training runs on a **single L4**. LoRA on
   PaliGemma2-3B (~6.4 M trainable params, ~3 B frozen) fits one GPU, so
   multi-GPU DDP would add complexity with no benefit. PyTorch-Lightning would
@@ -249,12 +266,37 @@ weights, swept over four sparsity levels on the **full 2,017-sample test split**
   `max_new_tokens` cap instead of emitting an answer and stopping, not a pruning
   cost. The deliverable is the accuracy/sparsity trade-off, not a latency win.
 
+### Pruned-model fine-tuning — recovery at 50 % sparsity
+
+Fine-tuning the 50 %-pruned model to recover accuracy
+(`scipali.models.optimize prune-finetune`, job `6483100850951553024`,
+`reports/eval/prune_finetune_results.json`): prune the merged model to 0.5
+sparsity, freeze the vision tower, then train the language model for **300
+steps** (batch 1, lr 1e-5, 8-bit AdamW, gradient checkpointing) on a single
+24 GB L4. Pruned weights are held at zero during training via gradient masking
+(backward hooks multiply each Linear's gradient by `weight != 0`), so the model
+stays exactly as sparse as it started — achieved sparsity 0.5005 before *and*
+after training.
+
+| sparsity | one-shot accuracy | fine-tuned accuracy | recovery |
+|---|---|---|---|
+| 0.5005 | 33.56 % | 34.61 % | **+1.04 pts** |
+
+- Recovery is real but modest — 300 steps at batch 1 is ~300 training samples,
+  a deliberately small budget chosen to fit the L4. The takeaway is the
+  mechanics (sparsity survives training, accuracy moves the right way), not a
+  full recovery, which would need a much longer schedule.
+- The one-shot 33.6 % differs slightly from the sweep row above (34.7 % at the
+  same 0.5005 sparsity): the fine-tune run used the later histogram-based
+  threshold, which lands on the same sparsity but a marginally different weight
+  set than the sweep's `kthvalue` threshold.
+
 ## Artifact layout (`reports/`)
 
 | Folder | Contents |
 |---|---|
 | `figures/` | `.png` visualizations (below) |
-| `eval/` | eval data: `production_eval_results.json`, `sweep2_summary.json`, `sweep3_summary.json`, `optimize_results.json` + `prune_results.json` |
+| `eval/` | eval data: `production_eval_results.json`, `sweep2_summary.json`, `sweep3_summary.json`, `optimize_results.json` + `prune_results.json` + `prune_finetune_results.json` |
 | `monitoring/` | `drift_report.html` (Evidently) |
 | `load/` | load-test summary + locust CSVs |
 | `profiling/` | `dataloader_profile.md` + cProfile (`.pstats`/`.txt`) + `dataloader_summary.json` |

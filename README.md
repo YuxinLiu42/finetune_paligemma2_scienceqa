@@ -1,8 +1,12 @@
-# scipali
+# scipali — Answer Your Science Questions
 
 [![Unit Tests](https://github.com/yuxinliu42/SS26_MLOps_Project_GroupA/actions/workflows/tests.yaml/badge.svg)](https://github.com/yuxinliu42/SS26_MLOps_Project_GroupA/actions/workflows/tests.yaml)
 [![Code linting](https://github.com/yuxinliu42/SS26_MLOps_Project_GroupA/actions/workflows/linting.yaml/badge.svg)](https://github.com/yuxinliu42/SS26_MLOps_Project_GroupA/actions/workflows/linting.yaml)
 [![codecov](https://codecov.io/gh/yuxinliu42/SS26_MLOps_Project_GroupA/graph/badge.svg)](https://codecov.io/gh/yuxinliu42/SS26_MLOps_Project_GroupA)
+
+<p align="center">
+  <img src="reports/figures/science-qa.jpg" alt="Science banner" width="720">
+</p>
 
 PaliGemma2-3B fine-tuned (LoRA) on ScienceQA-IMG, wrapped in a full MLOps
 pipeline — DVC data versioning, Hydra configs, W&B sweeps, Vertex AI training,
@@ -11,64 +15,43 @@ accuracy on the 2,017-sample test split. Full results in
 [`reports/RESULTS.md`](reports/RESULTS.md); usage in
 [`docs/source/usage.md`](docs/source/usage.md).
 
-## Architecture
-
-End-to-end pipeline — data versioning, training, evaluation, model registry,
-serving, monitoring, and inference optimization, glued by CI/CD:
-
-```mermaid
-flowchart TD
-    HF["HF ScienceQA-IMG"] --> PRE["preprocess<br/>(data.py)"]
-    PRE --> DVC[("DVC store<br/>· GCS")]
-    CFG["Hydra configs"] --> TRAIN
-    DVC --> TRAIN["Vertex AI training<br/>LoRA + Lightning (train.py)"]
-    TRAIN --> WB[("W&B<br/>sweeps · runs · registry")]
-    TRAIN --> EVAL["evaluate.py<br/>(test accuracy)"]
-    WB -->|"production alias"| GCS[("GCS<br/>models/production")]
-    GCS --> API["FastAPI service<br/>(api.py) · Cloud Run / local"]
-    API --> FE["Streamlit UI<br/>(frontend.py)"]
-    API --> MON["drift monitoring<br/>(monitoring.py)"]
-    GCS --> OPT["optimize.py on Vertex<br/>int4/compile benchmark · prune-sweep"]
-    EVAL --> REP["reports/RESULTS.md"]
-    OPT --> REP
-
-    subgraph CICD["CI/CD"]
-        GHA["GitHub Actions<br/>tests · lint · docs · model rollout"]
-        CB["Cloud Build<br/>API image"]
-    end
-    GHA -.-> API
-    CB -.-> API
-```
-
 ## Project description
 
-### Overall goal of the project
-The goal of the project is to develop techniques that improve reasoning accuracy
-using the PaliGemma foundation model.
+### Goal
+The project has two goals: **improve the reasoning accuracy** of the pretrained
+PaliGemma foundation model on multimodal science questions, and do it inside a
+**complete, reproducible MLOps pipeline** — versioned data, configurable
+training, tracked experiments, automated deployment, and monitoring (diagrammed
+in [`reports/figures/architecture.png`](reports/figures/architecture.png)).
 
-### What framework are you going to use (Kornia, Transformer, Pytorch-Geometrics)
-The Hugging Face **Transformers** framework (pretrained PaliGemma2), with
-**PEFT/LoRA** for parameter-efficient fine-tuning, **PyTorch Lightning** for the
-training loop, and **Hydra** for configuration management.
+### Framework
+The Hugging Face **Transformers** framework. We build on its main strength —
+thousands of pretrained models — by starting from a pretrained PaliGemma2
+checkpoint and fine-tuning it on our data rather than training anything from
+scratch. Around it: **PEFT/LoRA** for parameter-efficient fine-tuning,
+**PyTorch Lightning** for the training loop, and **Hydra** for configuration
+management.
 
-### How to you intend to include the framework into your project
-We utilise one of the strengths of the Transformers framework — thousands of
-pretrained models — by starting from a pretrained PaliGemma2 checkpoint and
-fine-tuning it on our data, then improving from there.
+### Use case & target users
+Given a science question, a supporting image, and a set of answer choices, the
+model picks the correct answer. The natural users are students and educational
+tools (ScienceQA is grade-school science material); within this course the
+served model is above all the workload that exercises the pipeline — deployed
+behind a FastAPI service on Cloud Run with a Streamlit UI on top (see
+[Serving](#serving)).
 
-### What data are you going to run on (initially, may change)
-We use **[`derek-thomas/ScienceQA`](https://huggingface.co/datasets/derek-thomas/ScienceQA)**
-(the image subset, "ScienceQA-IMG"). We
-initially planned `lmms-lab/ScienceQA`, but that mirror ships no train split, so
-we switched. Splits: train 6,218 / val 2,097 / test 2,017. Each sample has an
-image, a question, answer choices, the answer index, and optional hint / lecture
-plus a subject label.
+### Dataset
+**[`derek-thomas/ScienceQA`](https://huggingface.co/datasets/derek-thomas/ScienceQA)**,
+the image subset ("ScienceQA-IMG"): train 6,218 / val 2,097 / test 2,017. Each
+sample has an image, a question, answer choices, the answer index, and optional
+hint / lecture plus a subject label. (We initially planned `lmms-lab/ScienceQA`,
+but that mirror ships no train split, so we switched.)
 
-### What deep learning models do you expect to use
+### Model
 The **PaliGemma2-3B** vision-language model
 ([`google/paligemma2-3b-pt-224`](https://huggingface.co/google/paligemma2-3b-pt-224)),
-LoRA-adapted on the language-model attention projections with the vision encoder
-frozen.
+LoRA-adapted on the language-model attention projections (`q/k/v/o_proj`) with
+the vision encoder frozen — ~6.4 M trainable parameters against ~3 B frozen.
 
 ## Project structure
 
@@ -89,6 +72,328 @@ frozen.
 ├── pyproject.toml
 └── tasks.py                # invoke tasks
 ```
+
+## How do I …? (command guide)
+
+Copy-paste commands for every routine operation. Details and variants live in
+[`docs/source/usage.md`](docs/source/usage.md); results they produce are in
+[`reports/RESULTS.md`](reports/RESULTS.md).
+
+**Setup & data** ·
+[Set up the environment](#set-up-the-environment) ·
+[Get the data](#get-the-data) ·
+[Recreate the dataset from scratch](#recreate-the-dataset-from-scratch) ·
+[Publish a new data version](#publish-a-new-data-version) ·
+[Change hyperparameters](#change-hyperparameters)
+
+**Quality & CI** ·
+[Pre-commit hooks](#pre-commit-hooks) ·
+[Run tests and coverage](#run-tests-and-coverage) ·
+[Lint and type-check](#lint-and-type-check) ·
+[What CI runs on every push](#what-ci-runs-on-every-push)
+
+**Docker** ·
+[Build the docker images](#build-the-docker-images) ·
+[Run the API in a docker container](#run-the-api-in-a-docker-container)
+
+**Training & evaluation** ·
+[Train locally](#train-locally) ·
+[Train on Vertex AI](#train-on-vertex-ai) ·
+[Evaluate an adapter](#evaluate-an-adapter) ·
+[Profile the dataloader](#profile-the-dataloader) ·
+[Distributed training](#distributed-training)
+
+**Inference optimization** ·
+[Quantization and compile benchmark](#quantization-and-compile-benchmark) ·
+[Pruning sweep](#pruning-sweep)
+
+**Serving & deployment** ·
+[Predict on a single sample](#predict-on-a-single-sample) ·
+[Serve the API locally](#serve-the-api-locally) ·
+[Launch the Streamlit UI](#launch-the-streamlit-ui) ·
+[Demo the live API](#demo-the-live-api) ·
+[Deploy to Cloud Run](#deploy-to-cloud-run) ·
+[Promote a new model to production](#promote-a-new-model-to-production)
+
+**Monitoring & ops** ·
+[Data-drift report](#data-drift-report) ·
+[Load test](#load-test) ·
+[Set up the 5xx alert](#set-up-the-5xx-alert) ·
+[Serve the docs site](#serve-the-docs-site) ·
+[Regenerate the result figures](#regenerate-the-result-figures)
+
+### Set up the environment
+
+```bash
+uv sync                      # creates .venv from uv.lock (Python 3.11)
+```
+
+Cloud commands additionally need `gcloud auth login`; training/prediction needs
+access to the gated PaliGemma2 base model (HF token) and W&B login for tracking.
+
+### Get the data
+
+```bash
+dvc pull                     # fetch the DVC-tracked processed dataset from GCS
+```
+
+### Recreate the dataset from scratch
+
+```bash
+uv run inv preprocess-data   # = data.data download + data.data preprocess
+# or the underlying commands:
+uv run python -m scipali.data.data download
+uv run python -m scipali.data.data preprocess --overwrite
+```
+
+### Publish a new data version
+
+```bash
+dvc push                     # upload the new processed data to the GCS remote
+```
+
+Committing the changed `*.dvc` pointer triggers the `data-change` workflow (DVC
+sanity check + data tests) on GitHub Actions.
+
+### Change hyperparameters
+
+Configs are Hydra groups in `configs/` (`data` / `model` / `trainer` / `sweep`);
+override any value on the command line:
+
+```bash
+uv run train model.base_learning_rate=1.33e-4 trainer.max_epochs=2
+```
+
+The effective LR is derived from `model.base_learning_rate` via a sqrt
+batch-size rule (`resolve_learning_rate` in `train.py`).
+
+### Pre-commit hooks
+
+```bash
+uv run pre-commit install            # install the git hooks (once)
+uv run pre-commit run --all-files    # run them on the whole repo
+```
+
+Hooks: trailing-whitespace, EOF fixer, YAML check, large-file guard, ruff
+(lint + format).
+
+### Run tests and coverage
+
+```bash
+uv run inv test              # = coverage run -m pytest tests/ + coverage report
+uv run pytest tests/         # tests only
+```
+
+### Lint and type-check
+
+```bash
+uv run ruff check .          # lint (same command CI runs)
+uv run ruff format . --check # formatting
+uv run mypy .                # static types
+```
+
+### What CI runs on every push
+
+- `tests.yaml` — pytest suite; coverage uploaded to Codecov (badge above).
+- `linting.yaml` — ruff check + format + mypy.
+- `docs.yaml` — builds and deploys the MkDocs site.
+- `data-change.yaml` — on `*.dvc` changes: DVC sanity check + data tests.
+- `model-registry-change.yaml` — on a W&B registry webhook
+  (`repository_dispatch`): rolls a new Cloud Run revision + smoke test.
+- Cloud Build trigger `mlops-ci-api` rebuilds the API image on every push to
+  `main` touching `src/scipali/**`. (`mlops-ci-train` is disabled — the train
+  image needs a locally-built wheel, so it is built manually.)
+
+### Build the docker images
+
+```bash
+uv build --wheel -o wheelhouse   # train image installs this prebuilt wheel
+uv run inv docker-build          # builds train + api + predict images
+```
+
+### Run the API in a docker container
+
+```bash
+docker run -p 8000:8000 -e LAZY_LOAD=1 api:latest
+curl localhost:8000/             # health check — serves immediately, model loads lazily
+```
+
+Real predictions in the container need `CHECKPOINT_PATH` (e.g. a `gs://` adapter
+path) and GCP/HF credentials, as in [Serving](#serving).
+
+### Train locally
+
+```bash
+uv run train trainer.wandb.enabled=true trainer.wandb.run_name=local-test
+```
+
+### Train on Vertex AI
+
+```bash
+bash cloud/watch_job.sh                  # baseline + W&B sweep + eval, on one L4
+SKIP_BASELINE=1 bash cloud/watch_job.sh  # sweep only
+```
+
+### Evaluate an adapter
+
+```bash
+# local
+uv run python -m scipali.models.evaluate checkpoints/adapter-production --by-subject
+# standalone Vertex eval job against any GCS adapter
+TEMPLATE=cloud/vertex_eval.template.yaml RENDERED=cloud/vertex_eval.yaml \
+  DISPLAY_NAME=paligemma-eval \
+  ADAPTER_GCS=gs://mlops-paligemma-west4/models/production \
+  bash cloud/watch_job.sh
+```
+
+### Profile the dataloader
+
+```bash
+uv run python -m scipali.data.profile_data --workers 0,2,4
+```
+
+cProfile + per-worker-count timings; results in `reports/profiling/`.
+
+### Distributed training
+
+Not applicable by design — LoRA on a 3B model trains on a **single L4**;
+Lightning would enable it via `Trainer(devices=…, strategy="ddp")` if more GPUs
+were available. Justification and the data-loading profiling that backs it:
+[`reports/RESULTS.md`](reports/RESULTS.md#distributed-training--data-loading).
+
+### Quantization and compile benchmark
+
+```bash
+# bf16 vs int4 (bitsandbytes) vs bf16+torch.compile, on an L4
+TEMPLATE=cloud/vertex_optimize.template.yaml RENDERED=cloud/vertex_optimize.yaml \
+  DISPLAY_NAME=paligemma-optimize \
+  ADAPTER_GCS=gs://mlops-paligemma-west4/models/production \
+  bash cloud/watch_job.sh
+```
+
+### Pruning sweep
+
+```bash
+# accuracy vs sparsity over the full test split (prune-only, fits a 32GB host)
+SKIP_BENCHMARK=1 PRUNE_SPARSITIES=0.0,0.3,0.5,0.7 PRUNE_N_BATCHES=0 \
+  TEMPLATE=cloud/vertex_optimize.template.yaml RENDERED=cloud/vertex_optimize.yaml \
+  DISPLAY_NAME=paligemma-prune \
+  ADAPTER_GCS=gs://mlops-paligemma-west4/models/production \
+  bash cloud/watch_job.sh
+```
+
+A `prune-finetune` command (masked fine-tune to recover accuracy) also exists —
+see the note in [`docs/source/usage.md`](docs/source/usage.md#optimize-quantization--pruning).
+
+### Predict on a single sample
+
+```bash
+uv run python -m scipali.serving.predict checkpoints/adapter-production \
+  -q "What gas do plants absorb?" -c "oxygen,carbon dioxide,nitrogen" -i img.png
+```
+
+Also accepts `--hint`, `--lecture`, `--max-new-tokens` — the same optional
+fields as the API's `/predict` body.
+
+### Serve the API locally
+
+```bash
+CHECKPOINT_PATH=checkpoints/adapter-production PREDICT_DEVICE=cpu \
+  uv run uvicorn scipali.serving.api:app --port 8000
+# BentoML alternative:
+uv run --group serving bentoml serve scipali.serving.bento_service:ScienceQAService
+```
+
+### Launch the Streamlit UI
+
+```bash
+API_URL=http://localhost:8000 \
+  uvx --with streamlit==1.53.0 --with requests --with pillow --with datasets \
+  streamlit run src/scipali/serving/frontend.py
+```
+
+Point `API_URL` at the Cloud Run URL to drive the live service (see
+[Serving](#serving)).
+
+### Demo the live API
+
+```bash
+./cloud/demo_api.sh                              # health → predict → drift, test sample 0
+./cloud/demo_api.sh img.png "Question?" "a,b,c"  # bring your own sample
+```
+
+### Deploy to Cloud Run
+
+```bash
+# 1. build + push the API image
+gcloud builds submit --config=cloud/cloudbuild.api.yaml --project=paligemma-scienceqa .
+
+# 2. deploy (CPU, scale-to-zero, lazy model load)
+gcloud run deploy paligemma-api \
+  --image europe-west4-docker.pkg.dev/paligemma-scienceqa/mlops-images/paligemma-api:latest \
+  --region europe-west4 --project paligemma-scienceqa \
+  --execution-environment gen2 \
+  --memory 32Gi --cpu 8 \
+  --timeout 3600 --concurrency 1 --max-instances 3 --min-instances 0 \
+  --set-env-vars CHECKPOINT_PATH=gs://mlops-paligemma-west4/models/production,PREDICT_DEVICE=cpu,LAZY_LOAD=1 \
+  --set-secrets HF_TOKEN=hf-token:latest \
+  --service-account 581237630637-compute@developer.gserviceaccount.com \
+  --allow-unauthenticated
+```
+
+Flag rationale in [`docs/source/usage.md`](docs/source/usage.md#deploy-to-cloud-run).
+
+### Promote a new model to production
+
+```bash
+gcloud storage cp -r <new-adapter-dir> gs://mlops-paligemma-west4/models/production
+```
+
+Then move the W&B `production` alias to the new version (W&B UI). The registry
+webhook fires the `model-registry-change` workflow, which rolls out a fresh
+Cloud Run revision and smoke-tests it — **no image rebuild needed**.
+
+### Data-drift report
+
+```bash
+uv run --group serving python -m scipali.monitoring.monitoring   # Evidently report
+```
+
+The live service also exposes `/monitor/drift` (drift vs a seeded reference)
+and Prometheus metrics at `/metrics`.
+
+### Load test
+
+```bash
+uv run --group serving locust -f tests/load/locustfile.py \
+  --headless -u 5 -r 1 -t 1m --host <cloud-run-url>
+```
+
+### Set up the 5xx alert
+
+```bash
+uv run python cloud/setup_monitoring.py   # idempotent: email channel + 5xx alert policy
+```
+
+Fires on any 5xx from the API within 5 minutes → email. View under GCP
+Monitoring → Alerting.
+
+### Serve the docs site
+
+```bash
+uv run inv serve-docs        # live-reload at localhost:8000
+uv run inv build-docs        # static build (CI deploys via docs.yaml)
+```
+
+### Regenerate the result figures
+
+```bash
+uv run python -m scipali.models.visualize prune-curve reports/eval/prune_results.json
+uv run python -m scipali.models.visualize subject-accuracy reports/eval/production_eval_results.json
+```
+
+Full list of figure commands in
+[`reports/RESULTS.md`](reports/RESULTS.md#figures-reportsfigures).
 
 ## Serving
 

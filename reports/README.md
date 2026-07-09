@@ -531,26 +531,48 @@ scale-to-zero serving — added only a few dollars combined.
 >
 > Answer:
 
-See the [Architecture diagram in the main README](../README.md#architecture)
-(reproduced in [`docs/source/architecture.md`](../docs/source/architecture.md)).
+<img src="figures/architecture.png" alt="System architecture" width="700" height="332">
 
-Starting point: the raw `derek-thomas/ScienceQA` dataset is downloaded and
-preprocessed (`data.py`), then versioned with DVC into a GCS store. Hydra
-configs feed a Vertex AI training job (LoRA fine-tuning on PaliGemma2-3B,
-wrapped in PyTorch Lightning); results — adapters, metrics, sweep runs — are
-logged to Weights & Biases, and `evaluate.py` computes test accuracy. When a
-run is promoted, its adapter is copied to `gs://…/models/production/` and the
-W&B `production` alias is moved to point at it. The FastAPI service reads
-that `gs://` path at startup (locally or on Cloud Run), so promoting a new
-model needs no redeploy; a Streamlit frontend sits on top of the API for
-interactive use. `monitoring.py` closes the drift loop (collect production
-inputs → compare against a reference distribution), and `optimize.py` runs
-quantization/pruning benchmarks on Vertex as a separate, offline workload.
-Gluing all of this together, GitHub Actions runs tests/linting/docs on every
-push, Cloud Build rebuilds the API image automatically, and two further
-continuous workflows react to data changes and to model-registry changes
-(automatically rolling a newly-promoted model out to Cloud Run and
-smoke-testing it).
+**Figure: System architecture.** End-to-end MLOps pipeline for fine-tuning and
+serving PaliGemma2-3B on ScienceQA-IMG. Solid arrows show the main artifact
+flow from data versioning to monitoring; dashed arrows mark the two automated
+feedback loops: (A) the auto-deploy loop triggered by model promotion, and (B)
+the drift feedback loop from production logs back to the serving service.
+
+The pipeline begins with data versioning. The ScienceQA-IMG dataset is
+preprocessed and versioned with DVC, with the data itself stored in a GCS
+bucket while git tracks only the pointer files. Training runs as a one-shot
+Vertex AI custom job on a single L4 GPU, taking two parallel inputs: Hydra
+configuration files and the DVC-pulled dataset. We fine-tune PaliGemma2-3B
+using LoRA, keeping the entire 3B-parameter base model frozen and training only
+a low-rank adapter (~0.2% of total parameters), depicted in the figure as the
+frozen block with a small trainable sliver.
+
+All runs are tracked in Weights & Biases. A Bayesian sweep optimizes
+val/accuracy rather than val/loss, a choice motivated by the observed
+disagreement between the two metrics across sweep trials. The winning
+configuration reaches 72.19% test accuracy and is promoted by moving the
+production alias in the W&B model registry. Promotion is a single event with
+two consequences, which the figure aggregates into one arrow into the Model
+Release stage: the alias change fires a webhook, and the promoted adapter
+artifact is stored in GCS under models/production.
+
+For readability, the figure abstracts several details. The link from Cloud
+Logging to the drift check compresses a three-step chain: a collect command
+reads prediction events back from Cloud Logging, derives the same feature set
+used for the training reference, and writes a production CSV to GCS, which the
+/monitor/drift endpoint then compares against the reference on demand. This
+endpoint runs on the FastAPI service itself, although the figure places the
+Evidently component in the Monitoring zone. Container image supply is likewise
+omitted: Cloud Build builds the serving image on every push, while the training
+image is built manually from a locally-built wheel (its CI trigger is
+deliberately disabled), and both Vertex AI jobs and Cloud Run pull images by
+digest, so each workload runs exactly the image that was built and verified.
+GitHub Actions authenticates to GCP via Workload Identity Federation rather
+than stored service-account keys. Finally, the figure does not show the human
+gate in the loop: merging code changes triggers automatic validation but not
+automatic retraining, which remains a deliberate human decision due to GPU cost
+and quota; only the rollout after promotion is automated.
 
 ### Question 26
 
