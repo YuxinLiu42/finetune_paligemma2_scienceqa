@@ -123,6 +123,7 @@ Copy-paste commands for every routine operation. Details and variants live in
   - [Data-drift report](#data-drift-report)
   - [Load test](#load-test)
   - [Set up the 5xx alert](#set-up-the-5xx-alert)
+  - [Manage secrets](#manage-secrets)
   - [Serve the docs site](#serve-the-docs-site)
   - [Regenerate the result figures](#regenerate-the-result-figures)
   - [GCP billing: check, recover, rescue](#gcp-billing-check-recover-rescue)
@@ -341,6 +342,11 @@ separate configuration layers.
 docker run -p 8000:8000 -e LAZY_LOAD=1 api:latest
 curl localhost:8000/             # health check — serves immediately, model loads lazily
 ```
+
+`LAZY_LOAD=1` defers loading the 3B model until the first `/predict`, so the
+container is up (and passes health/startup probes) in seconds — essential on
+Cloud Run, where the probe would otherwise kill the container before the model
+finished loading; unset, the server loads the model eagerly at startup.
 
 Real predictions in the container need `CHECKPOINT_PATH` (e.g. a `gs://` adapter
 path) and GCP/HF credentials, as in [Serve the API locally](#serve-the-api-locally).
@@ -885,6 +891,30 @@ fires on any 5xx from the API within a 5-minute window and emails the verified
 channel (auto-closes after 30 min). Note `VERIFIED`: an email channel delivers
 nothing until its verification code is confirmed — we verified it end-to-end
 rather than assuming.
+
+#### Manage secrets
+
+All credentials live in **Secret Manager** — never in git, images, or job
+specs (job specs carry only secret *names*; previously the values were
+visible in plain `gcloud ai custom-jobs describe` output, which is exactly
+what this design removes):
+
+```bash
+gcloud secrets list                                             # wandb-api-key, hf-token
+gcloud secrets versions access latest --secret=wandb-api-key    # read (needs secretAccessor)
+printf '%s' "$NEW_KEY" | gcloud secrets versions add wandb-api-key --data-file=-   # rotate
+```
+
+How each consumer gets them:
+
+- **Vertex jobs** — `cloud/fetch_secrets.sh` at container start, via the job
+  service account's `secretAccessor` role (google-auth ADC).
+- **Cloud Run** — mounted at deploy time: `--set-secrets HF_TOKEN=hf-token:latest`.
+- **GitHub Actions** — holds *no* cloud secrets at all: keyless auth via
+  Workload Identity Federation (the org forbids service-account keys).
+- **W&B webhook** — the GitHub PAT it needs is stored as a W&B secret, on
+  their side.
+- **Local dev** — your own `wandb login` / HF token; nothing project-managed.
 
 #### Serve the docs site
 
