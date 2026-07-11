@@ -302,9 +302,13 @@ uv run --no-sync train "$@"
 
 #### Push the images to Artifact Registry
 
-Cloud workloads pull images from Artifact Registry
-(`europe-west4-docker.pkg.dev/paligemma-scienceqa/mlops-images/`). The API
-image (`paligemma-api`) is built and pushed automatically by CI on every push;
+Artifact Registry is GCP's private registry for build artifacts — for us a
+private Docker registry: the warehouse where Cloud Build deposits images and
+Vertex AI / Cloud Run pull them, each addressed as
+`<region>-docker.pkg.dev/<project>/<repository>/<image>`, e.g.
+`europe-west4-docker.pkg.dev/paligemma-scienceqa/mlops-images/paligemma-api`.
+The API image (`paligemma-api`) is built and pushed automatically by CI on
+every push;
 the train image (`paligemma-train`) is built and pushed manually via Cloud
 Build — it installs the locally-built wheel, which a bare CI checkout doesn't
 have (that is why the `mlops-ci-train` trigger is deliberately disabled):
