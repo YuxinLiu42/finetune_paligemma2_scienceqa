@@ -465,7 +465,24 @@ curl -X POST https://paligemma-api-581237630637.europe-west4.run.app/predict \
 A direct `/predict` on a cold (scaled-to-zero) instance takes ~150–230s
 (container start + model load + inference bundled together); once warm,
 calls run ~25–80s. There is also a Streamlit frontend and a shell demo script
-(`cloud/demo_api.sh`) that exercise the same live endpoint end-to-end.
+(`cloud/demo_api.sh`) that exercise the same live endpoint end-to-end. We also
+**load-tested the deployed service with locust** (`tests/load/locustfile.py`,
+results in `reports/load/`): under concurrent users the initial deploy
+returned 429s because it served one request at a time, which is why the
+service now runs `max-instances 3` — the load test directly changed the
+production configuration.
+
+Why 3, specifically: `concurrency 1` is forced by the workload (a multi-GB
+model and minutes-long CPU inferences — two per container risk memory
+pressure for both), so throughput can only scale horizontally. The cap exists
+because each instance is the largest CPU shape (8 vCPU / 32 GB) — uncapped
+scaling is a credits blast-radius — and because every new instance pays a
+~2–4 min model cold start, so wide scale-out cannot help short bursts anyway.
+Three matches our realistic peak (an examiner's request + the Streamlit UI +
+a monitoring call at once); beyond that the service returns 429 on purpose —
+fast, retryable backpressure instead of silently queueing requests into
+timeouts. The number was set by measurement plus a cost ceiling, and is
+revisitable with traffic data.
 
 Both invocation paths, shown live — the local CLI prediction and the deployed
 API answering the same kind of request:
@@ -493,6 +510,16 @@ delivered to a verified email notification channel — we deliberately verified
 the channel end-to-end (triggered the verification code, confirmed
 `verificationStatus: VERIFIED`) rather than assuming an unverified channel
 would actually deliver anything.
+
+The alert has also **fired for real**: during a load-test probe, two `/predict`
+requests errored (HTTP 500) under concurrent cold-start pressure — the policy
+opened an incident and emailed us within minutes, then auto-resolved once the
+condition cleared (the open/close pair arrived as two emails). The threshold is
+deliberately "any 5xx > 0 in 5 min": at this service's near-zero baseline
+traffic, a single server error *is* the signal, whereas a rate-based threshold
+would need volume to mean anything. The trade-off — it also fires on
+self-inflicted load tests — is acceptable at this scale and would be retuned
+to an error-rate condition as traffic grows.
 
 ### Question 24
 
@@ -636,6 +663,6 @@ evaluation/optimization jobs, the FastAPI serving app, Streamlit frontend and
 BentoML service, the CI/CD workflows (tests, linting, docs, and the two
 continuous data/model-registry-triggered workflows), the Cloud Run deployment,
 the drift-monitoring and Cloud Monitoring alerting setup, the documentation
-site, and this results write-up. By commit count this is 157 commits under
-Yuxin Liu's git identities versus 13 under Duc-Anh Valentino Nguyen (of 170
-total on `main`, per `git shortlog -sn main`).
+site, and this results write-up. By commit count (as of 2026-07-11) this is
+163 commits under Yuxin Liu's git identities versus 13 under Duc-Anh
+Valentino Nguyen, of 176 total on `main`, per `git shortlog -sn main`.
