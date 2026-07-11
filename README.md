@@ -127,7 +127,7 @@ Copy-paste commands for every routine operation. Details and variants live in
   - [Serve the docs site](#serve-the-docs-site)
   - [Regenerate the result figures](#regenerate-the-result-figures)
   - [GCP billing: check, recover, rescue](#gcp-billing-check-recover-rescue)
-  - [Delete everything](#delete-everything)
+  - [Delete everything in Google Cloud](#delete-everything-in-google-cloud)
 
 <a id="zone-setup-data"></a>
 ### Setup & data [[Back To Contents]](#command-guide)
@@ -347,6 +347,17 @@ curl localhost:8000/             # health check — serves immediately, model lo
 container is up (and passes health/startup probes) in seconds — essential on
 Cloud Run, where the probe would otherwise kill the container before the model
 finished loading; unset, the server loads the model eagerly at startup.
+
+The predict image runs the CLI as a container (its entrypoint *is*
+`scipali.serving.predict`, so args after the image name are CLI args; mount
+what it must read — paths in the args are container-side):
+
+```bash
+docker run --rm -v "$(pwd)/checkpoints:/checkpoints" -v "$(pwd)/img.png:/img.png" \
+  -e HF_TOKEN=<token> -e PREDICT_DEVICE=cpu \
+  predict:latest /checkpoints/adapter-production \
+  -q "What gas do plants absorb?" -c "oxygen,carbon dioxide,nitrogen" -i /img.png
+```
 
 Real predictions in the container need `CHECKPOINT_PATH` (e.g. a `gs://` adapter
 path) and GCP/HF credentials, as in [Serve the API locally](#serve-the-api-locally).
@@ -594,8 +605,8 @@ TEMPLATE=cloud/vertex_optimize.template.yaml RENDERED=cloud/vertex_optimize.yaml
 ```
 
 The explicit method (what the wrapper does, minus image digest-pinning and
-retries — all 8 template variables must be exported, or the rendered spec has
-empty values and Vertex rejects it):
+retries). All 8 template variables must be exported — `envsubst` renders unset
+ones as empty values, which Vertex rejects.
 
 ```bash
 export IMAGE_URI=europe-west4-docker.pkg.dev/paligemma-scienceqa/mlops-images/paligemma-train:latest \
@@ -776,6 +787,9 @@ unambiguous, so the ladder converges in five questions.
 gcloud builds submit --config=cloud/cloudbuild.api.yaml --project=paligemma-scienceqa .
 
 # 2. deploy (CPU, scale-to-zero, lazy model load)
+# !! TEMPORARY (2026-07-11): :latest is a known-broken image (see note below) —
+# !! replace the --image line with the digest form until the dockerfile fix:
+# !!   --image europe-west4-docker.pkg.dev/paligemma-scienceqa/mlops-images/paligemma-api@sha256:061ad5202756db5b5965c56f0b6468ba5dc9b6ad286275e768fd1e203b949412
 gcloud run deploy paligemma-api \
   --image europe-west4-docker.pkg.dev/paligemma-scienceqa/mlops-images/paligemma-api:latest \
   --region europe-west4 --project paligemma-scienceqa \
@@ -794,6 +808,26 @@ ends with the service URL — retrievable any time with:
 
 ```bash
 gcloud run services describe paligemma-api --region=europe-west4 --format="value(status.url)"
+```
+
+Then verify the **live** service (not localhost — that's your local server):
+
+```bash
+curl https://paligemma-api-581237630637.europe-west4.run.app/   # health of the new revision
+./cloud/demo_api.sh                                             # end-to-end predict (cold ~150-230 s)
+gcloud run revisions list --service=paligemma-api --region=europe-west4   # new revision at 100%?
+gcloud run services logs read paligemma-api --region=europe-west4 --limit=50   # if anything misbehaves
+```
+
+If a fresh `:latest` fails to deploy ("container failed to start… PORT" — in
+our case an image whose in-image build dropped `scipali`'s subpackages), the
+service keeps serving the previous revision; redeploy by the last-good
+**digest** instead of the tag:
+
+```bash
+gcloud run revisions list --service=paligemma-api --region=europe-west4 \
+  --format="table(name,active,spec.containers[0].image)"   # the active revision's image@sha256:…
+# rerun the deploy with --image …paligemma-api@sha256:<that-digest>
 ```
 
 The service is CPU-only (8 vCPU / 32 GB), `min-instances 0` (scale-to-zero)
@@ -892,6 +926,11 @@ channel (auto-closes after 30 min). Note `VERIFIED`: an email channel delivers
 nothing until its verification code is confirmed — we verified it end-to-end
 rather than assuming.
 
+In the console: **Monitoring → Alerting**
+([direct link](https://console.cloud.google.com/monitoring/alerting?project=paligemma-scienceqa))
+— policies, notification channels, and fired incidents all live on that page.
+(GCP's term is "alerting policy"; there is no "alarm" — that's AWS vocabulary.)
+
 #### Manage secrets
 
 All credentials live in **Secret Manager** — never in git, images, or job
@@ -972,7 +1011,7 @@ dvc pull                        # materialize the dataset locally
 
 — then run the teardown below so nothing keeps billing.
 
-#### Delete everything
+#### Delete everything in Google Cloud
 
 Step-by-step removal of every billable/cloud resource this project created, in stop-the-billing-first order:
 

@@ -13,6 +13,22 @@ steps:
       - -t
       - europe-west4-docker.pkg.dev/paligemma-scienceqa/mlops-images/paligemma-api:latest
       - .
+  # Import smoke test: the in-image project build can silently drop scipali's
+  # subpackages (the uv-base drift bug that hit the train image in June and the
+  # API image on 2026-07-11: revision 00013 died at deploy with
+  # "No module named 'scipali.models'"). A build that passes docker build but
+  # can't import the app must FAIL HERE, not at gcloud run deploy.
+  # --entrypoint overrides the image's uvicorn entrypoint (exec-form sh -c
+  # ignores appended args, so plain `docker run IMAGE python` would not work).
+  - name: gcr.io/cloud-builders/docker
+    args:
+      - run
+      - --rm
+      - --entrypoint
+      - /.venv/bin/python
+      - europe-west4-docker.pkg.dev/paligemma-scienceqa/mlops-images/paligemma-api:latest
+      - -c
+      - "import scipali.models, scipali.monitoring, scipali.serving.api; print('IMPORT_OK')"
 images:
   - europe-west4-docker.pkg.dev/paligemma-scienceqa/mlops-images/paligemma-api:latest
 timeout: 1800s
