@@ -439,6 +439,15 @@ disabled, because that image needs a locally-built wheel injected into the
 build context (see Question 15), so it's built manually rather than from a
 bare git checkout.
 
+Recent API builds may show **FAILURE — deliberately**: a base-image toolchain
+drift began producing images that *built* green but could not import the
+application (caught only when a Cloud Run deploy died), so we added an import
+smoke-test step to `cloudbuild.api.yaml`. Broken images now fail **in CI**
+with a one-line reason and are never pushed; the builds stay red until the
+underlying dockerfile fix lands. The live service was unaffected throughout —
+Cloud Run kept traffic on the last healthy revision, and deploys are pinned
+to a known-good image digest in the meantime.
+
 ### Question 22
 
 > **Did you manage to deploy your model, either in locally or cloud? If not, describe why. If yes, describe how and**
