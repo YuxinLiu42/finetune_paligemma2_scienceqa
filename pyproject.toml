@@ -61,6 +61,8 @@ dev = [
     "dvc-gs>=3.0.2",
     "pytest-timeout>=2.4.0",
     "google-cloud-aiplatform>=1.154.0",
+    "markdown>=3.10.2",
+    "loguru>=0.7.3",
 ]
 # Local ops/serving extras (load testing, drift, BentoML); not needed in the
 # training or API images. NOTE: the Streamlit frontend is deliberately NOT here
@@ -103,6 +105,9 @@ explicit = true
 
 [tool.ruff]
 line-length = 88
+# reports/report.py is the course-provided checker script — third-party code
+# we must not modify (the template forbids changes), so it is not linted.
+extend-exclude = ["reports/report.py"]
 
 [tool.ruff.lint]
 select = ["E", "F", "W", "D"]
@@ -131,3 +136,5 @@ omit = [
 ignore_missing_imports = true
 mypy_path = "src"
 explicit_package_bases = true
+# Course-provided checker script — not our code, not type-checked (see ruff note).
+exclude = ["reports/report\\.py"]

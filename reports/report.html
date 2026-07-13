@@ -1,0 +1,870 @@
+<p>Operations</p>
+<p>This is the report template for the exam. Please only remove the text formatted as with three dashes in front and behind
+like:</p>
+<p><code>--- question 1 fill here ---</code></p>
+<p>Where you instead should add your answers. Any other changes may have unwanted consequences when your report is
+auto-generated at the end of the course. For questions where you are asked to include images, start by adding the image
+to the <code>figures</code> subfolder (please only use <code>.png</code>, <code>.jpg</code> or <code>.jpeg</code>) and then add the following code in your answer:</p>
+<p><code>![my_image](figures/&lt;image&gt;.&lt;extension&gt;)</code></p>
+<p>In addition to this markdown file, we also provide the <code>report.py</code> script that provides two utility functions:</p>
+<p>Running:</p>
+<p><code>bash
+python report.py html</code></p>
+<p>Will generate a <code>.html</code> page of your report. After the deadline for answering this template, we will auto-scrape
+everything in this <code>reports</code> folder and then use this utility to generate a <code>.html</code> page that will be your serve
+as your final hand-in.</p>
+<p>Running</p>
+<p><code>bash
+python report.py check</code></p>
+<p>Will check your answers in this template against the constraints listed for each question e.g. is your answer too
+short, too long, or have you included an image when asked. For both functions to work you mustn't rename anything.
+The script has two dependencies that can be installed with</p>
+<p><code>bash
+pip install typer markdown</code></p>
+<p>or</p>
+<p><code>bash
+uv add typer markdown</code></p>
+<h2>Overall project checklist</h2>
+<p>The checklist is <em>exhaustive</em> which means that it includes everything that you could do on the project included in the
+curriculum in this course. Therefore, we do not expect at all that you have checked all boxes at the end of the project.
+The parenthesis at the end indicates what module the bullet point is related to. Please be honest in your answers, we
+will check the repositories and the code to verify your answers.</p>
+<h3>Week 1</h3>
+<ul>
+<li>[x] Create a git repository (M5)</li>
+<li>[x] Make sure that all team members have write access to the GitHub repository (M5)</li>
+<li>[x] Create a dedicated environment for you project to keep track of your packages (M2)</li>
+<li>[x] Create the initial file structure using cookiecutter with an appropriate template (M6)</li>
+<li>[x] Fill out the <code>data.py</code> file such that it downloads whatever data you need and preprocesses it (if necessary) (M6)</li>
+<li>[x] Add a model to <code>model.py</code> and a training procedure to <code>train.py</code> and get that running (M6)</li>
+<li>[x] Remember to either fill out the <code>requirements.txt</code>/<code>requirements_dev.txt</code> files or keeping your
+    <code>pyproject.toml</code>/<code>uv.lock</code> up-to-date with whatever dependencies that you are using (M2+M6)</li>
+<li>[x] Remember to comply with good coding practices (<code>pep8</code>) while doing the project (M7)</li>
+<li>[x] Do a bit of code typing and remember to document essential parts of your code (M7)</li>
+<li>[x] Setup version control for your data or part of your data (M8)</li>
+<li>[x] Add command line interfaces and project commands to your code where it makes sense (M9)</li>
+<li>[x] Construct one or multiple docker files for your code (M10)</li>
+<li>[x] Build the docker files locally and make sure they work as intended (M10)</li>
+<li>[x] Write one or multiple configurations files for your experiments (M11)</li>
+<li>[x] Used Hydra to load the configurations and manage your hyperparameters (M11)</li>
+<li>[x] Use profiling to optimize your code (M12)</li>
+<li>[x] Use logging to log important events in your code (M14)</li>
+<li>[x] Use Weights &amp; Biases to log training progress and other important metrics/artifacts in your code (M14)</li>
+<li>[x] Consider running a hyperparameter optimization sweep (M14)</li>
+<li>[x] Use PyTorch-lightning (if applicable) to reduce the amount of boilerplate in your code (M15)</li>
+</ul>
+<h3>Week 2</h3>
+<ul>
+<li>[x] Write unit tests related to the data part of your code (M16)</li>
+<li>[x] Write unit tests related to model construction and or model training (M16)</li>
+<li>[x] Calculate the code coverage (M16)</li>
+<li>[x] Get some continuous integration running on the GitHub repository (M17)</li>
+<li>[x] Add caching and multi-os/python/pytorch testing to your continuous integration (M17)</li>
+<li>[x] Add a linting step to your continuous integration (M17)</li>
+<li>[x] Add pre-commit hooks to your version control setup (M18)</li>
+<li>[x] Add a continues workflow that triggers when data changes (M19)</li>
+<li>[x] Add a continues workflow that triggers when changes to the model registry is made (M19)</li>
+<li>[x] Create a data storage in GCP Bucket for your data and link this with your data version control setup (M21)</li>
+<li>[x] Create a trigger workflow for automatically building your docker images (M21)</li>
+<li>[x] Get your model training in GCP using either the Engine or Vertex AI (M21)</li>
+<li>[x] Create a FastAPI application that can do inference using your model (M22)</li>
+<li>[x] Deploy your model in GCP using either Functions or Run as the backend (M23)</li>
+<li>[x] Write API tests for your application and setup continues integration for these (M24)</li>
+<li>[x] Load test your application (M24)</li>
+<li>[x] Create a more specialized ML-deployment API using either ONNX or BentoML, or both (M25)</li>
+<li>[x] Create a frontend for your API (M26)</li>
+</ul>
+<h3>Week 3</h3>
+<ul>
+<li>[x] Check how robust your model is towards data drifting (M27)</li>
+<li>[x] Setup collection of input-output data from your deployed application (M27)</li>
+<li>[x] Deploy to the cloud a drift detection API (M27)</li>
+<li>[x] Instrument your API with a couple of system metrics (M28)</li>
+<li>[x] Setup cloud monitoring of your instrumented application (M28)</li>
+<li>[x] Create one or more alert systems in GCP to alert you if your app is not behaving correctly (M28)</li>
+<li>[ ] If applicable, optimize the performance of your data loading using distributed data loading (M29)</li>
+<li>[ ] If applicable, optimize the performance of your training pipeline by using distributed training (M30)</li>
+<li>[x] Play around with quantization, compilation and pruning for you trained models to increase inference speed (M31)</li>
+</ul>
+<h3>Extra</h3>
+<ul>
+<li>[x] Write some documentation for your application (M32)</li>
+<li>[x] Publish the documentation to GitHub Pages (M32)</li>
+<li>[x] Revisit your initial project description. Did the project turn out as you wanted?</li>
+<li>[x] Create an architectural diagram over your MLOps pipeline</li>
+<li>[ ] Make sure all group members have an understanding about all parts of the project</li>
+<li>[x] Uploaded all your code to GitHub</li>
+</ul>
+<h2>Group information</h2>
+<h3>Question 1</h3>
+<blockquote>
+<p><strong>Enter the group number you signed up on <learn.inside.dtu.dk></strong></p>
+<p>Answer:</p>
+</blockquote>
+<p>Group A</p>
+<h3>Question 2</h3>
+<blockquote>
+<p><strong>Enter the study number for each member in the group</strong></p>
+<p>Example:</p>
+<p><em>sXXXXXX, sXXXXXX, sXXXXXX</em></p>
+<p>Answer:</p>
+</blockquote>
+<p>Yuxin Liu 12660585
+Duc-Anh Valentino Nguyen 12433139</p>
+<h3>Question 3</h3>
+<blockquote>
+<p><strong>Did you end up using any open-source frameworks/packages not covered in the course during your project? If so</strong>
+<strong>which did you use and how did they help you complete the project?</strong></p>
+<p>Recommended answer length: 0-200 words.</p>
+<p>Example:
+<em>We used the third-party framework ... in our project. We used functionality ... and functionality ... from the</em>
+<em>package to do ... and ... in our project</em>.</p>
+<p>Answer:</p>
+</blockquote>
+<p>Beyond the course-covered stack (Transformers, Lightning, Hydra, W&amp;B, FastAPI,
+DVC, Docker), we used several open-source packages not covered in the course.
+<strong>uv</strong> manages the environment and lockfile (replacing conda/pip), and its
+build backend packages our wheel. <strong>PEFT</strong> and <strong>bitsandbytes</strong> provide the
+LoRA adapters and 4-bit quantization — together they made fine-tuning and
+benchmarking a 3B-parameter model tractable on a single L4 GPU. <strong>Evidently</strong>
+powers the data-drift reports, and <strong>prometheus-fastapi-instrumentator</strong>
+exposes system metrics at <code>/metrics</code>. <strong>locust</strong> load-tested the deployed API
+(its findings changed our scaling configuration). <strong>BentoML</strong> provides an
+alternative specialized serving path, <strong>Streamlit</strong> the demo frontend, and
+<strong>Typer</strong> the command-line interfaces. Each filled a gap the core stack does
+not cover, and all are version-pinned in <code>uv.lock</code>.</p>
+<h2>Coding environment</h2>
+<blockquote>
+<p>In the following section we are interested in learning more about you local development environment. This includes
+how you managed dependencies, the structure of your code and how you managed code quality.</p>
+</blockquote>
+<h3>Question 4</h3>
+<blockquote>
+<p><strong>Explain how you managed dependencies in your project? Explain the process a new team member would have to go</strong>
+<strong>through to get an exact copy of your environment.</strong></p>
+<p>Recommended answer length: 100-200 words</p>
+<p>Example:
+<em>We used ... for managing our dependencies. The list of dependencies was auto-generated using ... . To get a</em>
+<em>complete copy of our development environment, one would have to run the following commands</em></p>
+<p>Answer:</p>
+</blockquote>
+<p>We manage dependencies with <strong><code>uv</code></strong>, not conda/pip. <code>pyproject.toml</code> declares
+the dependencies and dependency-groups (<code>dev</code>, <code>serving</code>, <code>monitoring</code>, <code>data</code>),
+and <code>uv.lock</code> pins exact resolved versions; <code>.python-version</code> pins the
+interpreter. CI and Docker builds use <code>uv sync --frozen</code>/<code>--locked</code> so the
+locked versions are reproduced exactly, never re-resolved.</p>
+<p>To get an exact copy of the environment, a new team member would run:</p>
+<p><code>bash
+git clone git@github.com:yuxinliu42/finetune_paligemma2_scienceqa.git
+cd finetune_paligemma2_scienceqa
+uv sync --locked --dev
+dvc pull   # fetch the processed dataset from the GCS remote</code></p>
+<p><code>uv lock --check</code> verifies the lockfile is still in sync with <code>pyproject.toml</code>
+before merging. Docker images (<code>dockerfiles/*.dockerfile</code>) use the same
+<code>uv sync --frozen</code> step, so the local, CI, and container environments are all
+built from the same lockfile. Dependency groups (<code>dev</code>, <code>serving</code>,
+<code>monitoring</code>, <code>data</code>) keep heavy optional stacks out of images that do not
+need them — the serving image, for instance, installs only base + monitoring.</p>
+<h3>Question 5</h3>
+<blockquote>
+<p><strong>We expect that you initialized your project using the cookiecutter template. Explain the overall structure of your</strong>
+<strong>code. What did you fill out? Did you deviate from the template in some way?</strong></p>
+<p>Recommended answer length: 100-200 words</p>
+<p>Example:
+<em>From the cookiecutter template we have filled out the ... , ... and ... folder. We have removed the ... folder</em>
+<em>because we did not use any ... in our project. We have added an ... folder that contains ... for running our</em>
+<em>experiments.</em></p>
+<p>Answer:</p>
+</blockquote>
+<p>The project was initialized from
+<a href="https://github.com/SkafteNicki/mlops_template">SkafteNicki/mlops_template</a>.
+We filled out: <code>data/</code> (DVC-tracked pointers to the processed ScienceQA-IMG
+splits), <code>src/scipali/</code> — split into <code>data/</code> (download + preprocess),
+<code>models/</code> (model, train, evaluate, optimize, visualize), <code>serving/</code> (FastAPI
+app, predict CLI, Streamlit frontend, BentoML service), and <code>monitoring/</code>
+(drift detection); <code>configs/</code> (Hydra config groups); <code>dockerfiles/</code> (three
+images); <code>tests/</code> (pytest suite); <code>docs/</code> (MkDocs site, published to GitHub
+Pages).</p>
+<p>We removed <code>notebooks/</code> (all experimentation went through Hydra-configured
+scripts, not notebooks) and did not use a <code>references/</code> folder. We added two
+things not in the base template: <code>cloud/</code> (Vertex AI + Cloud Build + ops
+scripts) and a <code>monitoring/</code> subpackage under <code>src/scipali/</code>, since the
+template doesn't anticipate a deployed-model monitoring loop.</p>
+<h3>Question 6</h3>
+<blockquote>
+<p><strong>Did you implement any rules for code quality and format? What about typing and documentation? Additionally,</strong>
+<strong>explain with your own words why these concepts matters in larger projects.</strong></p>
+<p>Recommended answer length: 100-200 words.</p>
+<p>Example:
+<em>We used ... for linting and ... for formatting. We also used ... for typing and ... for documentation. These</em>
+<em>concepts are important in larger projects because ... . For example, typing ...</em></p>
+<p>Answer:</p>
+</blockquote>
+<p>Yes. We use <strong>ruff</strong> for both linting and formatting (replacing
+black/isort/flake8 with one faster tool), <strong>mypy</strong> for static type checking,
+and <strong>pre-commit</strong> hooks (<code>trailing-whitespace</code>, <code>end-of-file-fixer</code>,
+<code>check-yaml</code>, <code>check-added-large-files</code>, <code>ruff --fix</code>, <code>ruff-format</code>) that run
+on every commit. All three (ruff lint, ruff format check, mypy) are also
+enforced in CI (<code>.github/workflows/linting.yaml</code>), so a non-compliant change
+cannot be merged even if a hook was skipped locally. Public functions carry
+type hints and short Args/Returns docstrings.</p>
+<p>These rules matter more as a project grows because consistent formatting and
+typing remove an entire class of bikeshedding and reviewing friction — a
+reviewer can focus on logic instead of style, static types catch a class of
+bugs before runtime, and a shared, enforced style means any contributor
+(including a future one who wasn't on the original team) can read unfamiliar
+code without adapting to a different author's personal conventions.</p>
+<h2>Version control</h2>
+<blockquote>
+<p>In the following section we are interested in how version control was used in your project during development to
+corporate and increase the quality of your code.</p>
+</blockquote>
+<h3>Question 7</h3>
+<blockquote>
+<p><strong>How many tests did you implement and what are they testing in your code?</strong></p>
+<p>Recommended answer length: 50-100 words.</p>
+<p>Example:
+<em>In total we have implemented X tests. Primarily we are testing ... and ... as these the most critical parts of our</em>
+<em>application but also ... .</em></p>
+<p>Answer:</p>
+</blockquote>
+<p>132 tests across eight files. <code>test_model.py</code> (50) covers model construction,
+LoRA wiring, prompt building and config resolution; <code>test_data.py</code> (24) the
+download/preprocess pipeline and split integrity; <code>test_api.py</code> (19) the
+serving contracts, including validation failures; <code>test_monitoring.py</code> (12)
+drift-feature derivation and the Evidently path; <code>test_optimize.py</code> (11)
+pruning correctness — including that achieved sparsity matches the requested
+target; <code>test_predict.py</code> (8) the prediction CLI; <code>test_train.py</code> (6)
+training utilities such as the √-batch learning-rate rule; and
+<code>test_evaluate.py</code> (2) answer-letter extraction and scoring. All are CPU-only
+and hermetic so they run identically in CI.</p>
+<h3>Question 8</h3>
+<blockquote>
+<p><strong>What is the total code coverage (in percentage) of your code? If your code had a code coverage of 100% (or close</strong>
+<strong>to), would you still trust it to be error free? Explain you reasoning.</strong></p>
+<p>Recommended answer length: 100-200 words.</p>
+<p>Example:
+<em>The total code coverage of code is X%, which includes all our source code. We are far from 100% coverage of our **
+</em>code and even if we were then...*</p>
+<p>Answer:</p>
+</blockquote>
+<p>Total coverage is <strong>~72%</strong> of <code>src/scipali</code> (<code>uv run coverage report</code>),
+computed in CI on every push and uploaded to Codecov. CI installs the
+optional monitoring extras (<code>--group monitoring</code>) so the import-guarded
+lines — the Prometheus <code>/metrics</code> instrumentation and the Evidently
+drift-report body — are exercised there too, keeping the local number and
+the Codecov badge in agreement.</p>
+<p>No — 100% coverage would only mean every line <em>executed</em> at least once during
+testing, not that the code is correct. It says nothing about whether the
+<em>assertions</em> are meaningful, whether edge cases and unusual inputs are
+exercised, or whether two covered lines interact incorrectly together. A test
+that calls a function and checks nothing meaningful still counts as "covered."
+We treat coverage as a floor that flags obviously-untested code, not a
+correctness guarantee — e.g. our own gaps are concentrated in <code>train.py</code>
+(GPU-only training loop, not exercised by the fast CPU unit-test suite) and
+parts of <code>model.py</code>/<code>monitoring.py</code>, which are covered by integration-level
+checks (a real Vertex AI run, a real drift report) rather than unit tests.</p>
+<h3>Question 9</h3>
+<blockquote>
+<p><strong>Did you workflow include using branches and pull requests? If yes, explain how. If not, explain how branches and</strong>
+<strong>pull request can help improve version control.</strong></p>
+<p>Recommended answer length: 100-200 words.</p>
+<p>Example:
+<em>We made use of both branches and PRs in our project. In our group, each member had an branch that they worked on in</em>
+<em>addition to the main branch. To merge code we ...</em></p>
+<p>Answer:</p>
+</blockquote>
+<p>Yes. Changes went into feature branches and were merged into <code>main</code> via pull
+requests rather than pushed directly — the repository history shows PR merges. Since <code>main</code> is
+wired to CI (tests + linting on every push/PR) and to automatic deployment
+(Cloud Build rebuilds the API image, and later in the project a
+model-registry-change workflow rolls a promoted model out to Cloud Run), a
+broken <code>main</code> has real consequences beyond code review — so keeping changes in
+a branch until CI is green before merging was the main practical benefit,
+alongside the usual review/diff-visibility benefit of a PR. In practice, many
+late-project documentation pushes went to <code>main</code> directly once CI was
+reliably green — a pragmatic trade-off we would formalize with branch
+protection rules in a longer-lived project.</p>
+<h3>Question 10</h3>
+<blockquote>
+<p><strong>Did you use DVC for managing data in your project? If yes, then how did it improve your project to have version</strong>
+<strong>control of your data. If no, explain a case where it would be beneficial to have version control of your data.</strong></p>
+<p>Recommended answer length: 100-200 words.</p>
+<p>Example:
+<em>We did make use of DVC in the following way: ... . In the end it helped us in ... for controlling ... part of our</em>
+<em>pipeline</em></p>
+<p>Answer:</p>
+</blockquote>
+<p>Yes. DVC tracks the processed ScienceQA-IMG splits, with a GCS remote
+(<code>gs://mlops-paligemma-west4/dvcstore</code>). <code>.dvc/config</code> sets <code>no_scm=true</code>
+because the training/optimize Docker images ship the <code>.dvc</code> pointer files
+without a <code>.git</code> directory (so DVC can't detect a git repo inside the
+container), and <code>dvc pull</code> needs to work in that no-SCM mode.</p>
+<p>DVC let us keep the (large, binary) image data out of git entirely while still
+versioning exactly which processed split a given training run used — the
+pointer files are tiny and diff cleanly in git, while the actual bytes live in
+GCS and are pulled on demand (locally, in CI, and inside Vertex AI training
+jobs). It also meant switching data sources mid-project (we initially targeted
+<code>lmms-lab/ScienceQA</code>, then switched to
+<a href="https://huggingface.co/datasets/derek-thomas/ScienceQA"><code>derek-thomas/ScienceQA</code></a>
+because the former ships no train split) didn't require any special handling — <code>dvc add</code> +
+<code>dvc push</code> and the new processed split was versioned the same way.</p>
+<h3>Question 11</h3>
+<blockquote>
+<p><strong>Discuss you continuous integration setup. What kind of continuous integration are you running (unittesting,</strong>
+<strong>linting, etc.)? Do you test multiple operating systems, Python  version etc. Do you make use of caching? Feel free</strong>
+<strong>to insert a link to one of your GitHub actions workflow.</strong></p>
+<p>Recommended answer length: 200-300 words.</p>
+<p>Example:
+<em>We have organized our continuous integration into 3 separate files: one for doing ..., one for running ... testing</em>
+<em>and one for running ... . In particular for our ..., we used ... .An example of a triggered workflow can be seen</em>
+<em>here: <weblink></em></p>
+<p>Answer:</p>
+</blockquote>
+<p>CI is split across several GitHub Actions workflows:</p>
+<ul>
+<li><strong><code>tests.yaml</code></strong> — runs <code>pytest</code> + <code>coverage</code> across a <strong>3 × 2 matrix</strong>
+  (<code>ubuntu-latest</code> / <code>windows-latest</code> / <code>macos-latest</code> × Python <code>3.11</code> /
+  <code>3.12</code>, six combinations total), using <code>astral-sh/setup-uv</code> with
+  <code>enable-cache: true</code> for dependency caching. Coverage is uploaded to Codecov
+  from the ubuntu/3.11 cell.</li>
+<li><strong><code>linting.yaml</code></strong> — <code>ruff check</code>, <code>ruff format --check</code>, and <code>mypy</code>, run on
+  every push/PR to <code>main</code>.</li>
+<li><strong><code>docs.yaml</code></strong> — builds and publishes the MkDocs site to GitHub Pages
+  (<code>mkdocs gh-deploy</code>) on changes to <code>docs/</code>/<code>src/</code>.</li>
+<li><strong><code>data-change.yaml</code></strong> and <strong><code>model-registry-change.yaml</code></strong> — two additional
+  continuous workflows: the first runs data-integrity checks when the DVC
+  pointer files change, the second reacts to a real Weights &amp; Biases webhook
+  when the <code>production</code> model alias moves, and automatically rolls the newly
+  promoted adapter out to Cloud Run plus smoke-tests the live endpoint.</li>
+</ul>
+<p>The matrix exists because path handling and multiprocessing differ across
+operating systems — which forces the suite to stay CPU-only and hermetic. We
+deliberately do <strong>not</strong> matrix PyTorch versions: <code>uv.lock</code> pins exactly one,
+and testing versions we never ship would validate configurations that cannot
+reach production. Dependency caching via <code>astral-sh/setup-uv</code> keeps a full
+six-cell matrix run to a few minutes. Together with the Cloud Build trigger
+that rebuilds (and import-checks) the API image, one push to <code>main</code> is
+validated on six environments and yields a deployable artifact with no
+manual steps.</p>
+<p>Example: <a href="https://github.com/yuxinliu42/finetune_paligemma2_scienceqa/actions/workflows/tests.yaml">https://github.com/yuxinliu42/finetune_paligemma2_scienceqa/actions/workflows/tests.yaml</a></p>
+<h2>Running code and tracking experiments</h2>
+<blockquote>
+<p>In the following section we are interested in learning more about the experimental setup for running your code and
+especially the reproducibility of your experiments.</p>
+</blockquote>
+<h3>Question 12</h3>
+<blockquote>
+<p><strong>How did you configure experiments? Did you make use of config files? Explain with coding examples of how you would</strong>
+<strong>run a experiment.</strong></p>
+<p>Recommended answer length: 50-100 words.</p>
+<p>Example:
+<em>We used a simple argparser, that worked in the following way: Python  my_script.py --lr 1e-3 --batch_size 25</em></p>
+<p>Answer:</p>
+</blockquote>
+<p>We used <strong>Hydra</strong> configs under <code>configs/</code> (<code>data/</code>, <code>model/</code>, <code>trainer/</code>,
+<code>sweep/</code> groups), composed at runtime by the <code>train</code> entry point. Any nested
+key can be overridden from the CLI, e.g.:</p>
+<p><code>bash
+uv run train trainer.wandb.enabled=true trainer.wandb.run_name=local-test \
+  model.lora_r=16 data.batch_size=4 trainer.accumulate_grad_batches=4</code></p>
+<p>The learning rate is derived from <code>model.base_learning_rate</code> via a
+√-batch-size rule unless overridden explicitly, so trials at different
+gradient-accumulation settings are compared at an equivalent effective
+learning rate.</p>
+<h3>Question 13</h3>
+<blockquote>
+<p><strong>Reproducibility of experiments are important. Related to the last question, how did you secure that no information</strong>
+<strong>is lost when running experiments and that your experiments are reproducible?</strong></p>
+<p>Recommended answer length: 100-200 words.</p>
+<p>Example:
+<em>We made use of config files. Whenever an experiment is run the following happens: ... . To reproduce an experiment</em>
+<em>one would have to do ...</em></p>
+<p>Answer:</p>
+</blockquote>
+<p>Every run logs its fully-resolved Hydra config to Weights &amp; Biases as part of
+the run's config, so the exact hyperparameters behind any result are always
+recoverable from the W&amp;B run page, not just from whatever config file existed
+locally at the time. Dependency versions are pinned via <code>uv.lock</code> (<code>--frozen</code>
+installs in CI/Docker/Vertex), so package drift can't silently change results
+between runs. A seed is set for the training run, and the produced LoRA
+adapter, its evaluation metrics, and the W&amp;B run config travel together (the
+adapter is uploaded as a W&amp;B artifact and can be pulled back down alongside
+the config that produced it). To reproduce a specific result: pull the same
+DVC data revision, read the hyperparameters off the corresponding W&amp;B run, and
+re-run <code>uv run train</code> with those same Hydra overrides.</p>
+<h3>Question 14</h3>
+<blockquote>
+<p><strong>Upload 1 to 3 screenshots that show the experiments that you have done in W&amp;B (or another experiment tracking</strong>
+<strong>service of your choice). This may include loss graphs, logged images, hyperparameter sweeps etc. You can take</strong>
+<strong>inspiration from <a href="figures/wandb.png">this figure</a>. Explain what metrics you are tracking and why they are</strong>
+<strong>important.</strong></p>
+<p>Recommended answer length: 200-300 words + 1 to 3 screenshots.</p>
+<p>Example:
+<em>As seen in the first image when have tracked ... and ... which both inform us about ... in our experiments.</em>
+<em>As seen in the second image we are also tracking ... and ...</em></p>
+<p>Answer:</p>
+</blockquote>
+<p><img alt="Full-data sweep comparison" src="figures/sweep3_comparison.png" />
+<img alt="Earlier sweep comparison" src="figures/sweep2_comparison.png" /></p>
+<p>The first screenshot shows the full-data r=16 sweep (<code>win9arpw</code>): per-trial
+generation-based <code>val/accuracy</code> alongside <code>val/loss</code>, where the divergence
+between the two metrics is directly visible; the second shows the earlier
+r=8 sweep (<code>xptwdnis</code>) with the same effect. Beyond these curves, every run
+logs its fully-resolved Hydra config (the exact hyperparameters behind any
+result), a table of 32 sampled test predictions for qualitative inspection,
+and the trained LoRA adapter as a W&amp;B artifact — so any run's model and its
+producing config can be recovered together, months later, from the dashboard.</p>
+<p>We track both <code>val/loss</code> and a generation-based <code>val/accuracy</code> (exact-match on
+the extracted answer letter) every epoch, and select/early-stop on
+<code>val/accuracy</code> rather than <code>val/loss</code>. This turned out to matter concretely:
+in our sweep, the trial with the <em>best</em> <code>val/loss</code> (0.464) had the
+<em>worst</em> <code>val/accuracy</code> (0.619), while the trial we actually selected (best
+<code>val/accuracy</code>, and the eventual production model at 64.1% test) had a
+<em>higher</em> loss (0.511) but the <em>best</em> accuracy (0.702) — see
+<a href="RESULTS.md#methodology-note--why-we-optimise-valaccuracy-not-valloss"><code>reports/RESULTS.md</code></a>
+for the full table. Since the task is graded on exact-match accuracy, not
+log-likelihood, optimising the metric that's actually reported avoided
+promoting a model that looked good on loss but was measurably worse on the
+metric we actually care about.</p>
+<h3>Question 15</h3>
+<blockquote>
+<p><strong>Docker is an important tool for creating containerized applications. Explain how you used docker in your</strong>
+<strong>experiments/project? Include how you would run your docker images and include a link to one of your docker files.</strong></p>
+<p>Recommended answer length: 100-200 words.</p>
+<p>Example:
+<em>For our project we developed several images: one for training, inference and deployment. For example to run the</em>
+<em>training docker image: <code>docker run trainer:latest lr=1e-3 batch_size=64</code>. Link to docker file: <weblink></em></p>
+<p>Answer:</p>
+</blockquote>
+<p>We built three images (<code>dockerfiles/</code>): <code>train.dockerfile</code> (CUDA/amd64, used
+for Vertex AI training/eval/optimize jobs — installs the project from a
+prebuilt wheel rather than building it in-image, see the comment in the
+Dockerfile for why), <code>api.dockerfile</code> (CPU, the FastAPI serving image deployed
+to Cloud Run), and <code>predict.dockerfile</code> (CPU, a standalone single-prediction
+CLI image). The API image is rebuilt in the cloud on every push (Cloud Build
+trigger <code>mlops-ci-api</code>); the train image is cloud-built manually (it needs the
+locally-built wheel injected into the build context); and all three were also
+built and smoke-tested locally via <code>inv docker-build</code>.</p>
+<p>Example — running the predict image (the adapter and input image are mounted
+in, and the gated base model needs a Hugging Face token):</p>
+<p><code>bash
+docker run --rm -v "$(pwd)/checkpoints:/checkpoints" -v "$(pwd)/img.png:/img.png" \
+  -e HF_TOKEN=&lt;token&gt; predict:latest /checkpoints/adapter-production \
+  -q "What gas do plants absorb?" -c "oxygen,carbon dioxide,nitrogen" -i /img.png</code></p>
+<p>Link: <a href="https://github.com/yuxinliu42/finetune_paligemma2_scienceqa/blob/main/dockerfiles/api.dockerfile"><code>dockerfiles/api.dockerfile</code></a></p>
+<h3>Question 16</h3>
+<blockquote>
+<p><strong>When running into bugs while trying to run your experiments, how did you perform debugging? Additionally, did you</strong>
+<strong>try to profile your code or do you think it is already perfect?</strong></p>
+<p>Recommended answer length: 100-200 words.</p>
+<p>Example:
+<em>Debugging method was dependent on group member. Some just used ... and others used ... . We did a single profiling</em>
+<em>run of our main code at some point that showed ...</em></p>
+<p>Answer:</p>
+</blockquote>
+<p>Debugging was a mix of the VS Code debugger, logging, and — for the tricky
+bugs — inspecting intermediate tensors and logs. Two concrete examples:
+(1) training loss stayed stuck early on because of a stale
+<code>subjects</code>/<code>max_length</code> handling bug in the data pipeline; (2) a prompt that
+put the Hint/Lecture text <em>before</em> the answer Choices silently truncated the
+choices once the token budget ran out — worth roughly <strong>16 points</strong> of test
+accuracy, traced by inspecting the actual tokenized prompts and fixed by
+reordering <code>build_prompt</code>.</p>
+<p>We profiled in two ways: PyTorch Lightning's built-in profiler
+(<code>trainer.profiler</code>, configurable via Hydra) for the training loop, and a
+<code>cProfile</code>-based script (<code>scipali.data.profile_data</code>) for the <code>DataLoader</code>.
+The latter showed loading is image-decode-bound (~45% PIL decode, ~28%
+resize) but <em>not</em> the bottleneck — ~11 ms/batch fully overlaps GPU compute
+(see <code>reports/profiling/</code>). So the code was not perfect, but profiling told
+us which inefficiency would matter and that we did not currently need to fix
+it.</p>
+<h2>Working in the cloud</h2>
+<blockquote>
+<p>In the following section we would like to know more about your experience when developing in the cloud.</p>
+</blockquote>
+<h3>Question 17</h3>
+<blockquote>
+<p><strong>List all the GCP services that you made use of in your project and shortly explain what each service does?</strong></p>
+<p>Recommended answer length: 50-200 words.</p>
+<p>Example:
+<em>We used the following two services: Engine and Bucket. Engine is used for... and Bucket is used for...</em></p>
+<p>Answer:</p>
+</blockquote>
+<ul>
+<li><strong>Cloud Storage (GCS)</strong> — the DVC remote for versioned data, the model
+  registry's artifact store (<code>models/production/</code>), and the drift-monitoring
+  reference/production tables.</li>
+<li><strong>Vertex AI</strong> — runs all GPU work as custom jobs (training, hyperparameter
+  sweeps, standalone evaluation, quantization/pruning) on single-L4 machines.</li>
+<li><strong>Cloud Build</strong> — builds the Docker images; a trigger auto-rebuilds the API
+  image on every push to <code>main</code>.</li>
+<li><strong>Artifact Registry</strong> — stores the built container images.</li>
+<li><strong>Cloud Run</strong> — serves the FastAPI inference app: CPU-only, scale-to-zero,
+  lazy model loading.</li>
+<li><strong>Secret Manager</strong> — holds the Hugging Face token and W&amp;B API key, fetched
+  at container start rather than baked into images.</li>
+<li><strong>Cloud Monitoring</strong> — an alert policy on repeated 5xx responses, with a
+  verified email notification channel.</li>
+<li><strong>IAM / Workload Identity Federation</strong> — keyless GCP auth for the GitHub
+  Actions workflow that rolls a newly-promoted model out to Cloud Run.</li>
+</ul>
+<h3>Question 18</h3>
+<blockquote>
+<p><strong>The backbone of GCP is the Compute engine. Explained how you made use of this service and what type of VMs</strong>
+<strong>you used?</strong></p>
+<p>Recommended answer length: 100-200 words.</p>
+<p>Example:
+<em>We used the compute engine to run our ... . We used instances with the following hardware: ... and we started the</em>
+<em>using a custom container: ...</em></p>
+<p>Answer:</p>
+</blockquote>
+<p>We did not provision or manage Compute Engine VMs directly. All GPU work runs
+as <strong>Vertex AI custom jobs</strong>, which provision the underlying VM for us
+(<code>g2-standard-8</code>: 8 vCPU / 32 GB RAM / 1× NVIDIA L4, via the Flex Start queue,
+in <code>europe-west4</code> — the only region where we had both G2 machine availability
+and L4 quota). Serving uses Cloud Run instead of a hand-managed VM. So our use
+of "Compute Engine" is indirect, through the managed services built on top of
+it, by design — we didn't need raw VM control for either training or serving,
+and the queue-based Flex Start provisioning meant we never paid for idle GPUs.</p>
+<h3>Question 19</h3>
+<blockquote>
+<p><strong>Insert 1-2 images of your GCP bucket, such that we can see what data you have stored in it.</strong>
+<strong>You can take inspiration from <a href="figures/bucket.png">this figure</a>.</strong></p>
+<p>Answer:</p>
+</blockquote>
+<p><img alt="GCS bucket" src="figures/gcs_bucket.png" /></p>
+<p>Verifiable from the CLI:</p>
+<p><code>bash
+$ gsutil ls gs://mlops-paligemma-west4/
+gs://mlops-paligemma-west4/dvcstore/
+gs://mlops-paligemma-west4/models/
+gs://mlops-paligemma-west4/monitoring/
+gs://mlops-paligemma-west4/vertex-output/</code></p>
+<p><code>dvcstore/</code> holds the DVC-versioned ScienceQA-IMG splits, <code>models/</code> holds the
+LoRA adapters (with <code>models/production/</code> being the one the API serves),
+<code>monitoring/</code> holds the drift reference/production tables, and
+<code>vertex-output/</code> holds Vertex AI job outputs. Total bucket size: ~14.2 GiB.</p>
+<h3>Question 20</h3>
+<blockquote>
+<p><strong>Upload 1-2 images of your GCP artifact registry, such that we can see the different docker images that you have</strong>
+<strong>stored. You can take inspiration from <a href="figures/registry.png">this figure</a>.</strong></p>
+<p>Answer:</p>
+</blockquote>
+<p><img alt="Artifact Registry — paligemma-api image versions" src="figures/artifact_api.png" /></p>
+<p><img alt="Artifact Registry — paligemma-train image versions" src="figures/artifact_train.png" /></p>
+<p>Verifiable from the CLI:</p>
+<p><code>bash
+gcloud artifacts docker images list \
+  europe-west4-docker.pkg.dev/paligemma-scienceqa/mlops-images</code></p>
+<h3>Question 21</h3>
+<blockquote>
+<p><strong>Upload 1-2 images of your GCP cloud build history, so we can see the history of the images that have been build in</strong>
+<strong>your project. You can take inspiration from <a href="figures/build.png">this figure</a>.</strong></p>
+<p>Answer:</p>
+</blockquote>
+<p><img alt="Cloud Build history" src="figures/cloud_build_history.png" /></p>
+<p>Verifiable from the CLI: <code>gcloud builds list --region=europe-west4</code>. Trigger
+<code>mlops-ci-api</code> auto-builds the API image on every push to <code>main</code> that touches
+<code>src/scipali/**</code>; the train image's trigger (<code>mlops-ci-train</code>) exists but is
+disabled, because that image needs a locally-built wheel injected into the
+build context (see Question 15), so it's built manually rather than from a
+bare git checkout.</p>
+<p>Recent API builds may show <strong>FAILURE — deliberately</strong>: a base-image toolchain
+drift began producing images that <em>built</em> green but could not import the
+application (caught only when a Cloud Run deploy died), so we added an import
+smoke-test step to <code>cloudbuild.api.yaml</code>. Broken images now fail <strong>in CI</strong>
+with a one-line reason and are never pushed; the builds stay red until the
+underlying dockerfile fix lands. The live service was unaffected throughout —
+Cloud Run kept traffic on the last healthy revision, and deploys are pinned
+to a known-good image digest in the meantime.</p>
+<h3>Question 22</h3>
+<blockquote>
+<p><strong>Did you manage to train your model in the cloud using either the Engine or Vertex AI? If yes, explain how you did</strong>
+<strong>it. If not, describe why.</strong></p>
+<p>Recommended answer length: 100-200 words.</p>
+<p>Example:
+<em>We managed to train our model in the cloud using the Engine. We did this by ... . The reason we choose the Engine</em>
+<em>was because ...</em></p>
+<p>Answer:</p>
+</blockquote>
+<p>Yes — every GPU workload trains as a <strong>Vertex AI custom job</strong>; we deliberately
+provisioned no Compute Engine VMs (nothing to SSH into or forget to delete —
+<code>gcloud compute instances list</code> is empty by design). A job is one template
+(<code>cloud/vertex_config.template.yaml</code>) rendered with <code>envsubst</code> and submitted
+via <code>gcloud ai custom-jobs create</code>, wrapped by <code>cloud/watch_job.sh</code> (image
+digest-pinning, retries, log streaming). The container is our train image
+from Artifact Registry; at start it fetches W&amp;B/HF secrets from Secret
+Manager, runs <code>dvc pull</code> for the processed data, then executes baseline
+training, a W&amp;B Bayesian sweep (<code>wandb sweep</code> + <code>wandb agent</code>), and
+evaluation of the best trial. Hardware is a single NVIDIA L4
+(<code>g2-standard-8</code>) in <code>europe-west4</code> — the only region where G2 availability
+and L4 quota lined up — through the Flex Start queue, where capacity waits
+ranged from 8 minutes to 16+ hours, and <code>maxWaitDuration</code> had to be raised
+explicitly to survive stockouts.</p>
+<h2>Deployment</h2>
+<h3>Question 23</h3>
+<blockquote>
+<p><strong>Did you manage to write an API for your model? If yes, explain how you did it and if you did anything special. If</strong>
+<strong>not, explain how you would do it.</strong></p>
+<p>Recommended answer length: 100-200 words.</p>
+<p>Example:
+<em>We did manage to write an API for our model. We used FastAPI to do this. We did this by ... . We also added ...</em>
+<em>to the API to make it more ...</em></p>
+<p>Answer:</p>
+</blockquote>
+<p>Yes — a <strong>FastAPI</strong> application (<code>scipali.serving.api</code>). <code>POST /predict</code>
+takes a Pydantic-validated JSON body (<code>question</code>, <code>choices</code>, optional
+<code>hint</code>/<code>lecture</code>, and a base64-encoded <code>image_b64</code>) and returns
+<code>{"prediction": "&lt;letter&gt;"}</code>; <code>GET /</code> reports health and whether the model is
+loaded; <code>GET /monitor/drift</code> and <code>GET /metrics</code> expose monitoring. Two design
+decisions matter most: <strong>lazy model loading</strong> — the app starts and passes
+startup probes in seconds and loads the 3B model on the first prediction
+(required for Cloud Run) — and the <strong>adapter is read from a <code>gs://</code> path at
+startup</strong>, decoupling model updates from the container image. Every
+prediction also emits one structured JSON log line (derived features +
+prediction) that feeds the drift-monitoring pipeline. FastAPI auto-serves
+interactive OpenAPI docs at <code>/docs</code>, which we use for live demos; the full
+contracts and request-flow diagram are documented in <code>docs/source/api.md</code>.</p>
+<h3>Question 24</h3>
+<blockquote>
+<p><strong>Did you manage to deploy your API, either in locally or cloud? If not, describe why. If yes, describe how and</strong>
+<strong>preferably how you invoke your deployed service?</strong></p>
+<p>Recommended answer length: 100-200 words.</p>
+<p>Example:
+<em>For deployment we wrapped our model into application using ... . We first tried locally serving the model, which</em>
+<em>worked. Afterwards we deployed it in the cloud, using ... . To invoke the service an user would call</em>
+<em><code>curl -X POST -F "file=@file.json"&lt;weburl&gt;</code></em></p>
+<p>Answer:</p>
+</blockquote>
+<p>Yes, both locally and in the cloud. The FastAPI app is deployed to <strong>Cloud
+Run</strong> (<code>paligemma-api</code>, <code>europe-west4</code>): CPU-only (8 vCPU / 32 GB),
+scale-to-zero, <code>concurrency 1</code> (one heavy 3B inference per container) with
+overflow to at most 3 instances — capacity settings that came from load
+testing (Question 25). Lazy model loading lets the container pass its startup
+probe immediately; the adapter is read from <code>gs://…/models/production</code> at
+startup, so promoting a new model needs no rebuild or redeploy. Invoke it
+directly:</p>
+<p><code>bash
+curl -X POST https://paligemma-api-581237630637.europe-west4.run.app/predict \
+  -H 'Content-Type: application/json' \
+  -d '{"question": "...", "choices": ["a","b","c"], "image_b64": "&lt;base64&gt;"}'</code></p>
+<p>A cold (scaled-to-zero) <code>/predict</code> takes ~150–230 s bundled (container start
++ model load + inference); warm calls run ~25–80 s. A Streamlit frontend and
+a shell demo (<code>cloud/demo_api.sh</code>) drive the same live endpoint.</p>
+<p><img alt="Local prediction via the CLI" src="figures/predict_cli_local.png" /></p>
+<p><img alt="Invoking the deployed API" src="figures/predict_api.png" /></p>
+<h3>Question 25</h3>
+<blockquote>
+<p><strong>Did you perform any functional testing and load testing of your API? If yes, explain how you did it and what</strong>
+<strong>results for the load testing did you get. If not, explain how you would do it.</strong></p>
+<p>Recommended answer length: 100-200 words.</p>
+<p>Example:
+<em>For functional testing we used pytest with httpx to test our API endpoints and ensure they returned the correct</em>
+<em>responses. For load testing we used locust with 100 concurrent users. The results of the load testing showed that</em>
+<em>our API could handle approximately 500 requests per second before the service crashed.</em></p>
+<p>Answer:</p>
+</blockquote>
+<p>Yes, both. <strong>Functional tests</strong>: 19 tests in <code>tests/test_api.py</code> drive the
+app through FastAPI's <code>TestClient</code> — the health contract, the <code>/predict</code>
+happy path and validation failures (422 on malformed bodies), the drift
+endpoint, and the metrics instrumentation — and run in CI on every push
+across the 3 OS × 2 Python matrix. <strong>Load testing</strong>: locust against the
+deployed service (<code>tests/load/locustfile.py</code>; recorded run and analysis in
+<code>reports/load/</code>). Warm <code>/predict</code> showed p50 ≈ 10 s / p95 ≈ 27 s, and under
+concurrent users the initial deploy returned 429s because it served one
+request at a time — a finding that directly changed production
+(<code>max-instances</code> raised 1 → 3, keeping <code>concurrency 1</code> deliberately: one
+heavy inference per container avoids memory pressure). A later probe also
+surfaced 500s under concurrent cold-start pressure, which our 5xx alert
+caught and emailed within minutes (Question 26).</p>
+<h3>Question 26</h3>
+<blockquote>
+<p><strong>Did you manage to implement monitoring of your deployed model? If yes, explain how it works. If not, explain how</strong>
+<strong>monitoring would help the longevity of your application.</strong></p>
+<p>Recommended answer length: 100-200 words.</p>
+<p>Example:
+<em>We did not manage to implement monitoring. We would like to have monitoring implemented such that over time we could</em>
+<em>measure ... and ... that would inform us about this ... behaviour of our application.</em></p>
+<p>Answer:</p>
+</blockquote>
+<p>Yes, three layers. <strong>Data drift</strong>: <code>monitoring.py</code> derives lightweight
+features per request (question length, number of choices, hint/lecture
+presence, image dimensions); <code>GET /monitor/drift</code> compares the training
+reference against production features collected from real <code>/predict</code> traffic
+via Cloud Logging (Evidently <code>DataDriftPreset</code>) — avoiding the
+self-comparison trap of "reference vs a held-out slice of the same dataset".
+<strong>System metrics</strong>: <code>prometheus-fastapi-instrumentator</code> exposes request
+counts/latency/sizes at <code>/metrics</code>. <strong>Alerting</strong>: a Cloud Monitoring policy
+fires on any 5xx within 5 minutes, emailing a notification channel we
+verified end-to-end (<code>verificationStatus: VERIFIED</code>) rather than assuming
+delivery. The alert has also <strong>fired for real</strong>: during a load-test probe,
+two <code>/predict</code> requests returned 500 under concurrent cold-start pressure —
+the incident opened and emailed us within minutes, then auto-resolved. The
+zero threshold is deliberate at our near-zero baseline traffic (a single
+server error <em>is</em> the signal) and would be retuned to an error-rate condition
+as traffic grows.</p>
+<h2>Overall discussion of project</h2>
+<blockquote>
+<p>In the following section we would like you to think about the general structure of your project.</p>
+</blockquote>
+<h3>Question 27</h3>
+<blockquote>
+<p><strong>How many credits did you end up using during the project and what service was most expensive? In general what do</strong>
+<strong>you think about working in the cloud?</strong></p>
+<p>Recommended answer length: 100-200 words.</p>
+<p>Example:
+<em>Group member 1 used ..., Group member 2 used ..., in total ... credits was spend during development. The service</em>
+<em>costing the most was ... due to ... . Working in the cloud was ...</em></p>
+<p>Answer:</p>
+</blockquote>
+<p>Total usage across the project's <strong>two</strong> education billing accounts was
+<strong>≈ $70, fully covered by credits ($0 out of pocket)</strong>. The first account
+accrued $50.15 — Compute Engine $33.25 + AI Platform Training $13.06
+(together the Vertex L4 training stack: the GPU VMs bill as Compute Engine
+SKUs under the job orchestration) plus small Cloud Build / Artifact Registry
+/ Storage / Cloud Run charges — and <strong>closed mid-project, mid-sweep</strong>; the
+project was re-linked to a second account, which accrued $19.77 (Vertex +
+Compute $10.97, Artifact Registry $7.07 for the ~3.4 GB train images, the
+rest storage and serving). The most expensive service was therefore the
+<strong>Vertex AI training stack (≈ $57 of ≈ $70)</strong> — consistent with 73 custom
+jobs and ~47 h of billed GPU runtime, while Flex-Start queue waits were
+unbilled. Storage, builds, and scale-to-zero serving added only a few dollars
+combined.</p>
+<p><img alt="Billing — first education account" src="figures/billing_Yuxin.png" /></p>
+<p><img alt="Billing — second education account" src="figures/billing_duc.png" /></p>
+<h3>Question 28</h3>
+<blockquote>
+<p><strong>Did you implement anything extra in your project that is not covered by other questions? Maybe you implemented</strong>
+<strong>a frontend for your API, use extra version control features, a drift detection service, a kubernetes cluster etc.</strong>
+<strong>If yes, explain what you did and why.</strong></p>
+<p>Recommended answer length: 0-200 words.</p>
+<p>Example:
+<em>We implemented a frontend for our API. We did this because we wanted to show the user ... . The frontend was</em>
+<em>implemented using ...</em></p>
+<p>Answer:</p>
+</blockquote>
+<p>Several things beyond the questions above. <strong>An inference-optimization suite
+(M31)</strong>: a bf16 vs int4 vs <code>torch.compile</code> benchmark (int4 halves GPU memory
+for ~9 % latency cost), a global-magnitude pruning sweep over the full test
+split (graceful degradation to ~30 % sparsity, collapse at 70 %), and a
+masked prune-finetune recovering ~1 pt at 50 % sparsity — all as Vertex jobs
+with results in <code>reports/RESULTS.md</code>. <strong>Automated model rollout</strong>: moving the
+<code>production</code> alias in the W&amp;B model registry fires a webhook →
+<code>repository_dispatch</code> → GitHub Actions (keyless Workload Identity Federation)
+→ a fresh Cloud Run revision plus smoke test — verified live. <strong>A CI import
+guard born from a real incident</strong>: a base-image drift produced images that
+built green but could not import the application; Cloud Build now runs an
+import smoke test, so broken images fail in CI and are never pushed. Plus a
+two-mode <strong>Streamlit</strong> frontend, a <strong>BentoML</strong> serving alternative, and an
+exhaustive command guide in the README with real expected outputs.</p>
+<h3>Question 29</h3>
+<blockquote>
+<p><strong>Include a figure that describes the overall architecture of your system and what services that you make use of.</strong>
+<strong>You can take inspiration from <a href="figures/overview.png">this figure</a>. Additionally, in your own words, explain the</strong>
+<strong>overall steps in figure.</strong></p>
+<p>Recommended answer length: 200-400 words</p>
+<p>Example:</p>
+<p><em>The starting point of the diagram is our local setup, where we integrated ... and ... and ... into our code.</em>
+<em>Whenever we commit code and push to GitHub, it auto triggers ... and ... . From there the diagram shows ...</em></p>
+<p>Answer:</p>
+</blockquote>
+<p><img alt="System architecture" src="figures/architecture.jpg" /></p>
+<p><strong>Figure: System architecture.</strong> End-to-end MLOps pipeline for fine-tuning and
+serving PaliGemma2-3B on ScienceQA-IMG. Solid arrows show the main artifact
+flow from data versioning to monitoring; dashed arrows mark the two automated
+feedback loops: (A) the auto-deploy loop triggered by model promotion, and (B)
+the drift feedback loop from production logs back to the serving service.</p>
+<p>The pipeline begins with data versioning. The ScienceQA-IMG dataset is
+preprocessed and versioned with DVC, with the data itself stored in a GCS
+bucket while git tracks only the pointer files. Training runs as a one-shot
+Vertex AI custom job on a single L4 GPU, taking two parallel inputs: Hydra
+configuration files and the DVC-pulled dataset. We fine-tune PaliGemma2-3B
+using LoRA, keeping the entire 3B-parameter base model frozen and training only
+a low-rank adapter (~0.2% of total parameters), depicted in the figure as the
+frozen block with a small trainable sliver.</p>
+<p>All runs are tracked in Weights &amp; Biases. A Bayesian sweep optimizes
+val/accuracy rather than val/loss, a choice motivated by the observed
+disagreement between the two metrics across sweep trials. The winning
+configuration reaches 72.19% test accuracy and is promoted by moving the
+production alias in the W&amp;B model registry. Promotion is a single event with
+two consequences: the alias change fires a webhook, and the promoted adapter
+artifact is stored in GCS under models/production.</p>
+<p>For readability, the figure abstracts several details. The link from Cloud
+Logging to the drift check compresses a three-step chain: a collect command
+reads prediction events back from Cloud Logging, derives the same feature set
+used for the training reference, and writes a production CSV to GCS, which the
+/monitor/drift endpoint then compares against the reference on demand.
+Container image supply is likewise
+omitted: Cloud Build builds the serving image on every push, while the training
+image is built manually from a locally-built wheel (its CI trigger is
+deliberately disabled), and both Vertex AI jobs and Cloud Run pull images by
+digest, so each workload runs exactly the image that was built and verified.
+Finally, the figure does not show the human gate in the loop: merging code
+changes triggers automatic validation but not automatic retraining — a
+deliberate human decision due to GPU cost and quota; only the rollout after
+promotion is automated (via keyless Workload Identity Federation rather than
+stored service-account keys).</p>
+<h3>Question 30</h3>
+<blockquote>
+<p><strong>Discuss the overall struggles of the project. Where did you spend most time and what did you do to overcome these</strong>
+<strong>challenges?</strong></p>
+<p>Recommended answer length: 200-400 words.</p>
+<p>Example:
+<em>The biggest challenges in the project was using ... tool to do ... . The reason for this was ...</em></p>
+<p>Answer:</p>
+</blockquote>
+<p>The single biggest accuracy bug was a <strong>prompt-ordering mistake</strong>: placing the
+optional Hint/Lecture text before the answer Choices meant the tokenizer's
+<code>max_length</code> sometimes truncated the choices themselves — worth roughly <strong>16
+points</strong> of test accuracy once diagnosed and fixed by reordering the prompt
+builder.</p>
+<p><strong>Vertex AI GPU availability</strong> cost real time: L4 quota and G2 machine
+availability only lined up in <code>europe-west4</code> (a region with quota elsewhere had
+no G2 machines at all), and Flex Start's default <code>maxWaitDuration</code> silently
+meant a 24-hour stockout cutoff unless explicitly overridden. A GCP billing
+account also closed mid-sweep, killing several in-flight trials — we treated
+W&amp;B's "failed" (but actually completed) runs as valid since their artifacts
+were intact.</p>
+<p><strong>The pruning sweep</strong> failed repeatedly on Vertex before it worked — capacity
+errors, a CUDA out-of-memory during pruning, a packaging bug that dropped
+subpackages from an in-image-built wheel (fixed by building the wheel outside
+the image and shipping it in), and a host-RAM OOM from naively pooling ~3B
+weights to float32 (fixed with a histogram-based global threshold instead).</p>
+<p>A live production bug: Rich's fixed-width log wrapping shredded the
+drift-monitoring JSON payload once it hit Cloud Logging, silently breaking the
+collect → drift loop — fixed by logging structured JSON straight to stdout
+instead of through the Rich logger. Separately, a GCP org policy disabling
+service-account key creation forced the model-registry-change CI workflow's
+auth to be redesigned around keyless Workload Identity Federation partway
+through the project. And on the dev-environment side, this project's working
+directory being iCloud-synced meant files were sometimes evicted mid-operation,
+intermittently stalling <code>git diff</code>, <code>gcloud builds submit</code>, and even local
+<code>docker build</code> — which looked like tool bugs at first until root-caused to the
+sync behaviour.</p>
+<h3>Question 31</h3>
+<blockquote>
+<p><strong>State the individual contributions of each team member. This is required information from DTU, because we need to</strong>
+<strong>make sure all members contributed actively to the project. Additionally, state if/how you have used generative AI</strong>
+<strong>tools in your project.</strong></p>
+<p>Recommended answer length: 50-300 words.</p>
+<p>Example:
+<em>Student sXXXXXX was in charge of developing of setting up the initial cookie cutter project and developing of the</em>
+<em>docker containers for training our applications.</em>
+<em>Student sXXXXXX was in charge of training our models in the cloud and deploying them afterwards.</em>
+<em>All members contributed to code by...</em>
+<em>We have used ChatGPT to help debug our code. Additionally, we used GitHub Copilot to help write some of our code.</em>
+Answer:</p>
+</blockquote>
+<p>Based on the repository's commit history: <strong>Duc-Anh Valentino Nguyen</strong> set up
+the initial repository scaffold (the cookiecutter-based initial commit) and
+early iterations of the project README (framework overview, team-member
+listing). <strong>Yuxin Liu</strong> implemented the data pipeline and DVC setup, the
+model/training code and Hydra configs, the Vertex AI training/sweep/
+evaluation/optimization jobs, the FastAPI serving app, Streamlit frontend and
+BentoML service, the CI/CD workflows (tests, linting, docs, and the two
+continuous data/model-registry-triggered workflows), the Cloud Run deployment,
+the drift-monitoring and Cloud Monitoring alerting setup, the documentation
+site, and this results write-up. By commit count (as of 2026-07-12) this is
+164 commits under Yuxin Liu's git identities versus 13 under Duc-Anh
+Valentino Nguyen, of 178 total on <code>main</code>, per <code>git shortlog -sn main</code>.</p>
