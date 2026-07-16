@@ -160,7 +160,10 @@ exposes system metrics at `/metrics`. **locust** load-tested the deployed API
 (its findings changed our scaling configuration). **BentoML** provides an
 alternative specialized serving path, **Streamlit** the demo frontend, and
 **Typer** the command-line interfaces. Each filled a gap the core stack does
-not cover, and all are version-pinned in `uv.lock`.
+not cover. All are pinned in `uv.lock` except two deliberate outliers:
+Streamlit runs isolated via `uvx` (`streamlit==1.53.0`) because its Starlette
+pin conflicts with FastAPI's, and bitsandbytes is installed at runtime on the
+GPU image only.
 
 ## Coding environment
 
@@ -506,7 +509,7 @@ the extracted answer letter) every epoch, and select/early-stop on
 `val/accuracy` rather than `val/loss`. This turned out to matter concretely:
 in our sweep, the trial with the *best* `val/loss` (0.464) had the
 *worst* `val/accuracy` (0.619), while the trial we actually selected (best
-`val/accuracy`, and the eventual production model at 64.1% test) had a
+`val/accuracy`, promoted to production at the time — 64.1% test) had a
 *higher* loss (0.511) but the *best* accuracy (0.702) — see
 [`reports/RESULTS.md`](RESULTS.md#methodology-note--why-we-optimise-valaccuracy-not-valloss)
 for the full table. Since the task is graded on exact-match accuracy, not
@@ -931,7 +934,7 @@ exhaustive command guide in the README with real expected outputs.
 >
 > Answer:
 
-<img src="figures/architecture.jpg" alt="System architecture" width="700" height="332">
+![System architecture](figures/architecture.jpg)
 
 **Figure: System architecture.** End-to-end MLOps pipeline for fine-tuning and
 serving PaliGemma2-3B on ScienceQA-IMG. Solid arrows show the main artifact
@@ -1041,6 +1044,6 @@ evaluation/optimization jobs, the FastAPI serving app, Streamlit frontend and
 BentoML service, the CI/CD workflows (tests, linting, docs, and the two
 continuous data/model-registry-triggered workflows), the Cloud Run deployment,
 the drift-monitoring and Cloud Monitoring alerting setup, the documentation
-site, and this results write-up. By commit count (as of 2026-07-12) this is
-164 commits under Yuxin Liu's git identities versus 13 under Duc-Anh
-Valentino Nguyen, of 178 total on `main`, per `git shortlog -sn main`.
+site, and this results write-up. By commit count (as of 2026-07-15) this is
+166 commits under Yuxin Liu's git identities versus 13 under Duc-Anh
+Valentino Nguyen, of 179 total on `main`, per `git shortlog -sne main`.

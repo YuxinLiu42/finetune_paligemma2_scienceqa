@@ -6,8 +6,8 @@ features, so we derive lightweight ones from each sample — question length,
 number of choices, hint/lecture presence, image dimensions, subject — which is
 enough to catch distribution shift in the inputs the model sees.
 
-Run (single-command Typer app, so no subcommand name):
-    uv run --group serving python -m scipali.monitoring.monitoring
+Run (Typer app with three subcommands: collect / seed-reference / drift):
+    uv run --group serving python -m scipali.monitoring.monitoring drift
 """
 
 import json

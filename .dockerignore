@@ -19,6 +19,8 @@ outputs
 *.env
 .dvc/config.local
 cloud/vertex_config.yaml
+cloud/vertex_eval.yaml
+cloud/vertex_optimize.yaml
 
 # hygiene — large for local builds
 .git

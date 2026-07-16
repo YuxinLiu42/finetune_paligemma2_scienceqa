@@ -19,6 +19,7 @@
 # are per-submit artifacts that don't belong in the image):
 cloud/vertex_config.yaml
 cloud/vertex_eval.yaml
+cloud/vertex_optimize.yaml
 
 # DVC-tracked data: ship only the .dvc pointers, not the real data.
 # .gitignore used to hide these dirs, but it's disabled now that this file exists.

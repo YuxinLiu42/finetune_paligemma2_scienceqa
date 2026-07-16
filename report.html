@@ -82,7 +82,7 @@ will check the repositories and the code to verify your answers.</p>
 <li>[x] Instrument your API with a couple of system metrics (M28)</li>
 <li>[x] Setup cloud monitoring of your instrumented application (M28)</li>
 <li>[x] Create one or more alert systems in GCP to alert you if your app is not behaving correctly (M28)</li>
-<li>[ ] If applicable, optimize the performance of your data loading using distributed data loading (M29)</li>
+<li>[x] If applicable, optimize the performance of your data loading using distributed data loading (M29)</li>
 <li>[ ] If applicable, optimize the performance of your training pipeline by using distributed training (M30)</li>
 <li>[x] Play around with quantization, compilation and pruning for you trained models to increase inference speed (M31)</li>
 </ul>
@@ -132,7 +132,10 @@ exposes system metrics at <code>/metrics</code>. <strong>locust</strong> load-te
 (its findings changed our scaling configuration). <strong>BentoML</strong> provides an
 alternative specialized serving path, <strong>Streamlit</strong> the demo frontend, and
 <strong>Typer</strong> the command-line interfaces. Each filled a gap the core stack does
-not cover, and all are version-pinned in <code>uv.lock</code>.</p>
+not cover. All are pinned in <code>uv.lock</code> except two deliberate outliers:
+Streamlit runs isolated via <code>uvx</code> (<code>streamlit==1.53.0</code>) because its Starlette
+pin conflicts with FastAPI's, and bitsandbytes is installed at runtime on the
+GPU image only.</p>
 <h2>Coding environment</h2>
 <blockquote>
 <p>In the following section we are interested in learning more about you local development environment. This includes
@@ -420,7 +423,7 @@ the extracted answer letter) every epoch, and select/early-stop on
 <code>val/accuracy</code> rather than <code>val/loss</code>. This turned out to matter concretely:
 in our sweep, the trial with the <em>best</em> <code>val/loss</code> (0.464) had the
 <em>worst</em> <code>val/accuracy</code> (0.619), while the trial we actually selected (best
-<code>val/accuracy</code>, and the eventual production model at 64.1% test) had a
+<code>val/accuracy</code>, promoted to production at the time — 64.1% test) had a
 <em>higher</em> loss (0.511) but the <em>best</em> accuracy (0.702) — see
 <a href="RESULTS.md#methodology-note--why-we-optimise-valaccuracy-not-valloss"><code>reports/RESULTS.md</code></a>
 for the full table. Since the task is graded on exact-match accuracy, not
@@ -865,6 +868,6 @@ evaluation/optimization jobs, the FastAPI serving app, Streamlit frontend and
 BentoML service, the CI/CD workflows (tests, linting, docs, and the two
 continuous data/model-registry-triggered workflows), the Cloud Run deployment,
 the drift-monitoring and Cloud Monitoring alerting setup, the documentation
-site, and this results write-up. By commit count (as of 2026-07-12) this is
-164 commits under Yuxin Liu's git identities versus 13 under Duc-Anh
-Valentino Nguyen, of 178 total on <code>main</code>, per <code>git shortlog -sn main</code>.</p>
+site, and this results write-up. By commit count (as of 2026-07-15) this is
+166 commits under Yuxin Liu's git identities versus 13 under Duc-Anh
+Valentino Nguyen, of 179 total on <code>main</code>, per <code>git shortlog -sne main</code>.</p>

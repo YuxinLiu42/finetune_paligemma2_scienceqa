@@ -454,7 +454,8 @@ wandb sweep --project scienceqa-paligemma2 configs/sweep.yaml       # register t
 # -> wandb: Run sweep agent with: wandb agent <entity>/scienceqa-paligemma2/<id>
 wandb agent <entity>/scienceqa-paligemma2/<id> --count 8            # paste the printed string;
                                                                     # 8 = the SWEEP_COUNT default
-python -m scipali.models.evaluate checkpoints/adapter-production --by-subject   # test an adapter
+python -m scipali.models.evaluate "checkpoints/adapter-<best-run>" --by-subject \
+  --batch-size 1 --output-path eval_results.json   # test the sweep winner (name resolved via the W&B API)
 ```
 
 All the `$VARS` above are documented, with defaults, in the header of

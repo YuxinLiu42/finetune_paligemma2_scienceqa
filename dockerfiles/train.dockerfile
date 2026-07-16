@@ -52,3 +52,8 @@ ENV LD_LIBRARY_PATH="/usr/local/nvidia/lib64:/usr/local/nvidia/lib"
 # mode or `dvc pull` errors looking for a git repo. Belt-and-suspenders with the
 # copied .dvc/config so the image is correct regardless of the local setting.
 RUN dvc config core.no_scm true
+
+# Default single-run path: fetch secrets -> dvc pull -> train (entrypoint.sh;
+# it has no shebang, so run it via bash). Vertex job specs set an explicit
+# command (cloud/run_*.sh), which overrides this CMD.
+CMD ["bash", "entrypoint.sh"]

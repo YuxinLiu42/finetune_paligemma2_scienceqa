@@ -261,7 +261,8 @@ weights, swept over four sparsity levels on the **full 2,017-sample test split**
 - **Accuracy degrades gracefully to ~30 % sparsity** (71.8 → 63.3 %, −8.5 pts),
   then collapses — 50 % roughly halves it (34.7 %) and 70 % destroys the model
   (4.4 %, *below* chance: the model stops emitting a valid answer letter). The
-  0 %-prune baseline (71.8 %) matches the deployed model's test accuracy,
+  0 %-prune baseline (71.8 %) closely matches the deployed model's 72.19 % test
+  accuracy (an 8-sample gap from the merged-model vs adapter eval paths),
   confirming the merge-and-score path is faithful.
 - **A single global magnitude threshold** across all layers (computed with
   `torch.kthvalue`, not the per-layer `amount`). The achieved sparsity lands
