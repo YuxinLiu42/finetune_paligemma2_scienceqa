@@ -204,8 +204,11 @@ Build the API image (amd64) and deploy. The service reads its adapter from
 gcloud builds submit --config=cloud/cloudbuild.api.yaml --project=paligemma-scienceqa .
 
 # 2. deploy (CPU, scale-to-zero, lazy model load)
-# !! TEMPORARY (2026-07-11): :latest is a known-broken image — deploy by digest
-# !! until the dockerfile root fix (same note in the root README):
+# !! NOTE on :latest: the tag was broken on 2026-07-11 (in-image subpackage-drop
+# !! bug); an import-guard step in cloudbuild.api.yaml now gates every push
+# !! (green since 2026-07-16). The live service stays digest-pinned until the
+# !! next deliberate redeploy (same note in the root README) — to reproduce the
+# !! live revision exactly, use the digest form:
 # !!   --image europe-west4-docker.pkg.dev/paligemma-scienceqa/mlops-images/paligemma-api@sha256:061ad5202756db5b5965c56f0b6468ba5dc9b6ad286275e768fd1e203b949412
 gcloud run deploy paligemma-api \
   --image europe-west4-docker.pkg.dev/paligemma-scienceqa/mlops-images/paligemma-api:latest \

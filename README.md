@@ -792,8 +792,11 @@ unambiguous, so the ladder converges in five questions.
 gcloud builds submit --config=cloud/cloudbuild.api.yaml --project=paligemma-scienceqa .
 
 # 2. deploy (CPU, scale-to-zero, lazy model load)
-# !! TEMPORARY (2026-07-11): :latest is a known-broken image (see note below) —
-# !! replace the --image line with the digest form until the dockerfile fix:
+# !! NOTE on :latest (see also the note below): the tag was broken on
+# !! 2026-07-11 by the in-image subpackage-drop bug; an import-guard step in
+# !! cloudbuild.api.yaml now gates every push (green since 2026-07-16). The
+# !! live service stays pinned to a verified digest until the next deliberate
+# !! redeploy — to reproduce the live revision exactly, use the digest form:
 # !!   --image europe-west4-docker.pkg.dev/paligemma-scienceqa/mlops-images/paligemma-api@sha256:061ad5202756db5b5965c56f0b6468ba5dc9b6ad286275e768fd1e203b949412
 gcloud run deploy paligemma-api \
   --image europe-west4-docker.pkg.dev/paligemma-scienceqa/mlops-images/paligemma-api:latest \
