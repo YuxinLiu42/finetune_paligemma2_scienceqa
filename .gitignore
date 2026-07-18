@@ -196,6 +196,11 @@ cloud/vertex_optimize.yaml
 .claude/
 import_time.log
 
+# generated report page lives ONLY at reports/report.html; report.py html
+# writes to the CWD, so a root-level copy appears if run from the repo root —
+# keep it out (root-anchored: does not affect reports/report.html)
+/report.html
+
 # Local presentation guide — kept out of the repo on request
 PROJECT_GUIDE.md
 scipali_demo/

@@ -904,8 +904,8 @@ combined.
 >
 > Answer:
 
-Several things beyond the questions above. **An inference-optimization suite
-(M31)**: a bf16 vs int4 vs `torch.compile` benchmark (int4 halves GPU memory
+Several things beyond the questions above. **An inference-optimization
+suite**: a bf16 vs int4 vs `torch.compile` benchmark (int4 halves GPU memory
 for ~9 % latency cost), a global-magnitude pruning sweep over the full test
 split (graceful degradation to ~30 % sparsity, collapse at 70 %), and a
 masked prune-finetune recovering ~1 pt at 50 % sparsity — all as Vertex jobs
@@ -1044,6 +1044,7 @@ evaluation/optimization jobs, the FastAPI serving app, Streamlit frontend and
 BentoML service, the CI/CD workflows (tests, linting, docs, and the two
 continuous data/model-registry-triggered workflows), the Cloud Run deployment,
 the drift-monitoring and Cloud Monitoring alerting setup, the documentation
-site, and this results write-up. By commit count (as of 2026-07-15) this is
-166 commits under Yuxin Liu's git identities versus 13 under Duc-Anh
-Valentino Nguyen, of 179 total on `main`, per `git shortlog -sne main`.
+site, and this results write-up. This split is visible directly in the
+history: the large majority of commits on `main` are under Yuxin Liu's git
+identities, with the remainder under Duc-Anh Valentino Nguyen, verifiable any
+time via `git shortlog -sn main`.

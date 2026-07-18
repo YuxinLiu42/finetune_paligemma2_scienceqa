@@ -16,7 +16,7 @@ import subprocess
 import urllib.request
 
 PROJECT = os.environ.get("GCP_PROJECT", "paligemma-scienceqa")
-ALERT_EMAIL = os.environ.get("ALERT_EMAIL", "liuyuxinnj@gmail.com")
+ALERT_EMAIL = os.environ.get("ALERT_EMAIL", "")  # the inbox that receives alerts
 SERVICE = os.environ.get("SERVICE_NAME", "paligemma-api")
 BASE = f"https://monitoring.googleapis.com/v3/projects/{PROJECT}"
 
@@ -37,6 +37,8 @@ def _api(path: str, body: dict | None = None) -> dict:
 
 def main() -> None:
     """Create (or reuse) the email channel and the 5xx alert policy."""
+    if not ALERT_EMAIL:
+        raise SystemExit("Set ALERT_EMAIL to the address that should receive alerts.")
     chan_name = "paligemma-api alerts (email)"
     existing = _api("notificationChannels").get("notificationChannels", [])
     channel = next((c for c in existing if c.get("displayName") == chan_name), None)
