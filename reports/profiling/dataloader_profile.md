@@ -1,7 +1,7 @@
 # Data-loading profile
 
 **What / why.** "Use profiling to optimize your code". This profiles the
-**training** `DataLoader` — the exact pipeline used during fine-tuning — to find
+**training** `DataLoader`, the exact pipeline used during fine-tuning, to find
 where data-loading time goes and whether it is worth optimizing.
 
 **How (reproducible, CPU-only, no GPU, no network):**
@@ -20,7 +20,7 @@ Raw artifacts in this folder: `dataloader.pstats` (binary, open with `pstats`/
 `snakeviz`), `dataloader_profile.txt` (top functions), `dataloader_summary.json`
 (throughput numbers).
 
-## Result 1 — where the time goes (cProfile, single-process, 200 batches = 2.285 s)
+## Result 1: where the time goes (cProfile, single-process, 200 batches = 2.285 s)
 
 | Stage | Self / cum time | Share | Source |
 |---|---|---|---|
@@ -34,7 +34,7 @@ The two halves of the loop are almost exactly balanced: the dataset fetch
 text tokenisation is a minor tail. **≈77% of data-loading time is image handling,
 ≈21% is text.**
 
-## Result 2 — throughput vs `num_workers` (wall-clock, 200 batches)
+## Result 2: throughput vs `num_workers` (wall-clock, 200 batches)
 
 | `num_workers` | samples/s | ms/batch |
 |---|---|---|
@@ -59,11 +59,12 @@ ranking above, not the exact best worker count.
    cheaper and the processor's resize becomes a near no-op. That would cut the
    bulk of the ~73% image cost.
 
-2. **…but the loader is not the training bottleneck, so this optimization was not
-   needed.** Even single-process loading delivers ~354 samples/s (~11 ms/batch).
-   A single LoRA training *step* for a 3-B model (batch 4, seq 512, gradient
-   checkpointing) on the L4 is far slower than 11 ms, so data preparation fully
-   overlaps with GPU compute — even `num_workers=0` would not starve the GPU.
+2. **However, the loader is not the training bottleneck, so this optimization
+   was not needed.** Even single-process loading delivers ~354 samples/s
+   (~11 ms/batch). A single LoRA training *step* for a 3B model (batch 4,
+   seq 512, gradient checkpointing) on the L4 is far slower than 11 ms, so data
+   preparation fully overlaps with GPU compute; even `num_workers=0` would not
+   starve the GPU.
    The training default `num_workers=4` is a safe choice with headroom; raising
    it would not speed up training.
 

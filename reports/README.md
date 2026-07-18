@@ -113,7 +113,7 @@ will check the repositories and the code to verify your answers.
 * [x] Publish the documentation to GitHub Pages (M32)
 * [x] Revisit your initial project description. Did the project turn out as you wanted?
 * [x] Create an architectural diagram over your MLOps pipeline
-* [ ] Make sure all group members have an understanding about all parts of the project
+* [x] Make sure all group members have an understanding about all parts of the project
 * [x] Uploaded all your code to GitHub
 
 ## Group information
@@ -153,7 +153,7 @@ Beyond the course-covered stack (Transformers, Lightning, Hydra, W&B, FastAPI,
 DVC, Docker), we used several open-source packages not covered in the course.
 **uv** manages the environment and lockfile (replacing conda/pip), and its
 build backend packages our wheel. **PEFT** and **bitsandbytes** provide the
-LoRA adapters and 4-bit quantization — together they made fine-tuning and
+LoRA adapters and 4-bit quantization; together they made fine-tuning and
 benchmarking a 3B-parameter model tractable on a single L4 GPU. **Evidently**
 powers the data-drift reports, and **prometheus-fastapi-instrumentator**
 exposes system metrics at `/metrics`. **locust** load-tested the deployed API
@@ -203,7 +203,7 @@ before merging. Docker images (`dockerfiles/*.dockerfile`) use the same
 `uv sync --frozen` step, so the local, CI, and container environments are all
 built from the same lockfile. Dependency groups (`dev`, `serving`,
 `monitoring`, `data`) keep heavy optional stacks out of images that do not
-need them — the serving image, for instance, installs only base + monitoring.
+need them. The serving image, for instance, installs only base + monitoring.
 
 ### Question 5
 
@@ -222,7 +222,7 @@ need them — the serving image, for instance, installs only base + monitoring.
 The project was initialized from
 [SkafteNicki/mlops_template](https://github.com/SkafteNicki/mlops_template).
 We filled out: `data/` (DVC-tracked pointers to the processed ScienceQA-IMG
-splits), `src/scipali/` — split into `data/` (download + preprocess),
+splits), `src/scipali/`, which is split into `data/` (download + preprocess),
 `models/` (model, train, evaluate, optimize, visualize), `serving/` (FastAPI
 app, predict CLI, Streamlit frontend, BentoML service), and `monitoring/`
 (drift detection); `configs/` (Hydra config groups); `dockerfiles/` (three
@@ -258,7 +258,7 @@ cannot be merged even if a hook was skipped locally. Public functions carry
 type hints and short Args/Returns docstrings.
 
 These rules matter more as a project grows because consistent formatting and
-typing remove an entire class of bikeshedding and reviewing friction — a
+typing remove a whole class of review friction: a
 reviewer can focus on logic instead of style, static types catch a class of
 bugs before runtime, and a shared, enforced style means any contributor
 (including a future one who wasn't on the original team) can read unfamiliar
@@ -286,7 +286,7 @@ LoRA wiring, prompt building and config resolution; `test_data.py` (24) the
 download/preprocess pipeline and split integrity; `test_api.py` (19) the
 serving contracts, including validation failures; `test_monitoring.py` (12)
 drift-feature derivation and the Evidently path; `test_optimize.py` (11)
-pruning correctness — including that achieved sparsity matches the requested
+pruning correctness, including that the achieved sparsity matches the requested
 target; `test_predict.py` (8) the prediction CLI; `test_train.py` (6)
 training utilities such as the √-batch learning-rate rule; and
 `test_evaluate.py` (2) answer-letter extraction and scoring. All are CPU-only
@@ -308,17 +308,17 @@ and hermetic so they run identically in CI.
 Total coverage is **~72%** of `src/scipali` (`uv run coverage report`),
 computed in CI on every push and uploaded to Codecov. CI installs the
 optional monitoring extras (`--group monitoring`) so the import-guarded
-lines — the Prometheus `/metrics` instrumentation and the Evidently
-drift-report body — are exercised there too, keeping the local number and
+lines (the Prometheus `/metrics` instrumentation and the Evidently
+drift-report body) are exercised there too, keeping the local number and
 the Codecov badge in agreement.
 
-No — 100% coverage would only mean every line *executed* at least once during
+No. 100% coverage would only mean every line *executed* at least once during
 testing, not that the code is correct. It says nothing about whether the
 *assertions* are meaningful, whether edge cases and unusual inputs are
 exercised, or whether two covered lines interact incorrectly together. A test
 that calls a function and checks nothing meaningful still counts as "covered."
 We treat coverage as a floor that flags obviously-untested code, not a
-correctness guarantee — e.g. our own gaps are concentrated in `train.py`
+correctness guarantee. For example, our own gaps are concentrated in `train.py`
 (GPU-only training loop, not exercised by the fast CPU unit-test suite) and
 parts of `model.py`/`monitoring.py`, which are covered by integration-level
 checks (a real Vertex AI run, a real drift report) rather than unit tests.
@@ -337,15 +337,15 @@ checks (a real Vertex AI run, a real drift report) rather than unit tests.
 > Answer:
 
 Yes. Changes went into feature branches and were merged into `main` via pull
-requests rather than pushed directly — the repository history shows PR merges. Since `main` is
+requests rather than pushed directly; the repository history shows the PR merges. Since `main` is
 wired to CI (tests + linting on every push/PR) and to automatic deployment
 (Cloud Build rebuilds the API image, and later in the project a
 model-registry-change workflow rolls a promoted model out to Cloud Run), a
-broken `main` has real consequences beyond code review — so keeping changes in
-a branch until CI is green before merging was the main practical benefit,
+broken `main` has real consequences beyond code review. Keeping changes in
+a branch until CI was green before merging was therefore the main practical benefit,
 alongside the usual review/diff-visibility benefit of a PR. In practice, many
 late-project documentation pushes went to `main` directly once CI was
-reliably green — a pragmatic trade-off we would formalize with branch
+reliably green, a pragmatic trade-off that we would formalize with branch
 protection rules in a longer-lived project.
 
 ### Question 10
@@ -368,14 +368,14 @@ without a `.git` directory (so DVC can't detect a git repo inside the
 container), and `dvc pull` needs to work in that no-SCM mode.
 
 DVC let us keep the (large, binary) image data out of git entirely while still
-versioning exactly which processed split a given training run used — the
+versioning exactly which processed split a given training run used: the
 pointer files are tiny and diff cleanly in git, while the actual bytes live in
 GCS and are pulled on demand (locally, in CI, and inside Vertex AI training
 jobs). It also meant switching data sources mid-project (we initially targeted
 `lmms-lab/ScienceQA`, then switched to
 [`derek-thomas/ScienceQA`](https://huggingface.co/datasets/derek-thomas/ScienceQA)
-because the former ships no train split) didn't require any special handling — `dvc add` +
-`dvc push` and the new processed split was versioned the same way.
+because the former ships no train split) did not require any special handling:
+`dvc add` + `dvc push`, and the new processed split was versioned the same way.
 
 ### Question 11
 
@@ -394,23 +394,23 @@ because the former ships no train split) didn't require any special handling —
 
 CI is split across several GitHub Actions workflows:
 
-- **`tests.yaml`** — runs `pytest` + `coverage` across a **3 × 2 matrix**
+- **`tests.yaml`**: runs `pytest` + `coverage` across a **3 × 2 matrix**
   (`ubuntu-latest` / `windows-latest` / `macos-latest` × Python `3.11` /
   `3.12`, six combinations total), using `astral-sh/setup-uv` with
   `enable-cache: true` for dependency caching. Coverage is uploaded to Codecov
   from the ubuntu/3.11 cell.
-- **`linting.yaml`** — `ruff check`, `ruff format --check`, and `mypy`, run on
+- **`linting.yaml`**: `ruff check`, `ruff format --check`, and `mypy`, run on
   every push/PR to `main`.
-- **`docs.yaml`** — builds and publishes the MkDocs site to GitHub Pages
+- **`docs.yaml`**: builds and publishes the MkDocs site to GitHub Pages
   (`mkdocs gh-deploy`) on changes to `docs/`/`src/`.
-- **`data-change.yaml`** and **`model-registry-change.yaml`** — two additional
+- **`data-change.yaml`** and **`model-registry-change.yaml`**: two additional
   continuous workflows: the first runs data-integrity checks when the DVC
   pointer files change, the second reacts to a real Weights & Biases webhook
   when the `production` model alias moves, and automatically rolls the newly
   promoted adapter out to Cloud Run plus smoke-tests the live endpoint.
 
 The matrix exists because path handling and multiprocessing differ across
-operating systems — which forces the suite to stay CPU-only and hermetic. We
+operating systems, which also forces the suite to stay CPU-only and hermetic. We
 deliberately do **not** matrix PyTorch versions: `uv.lock` pins exactly one,
 and testing versions we never ship would validate configurations that cannot
 reach production. Dependency caching via `astral-sh/setup-uv` keeps a full
@@ -501,7 +501,7 @@ between the two metrics is directly visible; the second shows the earlier
 r=8 sweep (`xptwdnis`) with the same effect. Beyond these curves, every run
 logs its fully-resolved Hydra config (the exact hyperparameters behind any
 result), a table of 32 sampled test predictions for qualitative inspection,
-and the trained LoRA adapter as a W&B artifact — so any run's model and its
+and the trained LoRA adapter as a W&B artifact, so any run's model and its
 producing config can be recovered together, months later, from the dashboard.
 
 We track both `val/loss` and a generation-based `val/accuracy` (exact-match on
@@ -509,8 +509,8 @@ the extracted answer letter) every epoch, and select/early-stop on
 `val/accuracy` rather than `val/loss`. This turned out to matter concretely:
 in our sweep, the trial with the *best* `val/loss` (0.464) had the
 *worst* `val/accuracy` (0.619), while the trial we actually selected (best
-`val/accuracy`, promoted to production at the time — 64.1% test) had a
-*higher* loss (0.511) but the *best* accuracy (0.702) — see
+`val/accuracy`, promoted to production at the time with 64.1% test) had a
+*higher* loss (0.511) but the *best* accuracy (0.702); see
 [`reports/RESULTS.md`](RESULTS.md#methodology-note--why-we-optimise-valaccuracy-not-valloss)
 for the full table. Since the task is graded on exact-match accuracy, not
 log-likelihood, optimising the metric that's actually reported avoided
@@ -531,7 +531,7 @@ metric we actually care about.
 > Answer:
 
 We built three images (`dockerfiles/`): `train.dockerfile` (CUDA/amd64, used
-for Vertex AI training/eval/optimize jobs — installs the project from a
+for Vertex AI training/eval/optimize jobs; it installs the project from a
 prebuilt wheel rather than building it in-image, see the comment in the
 Dockerfile for why), `api.dockerfile` (CPU, the FastAPI serving image deployed
 to Cloud Run), and `predict.dockerfile` (CPU, a standalone single-prediction
@@ -540,7 +540,7 @@ trigger `mlops-ci-api`); the train image is cloud-built manually (it needs the
 locally-built wheel injected into the build context); and all three were also
 built and smoke-tested locally via `inv docker-build`.
 
-Example — running the predict image (the adapter and input image are mounted
+Example: running the predict image (the adapter and input image are mounted
 in, and the gated base model needs a Hugging Face token):
 
 ```bash
@@ -564,20 +564,20 @@ Link: [`dockerfiles/api.dockerfile`](https://github.com/yuxinliu42/finetune_pali
 >
 > Answer:
 
-Debugging was a mix of the VS Code debugger, logging, and — for the tricky
-bugs — inspecting intermediate tensors and logs. Two concrete examples:
+Debugging was a mix of the VS Code debugger, logging, and, for the tricky
+bugs, inspecting intermediate tensors and logs. Two concrete examples:
 (1) training loss stayed stuck early on because of a stale
 `subjects`/`max_length` handling bug in the data pipeline; (2) a prompt that
 put the Hint/Lecture text *before* the answer Choices silently truncated the
-choices once the token budget ran out — worth roughly **16 points** of test
-accuracy, traced by inspecting the actual tokenized prompts and fixed by
+choices once the token budget ran out, which cost roughly **16 points** of test
+accuracy; it was traced by inspecting the actual tokenized prompts and fixed by
 reordering `build_prompt`.
 
 We profiled in two ways: PyTorch Lightning's built-in profiler
 (`trainer.profiler`, configurable via Hydra) for the training loop, and a
 `cProfile`-based script (`scipali.data.profile_data`) for the `DataLoader`.
 The latter showed loading is image-decode-bound (~45% PIL decode, ~28%
-resize) but *not* the bottleneck — ~11 ms/batch fully overlaps GPU compute
+resize) but *not* the bottleneck, because ~11 ms/batch fully overlaps GPU compute
 (see `reports/profiling/`). So the code was not perfect, but profiling told
 us which inefficiency would matter and that we did not currently need to fix
 it.
@@ -597,21 +597,21 @@ it.
 >
 > Answer:
 
-- **Cloud Storage (GCS)** — the DVC remote for versioned data, the model
+- **Cloud Storage (GCS)**: the DVC remote for versioned data, the model
   registry's artifact store (`models/production/`), and the drift-monitoring
   reference/production tables.
-- **Vertex AI** — runs all GPU work as custom jobs (training, hyperparameter
+- **Vertex AI**: runs all GPU work as custom jobs (training, hyperparameter
   sweeps, standalone evaluation, quantization/pruning) on single-L4 machines.
-- **Cloud Build** — builds the Docker images; a trigger auto-rebuilds the API
+- **Cloud Build**: builds the Docker images; a trigger auto-rebuilds the API
   image on every push to `main`.
-- **Artifact Registry** — stores the built container images.
-- **Cloud Run** — serves the FastAPI inference app: CPU-only, scale-to-zero,
+- **Artifact Registry**: stores the built container images.
+- **Cloud Run**: serves the FastAPI inference app: CPU-only, scale-to-zero,
   lazy model loading.
-- **Secret Manager** — holds the Hugging Face token and W&B API key, fetched
+- **Secret Manager**: holds the Hugging Face token and W&B API key, fetched
   at container start rather than baked into images.
-- **Cloud Monitoring** — an alert policy on repeated 5xx responses, with a
+- **Cloud Monitoring**: an alert policy on repeated 5xx responses, with a
   verified email notification channel.
-- **IAM / Workload Identity Federation** — keyless GCP auth for the GitHub
+- **IAM / Workload Identity Federation**: keyless GCP auth for the GitHub
   Actions workflow that rolls a newly-promoted model out to Cloud Run.
 
 ### Question 18
@@ -630,10 +630,10 @@ it.
 We did not provision or manage Compute Engine VMs directly. All GPU work runs
 as **Vertex AI custom jobs**, which provision the underlying VM for us
 (`g2-standard-8`: 8 vCPU / 32 GB RAM / 1× NVIDIA L4, via the Flex Start queue,
-in `europe-west4` — the only region where we had both G2 machine availability
+in `europe-west4`, the only region where we had both G2 machine availability
 and L4 quota). Serving uses Cloud Run instead of a hand-managed VM. So our use
 of "Compute Engine" is indirect, through the managed services built on top of
-it, by design — we didn't need raw VM control for either training or serving,
+it, by design: we did not need raw VM control for either training or serving,
 and the queue-based Flex Start provisioning meant we never paid for idle GPUs.
 
 ### Question 19
@@ -667,9 +667,9 @@ LoRA adapters (with `models/production/` being the one the API serves),
 >
 > Answer:
 
-![Artifact Registry — paligemma-api image versions](figures/artifact_api.png)
+![Artifact Registry: paligemma-api image versions](figures/artifact_api.png)
 
-![Artifact Registry — paligemma-train image versions](figures/artifact_train.png)
+![Artifact Registry: paligemma-train image versions](figures/artifact_train.png)
 
 Verifiable from the CLI:
 
@@ -694,12 +694,12 @@ disabled, because that image needs a locally-built wheel injected into the
 build context (see Question 15), so it's built manually rather than from a
 bare git checkout.
 
-Recent API builds may show **FAILURE — deliberately**: a base-image toolchain
+Recent API builds may show **FAILURE**, and this is deliberate: a base-image toolchain
 drift began producing images that *built* green but could not import the
 application (caught only when a Cloud Run deploy died), so we added an import
 smoke-test step to `cloudbuild.api.yaml`. Broken images now fail **in CI**
 with a one-line reason and are never pushed; the builds stay red until the
-underlying dockerfile fix lands. The live service was unaffected throughout —
+underlying dockerfile fix lands. The live service was unaffected throughout:
 Cloud Run kept traffic on the last healthy revision, and deploys are pinned
 to a known-good image digest in the meantime.
 
@@ -716,8 +716,8 @@ to a known-good image digest in the meantime.
 >
 > Answer:
 
-Yes — every GPU workload trains as a **Vertex AI custom job**; we deliberately
-provisioned no Compute Engine VMs (nothing to SSH into or forget to delete —
+Yes. Every GPU workload trains as a **Vertex AI custom job**; we deliberately
+provisioned no Compute Engine VMs (nothing to SSH into or forget to delete;
 `gcloud compute instances list` is empty by design). A job is one template
 (`cloud/vertex_config.template.yaml`) rendered with `envsubst` and submitted
 via `gcloud ai custom-jobs create`, wrapped by `cloud/watch_job.sh` (image
@@ -726,8 +726,8 @@ from Artifact Registry; at start it fetches W&B/HF secrets from Secret
 Manager, runs `dvc pull` for the processed data, then executes baseline
 training, a W&B Bayesian sweep (`wandb sweep` + `wandb agent`), and
 evaluation of the best trial. Hardware is a single NVIDIA L4
-(`g2-standard-8`) in `europe-west4` — the only region where G2 availability
-and L4 quota lined up — through the Flex Start queue, where capacity waits
+(`g2-standard-8`) in `europe-west4`, the only region where G2 availability
+and L4 quota lined up, through the Flex Start queue, where capacity waits
 ranged from 8 minutes to 16+ hours, and `maxWaitDuration` had to be raised
 explicitly to survive stockouts.
 
@@ -746,15 +746,15 @@ explicitly to survive stockouts.
 >
 > Answer:
 
-Yes — a **FastAPI** application (`scipali.serving.api`). `POST /predict`
+Yes, a **FastAPI** application (`scipali.serving.api`). `POST /predict`
 takes a Pydantic-validated JSON body (`question`, `choices`, optional
 `hint`/`lecture`, and a base64-encoded `image_b64`) and returns
 `{"prediction": "<letter>"}`; `GET /` reports health and whether the model is
 loaded; `GET /monitor/drift` and `GET /metrics` expose monitoring. Two design
-decisions matter most: **lazy model loading** — the app starts and passes
-startup probes in seconds and loads the 3B model on the first prediction
-(required for Cloud Run) — and the **adapter is read from a `gs://` path at
-startup**, decoupling model updates from the container image. Every
+decisions matter most: **lazy model loading** (the app starts and passes
+startup probes in seconds and loads the 3B model on the first prediction,
+which is required for Cloud Run), and the **adapter is read from a `gs://`
+path at startup**, decoupling model updates from the container image. Every
 prediction also emits one structured JSON log line (derived features +
 prediction) that feeds the drift-monitoring pipeline. FastAPI auto-serves
 interactive OpenAPI docs at `/docs`, which we use for live demos; the full
@@ -777,7 +777,7 @@ contracts and request-flow diagram are documented in `docs/source/api.md`.
 Yes, both locally and in the cloud. The FastAPI app is deployed to **Cloud
 Run** (`paligemma-api`, `europe-west4`): CPU-only (8 vCPU / 32 GB),
 scale-to-zero, `concurrency 1` (one heavy 3B inference per container) with
-overflow to at most 3 instances — capacity settings that came from load
+overflow to at most 3 instances; these capacity settings came from load
 testing (Question 25). Lazy model loading lets the container pass its startup
 probe immediately; the adapter is read from `gs://…/models/production` at
 startup, so promoting a new model needs no rebuild or redeploy. Invoke it
@@ -789,8 +789,8 @@ curl -X POST https://paligemma-api-581237630637.europe-west4.run.app/predict \
   -d '{"question": "...", "choices": ["a","b","c"], "image_b64": "<base64>"}'
 ```
 
-A cold (scaled-to-zero) `/predict` takes ~150–230 s bundled (container start
-+ model load + inference); warm calls run ~25–80 s. A Streamlit frontend and
+A cold (scaled-to-zero) `/predict` takes about 150 to 230 s in total (container
+start + model load + inference); warm calls run about 25 to 80 s. A Streamlit frontend and
 a shell demo (`cloud/demo_api.sh`) drive the same live endpoint.
 
 ![Local prediction via the CLI](figures/predict_cli_local.png)
@@ -812,14 +812,14 @@ a shell demo (`cloud/demo_api.sh`) drive the same live endpoint.
 > Answer:
 
 Yes, both. **Functional tests**: 19 tests in `tests/test_api.py` drive the
-app through FastAPI's `TestClient` — the health contract, the `/predict`
-happy path and validation failures (422 on malformed bodies), the drift
-endpoint, and the metrics instrumentation — and run in CI on every push
+app through FastAPI's `TestClient` (the health contract, the `/predict`
+happy path and validation failures with 422 on malformed bodies, the drift
+endpoint, and the metrics instrumentation) and run in CI on every push
 across the 3 OS × 2 Python matrix. **Load testing**: locust against the
 deployed service (`tests/load/locustfile.py`; recorded run and analysis in
 `reports/load/`). Warm `/predict` showed p50 ≈ 10 s / p95 ≈ 27 s, and under
 concurrent users the initial deploy returned 429s because it served one
-request at a time — a finding that directly changed production
+request at a time, a finding that directly changed production
 (`max-instances` raised 1 → 3, keeping `concurrency 1` deliberately: one
 heavy inference per container avoids memory pressure). A later probe also
 surfaced 500s under concurrent cold-start pressure, which our 5xx alert
@@ -842,14 +842,14 @@ Yes, three layers. **Data drift**: `monitoring.py` derives lightweight
 features per request (question length, number of choices, hint/lecture
 presence, image dimensions); `GET /monitor/drift` compares the training
 reference against production features collected from real `/predict` traffic
-via Cloud Logging (Evidently `DataDriftPreset`) — avoiding the
+via Cloud Logging (Evidently `DataDriftPreset`); this avoids the
 self-comparison trap of "reference vs a held-out slice of the same dataset".
 **System metrics**: `prometheus-fastapi-instrumentator` exposes request
 counts/latency/sizes at `/metrics`. **Alerting**: a Cloud Monitoring policy
 fires on any 5xx within 5 minutes, emailing a notification channel we
 verified end-to-end (`verificationStatus: VERIFIED`) rather than assuming
 delivery. The alert has also **fired for real**: during a load-test probe,
-two `/predict` requests returned 500 under concurrent cold-start pressure —
+two `/predict` requests returned 500 under concurrent cold-start pressure;
 the incident opened and emailed us within minutes, then auto-resolved. The
 zero threshold is deliberate at our near-zero baseline traffic (a single
 server error *is* the signal) and would be retuned to an error-rate condition
@@ -874,21 +874,21 @@ as traffic grows.
 
 Total usage across the project's **two** education billing accounts was
 **≈ $70, fully covered by credits ($0 out of pocket)**. The first account
-accrued $50.15 — Compute Engine $33.25 + AI Platform Training $13.06
-(together the Vertex L4 training stack: the GPU VMs bill as Compute Engine
-SKUs under the job orchestration) plus small Cloud Build / Artifact Registry
-/ Storage / Cloud Run charges — and **closed mid-project, mid-sweep**; the
+accrued $50.15 (Compute Engine $33.25 + AI Platform Training $13.06, together
+the Vertex L4 training stack because the GPU VMs bill as Compute Engine
+SKUs under the job orchestration, plus small Cloud Build / Artifact Registry
+/ Storage / Cloud Run charges) and **closed mid-project, mid-sweep**; the
 project was re-linked to a second account, which accrued $19.77 (Vertex +
 Compute $10.97, Artifact Registry $7.07 for the ~3.4 GB train images, the
 rest storage and serving). The most expensive service was therefore the
-**Vertex AI training stack (≈ $57 of ≈ $70)** — consistent with 73 custom
+**Vertex AI training stack (≈ $57 of ≈ $70)**, which is consistent with 73 custom
 jobs and ~47 h of billed GPU runtime, while Flex-Start queue waits were
 unbilled. Storage, builds, and scale-to-zero serving added only a few dollars
 combined.
 
-![Billing — first education account](figures/billing_Yuxin.png)
+![Billing: first education account](figures/billing_Yuxin.png)
 
-![Billing — second education account](figures/billing_duc.png)
+![Billing: second education account](figures/billing_duc.png)
 
 ### Question 28
 
@@ -908,11 +908,11 @@ Several things beyond the questions above. **An inference-optimization
 suite**: a bf16 vs int4 vs `torch.compile` benchmark (int4 halves GPU memory
 for ~9 % latency cost), a global-magnitude pruning sweep over the full test
 split (graceful degradation to ~30 % sparsity, collapse at 70 %), and a
-masked prune-finetune recovering ~1 pt at 50 % sparsity — all as Vertex jobs
+masked prune-finetune recovering ~1 pt at 50 % sparsity, all as Vertex jobs
 with results in `reports/RESULTS.md`. **Automated model rollout**: moving the
 `production` alias in the W&B model registry fires a webhook →
 `repository_dispatch` → GitHub Actions (keyless Workload Identity Federation)
-→ a fresh Cloud Run revision plus smoke test — verified live. **A CI import
+→ a fresh Cloud Run revision plus smoke test, verified live. **A CI import
 guard born from a real incident**: a base-image drift produced images that
 built green but could not import the application; Cloud Build now runs an
 import smoke test, so broken images fail in CI and are never pushed. Plus a
@@ -970,7 +970,7 @@ image is built manually from a locally-built wheel (its CI trigger is
 deliberately disabled), and both Vertex AI jobs and Cloud Run pull images by
 digest, so each workload runs exactly the image that was built and verified.
 Finally, the figure does not show the human gate in the loop: merging code
-changes triggers automatic validation but not automatic retraining — a
+changes triggers automatic validation but not automatic retraining, which is a
 deliberate human decision due to GPU cost and quota; only the rollout after
 promotion is automated (via keyless Workload Identity Federation rather than
 stored service-account keys).
@@ -989,19 +989,19 @@ stored service-account keys).
 
 The single biggest accuracy bug was a **prompt-ordering mistake**: placing the
 optional Hint/Lecture text before the answer Choices meant the tokenizer's
-`max_length` sometimes truncated the choices themselves — worth roughly **16
-points** of test accuracy once diagnosed and fixed by reordering the prompt
-builder.
+`max_length` sometimes truncated the choices themselves. This was worth
+roughly **16 points** of test accuracy once diagnosed and fixed by reordering
+the prompt builder.
 
 **Vertex AI GPU availability** cost real time: L4 quota and G2 machine
 availability only lined up in `europe-west4` (a region with quota elsewhere had
 no G2 machines at all), and Flex Start's default `maxWaitDuration` silently
 meant a 24-hour stockout cutoff unless explicitly overridden. A GCP billing
-account also closed mid-sweep, killing several in-flight trials — we treated
+account also closed mid-sweep, killing several in-flight trials; we treated
 W&B's "failed" (but actually completed) runs as valid since their artifacts
 were intact.
 
-**The pruning sweep** failed repeatedly on Vertex before it worked — capacity
+**The pruning sweep** failed repeatedly on Vertex before it worked: capacity
 errors, a CUDA out-of-memory during pruning, a packaging bug that dropped
 subpackages from an in-image-built wheel (fixed by building the wheel outside
 the image and shipping it in), and a host-RAM OOM from naively pooling ~3B
@@ -1009,15 +1009,15 @@ weights to float32 (fixed with a histogram-based global threshold instead).
 
 A live production bug: Rich's fixed-width log wrapping shredded the
 drift-monitoring JSON payload once it hit Cloud Logging, silently breaking the
-collect → drift loop — fixed by logging structured JSON straight to stdout
-instead of through the Rich logger. Separately, a GCP org policy disabling
+collect → drift loop. We fixed it by logging structured JSON straight to
+stdout instead of through the Rich logger. Separately, a GCP org policy disabling
 service-account key creation forced the model-registry-change CI workflow's
 auth to be redesigned around keyless Workload Identity Federation partway
 through the project. And on the dev-environment side, this project's working
 directory being iCloud-synced meant files were sometimes evicted mid-operation,
 intermittently stalling `git diff`, `gcloud builds submit`, and even local
-`docker build` — which looked like tool bugs at first until root-caused to the
-sync behaviour.
+`docker build`; these looked like tool bugs at first until we traced them back
+to the sync behaviour.
 
 ### Question 31
 
