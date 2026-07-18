@@ -1,4 +1,4 @@
-# scipali — Answer Your Science Questions
+# scipali: Answer Your Science Questions
 
 [![Unit Tests](https://github.com/yuxinliu42/finetune_paligemma2_scienceqa/actions/workflows/tests.yaml/badge.svg)](https://github.com/yuxinliu42/finetune_paligemma2_scienceqa/actions/workflows/tests.yaml)
 [![Code linting](https://github.com/yuxinliu42/finetune_paligemma2_scienceqa/actions/workflows/linting.yaml/badge.svg)](https://github.com/yuxinliu42/finetune_paligemma2_scienceqa/actions/workflows/linting.yaml)
@@ -9,7 +9,7 @@
 </p>
 
 PaliGemma2-3B fine-tuned (LoRA) on ScienceQA-IMG, wrapped in a full MLOps
-pipeline — DVC data versioning, Hydra configs, W&B sweeps, Vertex AI training,
+pipeline: DVC data versioning, Hydra configs, W&B sweeps, Vertex AI training,
 Cloud Run serving, drift monitoring, and CI/CD. Headline: **72.19%** exact-match
 accuracy on the 2,017-sample test split. Full results in
 [`reports/RESULTS.md`](reports/RESULTS.md); usage in
@@ -20,13 +20,13 @@ accuracy on the 2,017-sample test split. Full results in
 ### Goal
 The project has two goals: **improve the reasoning accuracy** of the pretrained
 PaliGemma foundation model on multimodal science questions, and do it inside a
-**complete, reproducible MLOps pipeline** — versioned data, configurable
+**complete, reproducible MLOps pipeline**: versioned data, configurable
 training, tracked experiments, automated deployment, and monitoring (diagrammed
 in [`reports/figures/architecture.jpg`](reports/figures/architecture.jpg)).
 
 ### Framework
-The Hugging Face **Transformers** framework. We build on its main strength —
-thousands of pretrained models — by starting from a pretrained PaliGemma2
+The Hugging Face **Transformers** framework. We build on its main strength,
+thousands of pretrained models, by starting from a pretrained PaliGemma2
 checkpoint and fine-tuning it on our data rather than training anything from
 scratch. Around it: **PEFT/LoRA** for parameter-efficient fine-tuning,
 **PyTorch Lightning** for the training loop, and **Hydra** for configuration
@@ -36,8 +36,8 @@ management.
 Given a science question, a supporting image, and a set of answer choices, the
 model picks the correct answer. The natural users are students and educational
 tools (ScienceQA is grade-school science material); within this course the
-served model is above all the workload that exercises the pipeline — deployed
-behind a FastAPI service on Cloud Run with a Streamlit UI on top (see the
+served model is above all the workload that exercises the pipeline; it is
+deployed behind a FastAPI service on Cloud Run with a Streamlit UI on top (see the
 [command guide](#command-guide)).
 
 ### Dataset
@@ -51,7 +51,7 @@ but that mirror ships no train split, so we switched.)
 The **PaliGemma2-3B** vision-language model
 ([`google/paligemma2-3b-pt-224`](https://huggingface.co/google/paligemma2-3b-pt-224)),
 LoRA-adapted on the language-model attention projections (`q/k/v/o_proj`) with
-the vision encoder frozen — ~6.4 M trainable parameters against ~3 B frozen.
+the vision encoder frozen: ~6.4 M trainable parameters against ~3 B frozen.
 
 ## Project structure
 
@@ -72,6 +72,28 @@ the vision encoder frozen — ~6.4 M trainable parameters against ~3 B frozen.
 ├── pyproject.toml
 └── tasks.py                # invoke tasks
 ```
+
+The `src/scipali` package started from the template's flat module layout
+(`data.py`, `model.py`, `train.py`, `evaluate.py`, `api.py`, `visualize.py`).
+Those files grew during the project, so we applied the template's own
+refactoring advice and moved them into subpackages of the same name:
+
+* `data/`: everything related to the data. `data.py` downloads ScienceQA-IMG,
+  preprocesses it into `data/processed`, and provides the dataset and collate
+  interface that training and evaluation import; `profile_data.py` profiles
+  the dataloader.
+* `models/`: `model.py` defines the LoRA-wrapped PaliGemma2 Lightning module;
+  `train.py` trains it (Hydra-configured, logged to W&B) using the data
+  interface from `data/`; `evaluate.py` scores a trained adapter on the test
+  split; `optimize.py` benchmarks quantization and pruning; `visualize.py`
+  renders the report figures from the evaluation outputs.
+* `serving/`: `api.py` is the FastAPI service that loads the promoted adapter
+  and serves predictions; `predict.py` is a standalone prediction CLI;
+  `frontend.py` is the Streamlit UI on top of the API; `bento_service.py` is
+  the BentoML serving alternative.
+* `monitoring/`: `monitoring.py` derives drift features, collects production
+  traffic back from Cloud Logging, and builds the Evidently drift report that
+  the `/monitor/drift` endpoint serves.
 
 ## Command guide
 
@@ -143,6 +165,7 @@ cd finetune_paligemma2_scienceqa
 
 ```bash
 uv sync                      # creates .venv from uv.lock (Python 3.11)
+uv run inv dev-requirements  # full CI-parity env (adds the monitoring group)
 ```
 
 Cloud commands additionally need `gcloud auth login`; training/prediction needs
@@ -153,7 +176,7 @@ access to the gated PaliGemma2 base model (HF token) and W&B login for tracking.
 ```bash
 dvc pull                     # fetch the DVC-tracked processed dataset from GCS
 # check DVC is working correctly:
-dvc doctor                   # env + remote sanity — same check the data-change CI runs
+dvc doctor                   # env + remote sanity; the same check the data-change CI runs
 dvc status -c                # is the local cache in sync with the GCS remote?
 ```
 
@@ -195,7 +218,7 @@ batch-size rule (`resolve_learning_rate` in `train.py`).
 ```bash
 git pull origin main            # start from the newest main
 uv sync                         # re-sync in case the lockfile moved
-uv run pre-commit install       # once per clone — hooks then run on every commit
+uv run pre-commit install       # once per clone; hooks then run on every commit
 git checkout -b feat/<name>     # work on a branch, never on main
 # ...edit, commit...
 uv run pytest tests/            # green before pushing
@@ -203,8 +226,8 @@ git push -u origin feat/<name>  # then open a pull request
 ```
 
 `main` is wired to CI **and** deployment (a push rebuilds the API image), so
-changes merge via pull request once CI is green — a broken `main` has real
-consequences beyond review.
+changes merge via pull request once CI is green, because a broken `main` has
+real consequences beyond review.
 
 #### Pre-commit hooks
 
@@ -226,9 +249,16 @@ uv run coverage report -m -i           # per-file coverage table
 uv run pytest tests/                   # tests only, no coverage
 ```
 
-Adding a test: drop `tests/test_<topic>.py` with `test_*` functions — pytest
+Adding a test: drop `tests/test_<topic>.py` with `test_*` functions; pytest
 discovers it automatically. Keep it CPU-fast; GPU-only code paths are guarded
 by `mypy` and real cloud runs instead.
+
+#### Lint and clean
+
+```bash
+uv run inv lint              # ruff check + format check + mypy (same checks as linting.yaml)
+uv run inv clean             # remove caches and build artifacts (keeps data and checkpoints)
+```
 
 #### Lint and type-check
 
@@ -240,15 +270,15 @@ uv run mypy .                # static types
 
 #### What CI runs on every push
 
-- `tests.yaml` — pytest suite; coverage uploaded to Codecov (badge above).
-- `linting.yaml` — ruff check + format + mypy.
-- `docs.yaml` — builds and deploys the MkDocs site.
-- `data-change.yaml` — on `*.dvc` changes: DVC sanity check + data tests.
-- `model-registry-change.yaml` — on a W&B registry webhook
+- `tests.yaml`: pytest suite; coverage uploaded to Codecov (badge above).
+- `linting.yaml`: ruff check + format + mypy.
+- `docs.yaml`: builds and deploys the MkDocs site.
+- `data-change.yaml`: on `*.dvc` changes, DVC sanity check + data tests.
+- `model-registry-change.yaml`: on a W&B registry webhook
   (`repository_dispatch`): rolls a new Cloud Run revision + smoke test.
 - Cloud Build trigger `mlops-ci-api` rebuilds the API image on every push to
-  `main` touching `src/scipali/**`. (`mlops-ci-train` is disabled — the train
-  image needs a locally-built wheel, so it is built manually.)
+  `main` touching `src/scipali/**`. (`mlops-ci-train` is disabled because the
+  train image needs a locally-built wheel, so it is built manually.)
 
 <a id="zone-docker"></a>
 ### Docker [[Back To Contents]](#command-guide)
@@ -267,11 +297,11 @@ docker build -t predict:latest . -f dockerfiles/predict.dockerfile
 Platform: `train.dockerfile` is pinned to `linux/amd64` (CUDA wheels), so on
 Apple Silicon it builds under emulation (slow, ~15 min); `api` and `predict`
 build natively anywhere. The api image built here is exactly what Cloud Run
-serves — see [Deploy to Cloud Run](#deploy-to-cloud-run).
+serves; see [Deploy to Cloud Run](#deploy-to-cloud-run).
 
 The three Dockerfiles live in `dockerfiles/` (`train` / `api` / `predict`).
 Testing them: the next entry smoke-tests the API image; the train image gets an
-import smoke test without a GPU (this exact check caught a real packaging bug —
+import smoke test without a GPU (this exact check caught a real packaging bug;
 see the comment in `train.dockerfile`); and CI rebuilds `api.dockerfile` on
 every push (`mlops-ci-api`), so a broken Dockerfile fails CI:
 
@@ -280,17 +310,17 @@ docker run --rm --platform=linux/amd64 train:latest \
   python -c "import scipali.models.train, scipali.models.optimize"
 ```
 
-**Note — env for real training runs.** The train container bundles GPU training
+**Note: env for real training runs.** The train container bundles GPU training
 (CUDA torch), automatic data preparation (`entrypoint.sh` runs `dvc pull` at
 startup), and W&B logging. On Vertex AI all of this is prepared automatically:
 W&B/HF keys are fetched from Secret Manager and GCS access comes from the job's
-service account. To run it anywhere else, prepare the env yourself — an NVIDIA
+service account. To run it anywhere else, prepare the env yourself: an NVIDIA
 GPU (`docker run --gpus all …`), `WANDB_API_KEY`, `HF_TOKEN`, and GCS
 credentials for the DVC pull. If `--gpus all` errors, the host is missing a
-working NVIDIA driver or the NVIDIA Container Toolkit — `nvidia-smi` must
+working NVIDIA driver or the NVIDIA Container Toolkit; `nvidia-smi` must
 succeed on the host first, then
 `docker run --rm --gpus all nvidia/cuda:12.4.1-base-ubuntu22.04 nvidia-smi`
-verifies Docker can see the GPU. (On macOS `--gpus all` can never work — our
+verifies Docker can see the GPU. (On macOS `--gpus all` can never work, so our
 GPU containers run on Vertex instead.) The single-run path, `entrypoint.sh`, is three
 specific commands:
 
@@ -302,16 +332,16 @@ uv run --no-sync train "$@"
 
 #### Push the images to Artifact Registry
 
-Artifact Registry is GCP's private registry for build artifacts — for us a
-private Docker registry: the warehouse where Cloud Build deposits images and
+Artifact Registry is GCP's private registry for build artifacts. For us it is
+a private Docker registry: the warehouse where Cloud Build deposits images and
 Vertex AI / Cloud Run pull them, each addressed as
 `<region>-docker.pkg.dev/<project>/<repository>/<image>`, e.g.
 `europe-west4-docker.pkg.dev/paligemma-scienceqa/mlops-images/paligemma-api`.
 The API image (`paligemma-api`) is built and pushed automatically by CI on
 every push;
 the train image (`paligemma-train`) is built and pushed manually via Cloud
-Build — it installs the locally-built wheel, which a bare CI checkout doesn't
-have (that is why the `mlops-ci-train` trigger is deliberately disabled):
+Build, because it installs the locally-built wheel, which a bare CI checkout
+does not have (that is why the `mlops-ci-train` trigger is deliberately disabled):
 
 ```bash
 uv build --wheel -o wheelhouse   # the wheel the train image installs
@@ -325,7 +355,7 @@ Cloud Build:
 ```bash
 gcloud auth login
 gcloud config set project paligemma-scienceqa
-gcloud auth configure-docker europe-west4-docker.pkg.dev   # once — lets docker push to AR
+gcloud auth configure-docker europe-west4-docker.pkg.dev   # once; lets docker push to AR
 docker build --platform=linux/amd64 -t api:latest . -f dockerfiles/api.dockerfile
 docker tag api:latest europe-west4-docker.pkg.dev/paligemma-scienceqa/mlops-images/paligemma-api:latest
 docker push europe-west4-docker.pkg.dev/paligemma-scienceqa/mlops-images/paligemma-api:latest
@@ -336,25 +366,25 @@ local build on Apple Silicon is arm64, which Cloud Run cannot run) and needs
 no docker credential setup.
 
 The Vertex job spec (`cloud/vertex_config.template.yaml`) then references this
-image and defines the *infrastructure* — machine type, GPU, env vars, image
-URI — while the *hyperparameters* live in the Hydra configs: two deliberately
+image and defines the *infrastructure* (machine type, GPU, env vars, image
+URI), while the *hyperparameters* live in the Hydra configs: two deliberately
 separate configuration layers.
 
 #### Run the API in a docker container
 
 ```bash
 docker run -p 8000:8000 -e LAZY_LOAD=1 api:latest
-curl localhost:8000/             # health check — serves immediately, model loads lazily
+curl localhost:8000/             # health check; serves immediately, model loads lazily
 ```
 
 `LAZY_LOAD=1` defers loading the 3B model until the first `/predict`, so the
-container is up (and passes health/startup probes) in seconds — essential on
-Cloud Run, where the probe would otherwise kill the container before the model
+container is up (and passes health/startup probes) in seconds, which is
+essential on Cloud Run, where the probe would otherwise kill the container before the model
 finished loading; unset, the server loads the model eagerly at startup.
 
 The predict image runs the CLI as a container (its entrypoint *is*
 `scipali.serving.predict`, so args after the image name are CLI args; mount
-what it must read — paths in the args are container-side):
+what it must read; paths in the args are container-side):
 
 ```bash
 docker run --rm -v "$(pwd)/checkpoints:/checkpoints" -v "$(pwd)/img.png:/img.png" \
@@ -390,7 +420,7 @@ and the end-of-training test pass), configured by Hydra:
 
 ```bash
 uv run train trainer.wandb.enabled=true trainer.wandb.run_name=local-test
-# smoke run — Lightning's fast_dev_run: 1 train + 1 val batch, then exit:
+# smoke run, Lightning's fast_dev_run: 1 train + 1 val batch, then exit:
 uv run train trainer.fast_dev_run=true trainer.wandb.enabled=false
 # print the full model architecture (loads the HF-cached base model):
 uv run python -m scipali.models.model
@@ -399,10 +429,10 @@ uv run python -m scipali.models.model
 #### Run training in a docker container
 
 This is exactly what the Vertex job does (next entry): it runs the
-`paligemma-train` image with `bash cloud/run_baseline_and_sweep.sh` on an L4
-— containerized training on a managed GPU host, with data, secrets, and image
+`paligemma-train` image with `bash cloud/run_baseline_and_sweep.sh` on an L4:
+containerized training on a managed GPU host, with data, secrets, and image
 wired in automatically. Locally we can only smoke-test the container (no
-NVIDIA GPU on macOS — see the Docker zone); on a Linux box with a GPU, the
+NVIDIA GPU on macOS; see the Docker zone); on a Linux box with a GPU, the
 manual equivalent has this shape (untested here, since Vertex *is* our GPU
 host):
 
@@ -419,7 +449,7 @@ managed, ephemeral job rather than a machine: we pay only while the job
 runs, there is nothing to SSH into or remember to delete, scarce L4 capacity
 is handled by a queue instead of by us, and the image/data/secrets are wired
 in automatically. The cloud-training path: submits a Vertex AI custom job on a single L4 GPU
-(`europe-west4`, Flex Start queue) running the train image — data arrives via
+(`europe-west4`, Flex Start queue) running the train image; data arrives via
 the automatic `dvc pull`, W&B/HF secrets via Secret Manager (see the Docker note).
 
 ```bash
@@ -427,7 +457,7 @@ bash cloud/watch_job.sh                  # baseline + W&B sweep + eval, on one L
 SKIP_BASELINE=1 bash cloud/watch_job.sh  # sweep only
 ```
 
-Under the hood (the explicit method, simplified — the script adds retries,
+Under the hood (the explicit method, simplified; the script adds retries,
 image digest-pinning, and log streaming): render the job spec from its
 template, submit it, watch the logs.
 
@@ -446,7 +476,7 @@ whose specific steps are:
 . cloud/fetch_secrets.sh    # W&B/HF keys from Secret Manager (google-auth REST;
                             # manual equivalent: gcloud secrets versions access latest --secret=wandb-api-key)
 python -c "import torch; assert torch.cuda.is_available()"
-# -> on the L4: "CUDA OK: 11.8" | on a laptop: AssertionError — by design, fail fast
+# -> on the L4: "CUDA OK: 11.8" | on a laptop: AssertionError; fail fast by design
 python -m scipali.models.train trainer.wandb.enabled=true trainer.wandb.run_name=baseline
 # (the same run locally: uv run train trainer.wandb.enabled=true trainer.wandb.run_name=baseline)
 wandb sweep --project scienceqa-paligemma2 configs/sweep.yaml       # register the Bayesian sweep
@@ -460,46 +490,46 @@ python -m scipali.models.evaluate "checkpoints/adapter-<best-run>" --by-subject 
 
 All the `$VARS` above are documented, with defaults, in the header of
 `cloud/run_baseline_and_sweep.sh` (`WANDB_PROJECT=scienceqa-paligemma2`,
-`SWEEP_COUNT=8`, …) — grep the script when in doubt.
+`SWEEP_COUNT=8`, …); grep the script when in doubt.
 
-Checking the job and its GPU — there is nothing to SSH into: Vertex workers
-are managed machines that exist only for the job's lifetime, so the windows in
-are `describe` and the log stream:
+Checking the job and its GPU: there is nothing to SSH into, because Vertex
+workers are managed machines that exist only for the job's lifetime, so the
+windows into it are `describe` and the log stream:
 
 ```bash
 gcloud ai custom-jobs list --region=europe-west4 --project=paligemma-scienceqa   # our "instances": jobs
 gcloud ai custom-jobs describe <job-id> --region=europe-west4 \
   --format="yaml(state, jobSpec.workerPoolSpecs[0].machineSpec)"   # machine + accelerator actually granted
-gcloud compute instances list                                      # empty by design — no long-lived VMs
+gcloud compute instances list                                      # empty by design; no long-lived VMs
 ```
 
 The GPU-is-linked check is the fail-fast CUDA assert at the top of the job
 (above): a CPU-only or driverless container dies in seconds instead of after a
-long queue. No image install step exists anywhere — the job spec pins the
+long queue. No image install step exists anywhere: the job spec pins the
 Artifact Registry image by digest and Vertex pulls it. And when compute is
 scarce there is no error at submit time: the job sits in `JOB_STATE_PENDING`
 in the Flex Start queue (we have waited 8 minutes to 16+ hours for an L4) and
 only fails if `maxWaitDuration` expires before capacity frees up.
 
-Picking the GPU: accelerators are not available in every region — this is how
+Picking the GPU: accelerators are not available in every region; this is how
 you discover where one exists (for us, L4/G2 capacity meant `europe-west4`):
 
 ```bash
 gcloud compute accelerator-types list --filter="name=nvidia-l4"
 ```
 
-The fully manual alternative — `gcloud compute instances create <name>
---zone=… --accelerator=type=nvidia-l4,count=1 …` — spins up a raw GPU VM you
+The fully manual alternative, `gcloud compute instances create <name>
+--zone=… --accelerator=type=nvidia-l4,count=1 …`, spins up a raw GPU VM you
 must SSH into, run, and remember to delete. We deliberately use managed Vertex
 custom jobs instead: the machine exists only for the job's lifetime, and the
 image, DVC data pull, and secrets are wired in automatically.
 
 #### Hyperparameter sweep (W&B)
 
-The sweep definition is `configs/sweep.yaml` — Bayesian search over
+The sweep definition is `configs/sweep.yaml`: Bayesian search over
 `model.base_learning_rate` (log-uniform) and
 `trainer.accumulate_grad_batches`, optimizing generation-based `val/accuracy`
-(max), *not* `val/loss` — the two disagree on this task (see
+(max), *not* `val/loss`, because the two disagree on this task (see
 [`reports/RESULTS.md`](reports/RESULTS.md)). Sweeps run inside the Vertex job:
 
 ```bash
@@ -510,7 +540,7 @@ wandb sweep --project scienceqa-paligemma2 configs/sweep.yaml
 # -> wandb: Created sweep with ID: win9arpw
 # -> wandb: Run sweep agent with: wandb agent <entity>/scienceqa-paligemma2/win9arpw
 wandb agent <entity>/scienceqa-paligemma2/win9arpw --count 8   # paste the exact
-#   agent string from the `wandb sweep` output above — it prints it ready to run
+#   agent string from the `wandb sweep` output above; it prints it ready to run
 ```
 
 Each agent trial launches `train` with sweep-chosen overrides; the best trial
@@ -519,7 +549,7 @@ by `val/accuracy` is then test-evaluated `--by-subject`.
 #### Debug a failing cloud job
 
 ```bash
-# resolve the newest job into $JOB — runnable any time, no id to look up:
+# resolve the newest job into $JOB; runnable any time, no id to look up:
 JOB=$(gcloud ai custom-jobs list --region=europe-west4 --project=paligemma-scienceqa \
   --sort-by=~createTime --limit=1 --format="value(name)")
 gcloud ai custom-jobs describe "$JOB" --region=europe-west4 \
@@ -535,14 +565,14 @@ gcloud logging read "resource.labels.job_id=\"${JOB##*/}\"" \
 
 Hard-won practices baked into the scripts (each debugged a real failure here):
 
-- **`PYTHONUNBUFFERED=1`** in the job scripts — a signal-killed process (OOM)
+- **`PYTHONUNBUFFERED=1`** in the job scripts: a signal-killed process (OOM)
   loses its buffered stdout, so without this our first pruning crash logged
   *nothing*, not even a traceback.
-- **CPU-only Vertex verify job** — a `n1-standard-4` job that just imports the
+- **CPU-only Vertex verify job**: a `n1-standard-4` job that just imports the
   package (~5 min, no GPU queue) caught an image-packaging bug that would
   otherwise cost a 16 h GPU-queue wait per attempt.
 - **Fail-fast CUDA assert** at job start (see the training steps above).
-- **`mypy` in CI** — it caught a call-signature bug in the GPU-only code path
+- **`mypy` in CI**: it caught a call-signature bug in the GPU-only code path
   that unit tests structurally cannot execute.
 
 #### Evaluate an adapter
@@ -559,8 +589,8 @@ TEMPLATE=cloud/vertex_eval.template.yaml RENDERED=cloud/vertex_eval.yaml \
 
 The Vertex variant is the same explicit method as
 [Train on Vertex AI](#train-on-vertex-ai), just rendering
-`cloud/vertex_eval.template.yaml` instead — as are the two optimization jobs
-below (`cloud/vertex_optimize.template.yaml`). Inside the container the eval
+`cloud/vertex_eval.template.yaml` instead, and the same holds for the two
+optimization jobs below (`cloud/vertex_optimize.template.yaml`). Inside the container the eval
 job runs `cloud/run_eval.sh`: download the adapter from GCS, then the same
 `python -m scipali.models.evaluate <adapter> --by-subject` as above, then
 upload the results JSON.
@@ -569,7 +599,7 @@ upload the results JSON.
 
 ```bash
 uv run python -m scipali.data.profile_data --workers 0,2,4
-# profile the training loop itself (Lightning profiler — 'simple' or 'advanced'):
+# profile the training loop itself (Lightning profiler, 'simple' or 'advanced'):
 uv run train trainer.profiler=simple trainer.fast_dev_run=true trainer.wandb.enabled=false
 ```
 
@@ -578,18 +608,18 @@ Lightning profiler prints its report when the run ends.
 
 #### Distributed training, data, and model
 
-None of the three is needed at this scale — **LoRA buys us out of all of
-them** (full argument + measurements in
+None of the three is needed at this scale, because **LoRA removes the need
+for all of them** (full argument + measurements in
 [`reports/RESULTS.md`](reports/RESULTS.md)):
 
-- **Distributed (data-parallel) training / DDP** — everything fits one L4
+- **Distributed (data-parallel) training / DDP**: everything fits one L4
   (~6.4 M trainable params). If more GPUs appeared, the switch is one Lightning
   line: `Trainer(devices=2, strategy="ddp")`.
-- **Distributed data loading** — we parallelize *within* the node instead: the
+- **Distributed data loading**: we parallelize *within* the node instead. The
   `DataLoader` runs with `num_workers: 2` (`configs/data/scienceqa.yaml`).
-  Profiling shows ~11 ms/batch, fully overlapped by compute — sharded loading
+  Profiling shows ~11 ms/batch, fully overlapped by compute; sharded loading
   would solve a problem we measurably do not have (~700 MB dataset).
-- **Distributed model (FSDP / tensor parallelism)** — the bf16 model is ~7 GB
+- **Distributed model (FSDP / tensor parallelism)**: the bf16 model is ~7 GB
   on a 24 GB L4, and LoRA training adds little on top (optimizer state only
   for adapter params, activations capped by gradient checkpointing). Nothing
   needs sharding; if it ever did, Lightning's FSDP/DeepSpeed strategies are a
@@ -610,8 +640,8 @@ TEMPLATE=cloud/vertex_optimize.template.yaml RENDERED=cloud/vertex_optimize.yaml
 ```
 
 The explicit method (what the wrapper does, minus image digest-pinning and
-retries). All 8 template variables must be exported — `envsubst` renders unset
-ones as empty values, which Vertex rejects.
+retries). All 8 template variables must be exported, because `envsubst` renders
+unset ones as empty values, which Vertex rejects.
 
 ```bash
 export IMAGE_URI=europe-west4-docker.pkg.dev/paligemma-scienceqa/mlops-images/paligemma-train:latest \
@@ -624,7 +654,7 @@ gcloud ai custom-jobs create --region=europe-west4 --project=paligemma-scienceqa
 ```
 
 Inside the container, `cloud/run_optimize.sh` runs the underlying CLI. One
-invocation benchmarks all three precision/compile configs — `bf16` (the
+invocation benchmarks all three precision/compile configs: `bf16` (the
 serving default), `int4` (bitsandbytes 4-bit), and `bf16+torch.compile`:
 
 ```bash
@@ -636,8 +666,8 @@ python -m scipali.models.optimize benchmark <adapter_dir> \
 
 Measured result (full table in [`reports/RESULTS.md`](reports/RESULTS.md)):
 **int4 halves peak GPU memory** (6.87 → 3.38 GB) for ~9 % latency cost, while
-`torch.compile` matched bf16 latency but *raised* memory to 8.26 GB — no win
-at this batch size.
+`torch.compile` matched bf16 latency but *raised* memory to 8.26 GB, with no
+win at this batch size.
 
 #### Pruning sweep
 
@@ -650,7 +680,7 @@ SKIP_BENCHMARK=1 PRUNE_SPARSITIES=0.0,0.3,0.5,0.7 PRUNE_N_BATCHES=0 \
   bash cloud/watch_job.sh
 ```
 
-The explicit method — identical to the benchmark above except
+The explicit method is identical to the benchmark above except
 `SKIP_BENCHMARK=1` and the display name:
 
 ```bash
@@ -673,7 +703,7 @@ python -m scipali.models.optimize prune-sweep <adapter_dir> \
 #   the local equivalent is checkpoints/adapter-production
 ```
 
-A `prune-finetune` command (masked fine-tune to recover accuracy) also exists —
+A `prune-finetune` command (masked fine-tune to recover accuracy) also exists;
 see the note in [`docs/source/usage.md`](docs/source/usage.md#optimize-quantization--pruning).
 
 <a id="zone-serving-deployment"></a>
@@ -686,7 +716,7 @@ uv run python -m scipali.serving.predict checkpoints/adapter-production \
   -q "What gas do plants absorb?" -c "oxygen,carbon dioxide,nitrogen" -i img.png
 ```
 
-Also accepts `--hint`, `--lecture`, `--max-new-tokens` — the same optional
+Also accepts `--hint`, `--lecture`, `--max-new-tokens`, the same optional
 fields as the API's `/predict` body. On a Mac, prefix `PREDICT_DEVICE=cpu`
 (MPS crashes on PaliGemma matmuls); add `HF_HUB_OFFLINE=1` to load the gated
 base model from the local HF cache when no HF token is configured.
@@ -695,10 +725,11 @@ base model from the local HF cache when no HF token is configured.
 
 The FastAPI service (`src/scipali/serving/api.py`) serves single-sample
 ScienceQA predictions. `CHECKPOINT_PATH` accepts a local adapter dir, a `.ckpt`
-file, or a `gs://` directory — the stable production path is fetched at
+file, or a `gs://` directory; the stable production path is fetched at
 startup, so a promoted adapter needs **no rebuild or redeploy**:
 
 ```bash
+uv run inv serve-api         # shortcut for the first command below
 CHECKPOINT_PATH=checkpoints/adapter-production PREDICT_DEVICE=cpu \
   uv run uvicorn scipali.serving.api:app --port 8000
 # or serve the deployed production adapter straight from GCS:
@@ -711,8 +742,8 @@ CHECKPOINT_PATH=checkpoints/adapter-production PREDICT_DEVICE=cpu \
   uv run python -m scipali.serving.api
 ```
 
-Once up: `curl localhost:8000/` for health, or open <http://localhost:8000/docs>
-— FastAPI's interactive Swagger UI, where you can fire a `/predict` from the
+Once up: `curl localhost:8000/` for health, or open <http://localhost:8000/docs>,
+FastAPI's interactive Swagger UI, where you can fire a `/predict` from the
 browser.
 
 #### Launch the Streamlit UI
@@ -735,26 +766,26 @@ Two modes: "Ask your own" (type a free question) and "Pick from ScienceQA"
 ./cloud/demo_api.sh img.png "Question?" "a,b,c"  # bring your own sample
 ```
 
-The first call on a scaled-to-zero instance takes ~2–4 min while the container
+The first call on a scaled-to-zero instance takes about 2 to 4 min while the container
 starts and the model loads.
 
 The service is public, so a prediction works from **any machine with zero
-setup** — no repo, no Python env, no credentials:
+setup**: no repo, no Python env, no credentials:
 
 - **Browser only:** open the live Swagger UI at
   <https://paligemma-api-581237630637.europe-west4.run.app/docs> and fire
   `POST /predict` via "Try it out".
 - **Any terminal:** the raw calls below need only `curl` + `base64`
-  (preinstalled on macOS/Linux) — deployment is the point: a client needs
+  (preinstalled on macOS/Linux); deployment is the point, since a client needs
   `curl`, not CUDA.
 
-Under the hood — the three raw calls (the API takes JSON with a
+Under the hood, the three raw calls (the API takes JSON with a
 base64-encoded image):
 
 
 ```bash
 API=https://paligemma-api-581237630637.europe-west4.run.app
-curl "$API/"                       # health — model_loaded flips after the 1st predict
+curl "$API/"                       # health; model_loaded flips after the 1st predict
 # -> {"status":"ok","model_loaded":"False"}
 curl -s -X POST "$API/predict" -H 'Content-Type: application/json' -d '{
   "question": "What is the capital of Wyoming?",
@@ -768,22 +799,22 @@ curl -s "$API/metrics" | head      # Prometheus metrics
 
 #### Interpret prediction failures
 
-Every failure mode we actually hit, as a diagnostic ladder — each symptom
+Every failure mode we actually hit, as a diagnostic ladder; each symptom
 means something different:
 
 | Symptom | Meaning | Fix |
 |---|---|---|
-| `Connection refused` / "Backend unreachable" | Nothing is listening — server not started, crashed, or wrong port | Start the API; check `lsof -i :8000` |
+| `Connection refused` / "Backend unreachable" | Nothing is listening: server not started, crashed, or wrong port | Start the API; check `lsof -i :8000` |
 | `{"detail":"Method Not Allowed"}` (405) | Path exists, wrong verb: a browser GET on `/predict`, or a POST silently downgraded to GET by the `http://`→`https://` 301 redirect | POST it (curl/UI/Swagger); always use `https://` exactly |
-| `422 Unprocessable Entity` | Server healthy — the request body is invalid (missing `question` / `choices` / `image_b64`) | Fix the JSON payload |
+| `422 Unprocessable Entity` | Server healthy; the request body is invalid (missing `question` / `choices` / `image_b64`) | Fix the JSON payload |
 | `{"detail":"Model checkpoint not loaded…"}` | Server was started without `CHECKPOINT_PATH` | Restart it with the env var set |
-| Very slow first call / client timeout | Not an error: cold start (~150–230 s on scaled-to-zero Cloud Run; locally the first predict loads the 3B model) | Warm it with one request first |
-| `429 Rate exceeded` | One heavy inference per instance (`concurrency=1`); overflow beyond `max-instances=3` is rejected | Retry — see [Load test](#load-test) |
-| `5xx` | Real server-side failure | Check Cloud Run logs — this is exactly what the [5xx alert](#set-up-the-5xx-alert) emails about |
+| Very slow first call / client timeout | Not an error: cold start (about 150 to 230 s on scaled-to-zero Cloud Run; locally the first predict loads the 3B model) | Warm it with one request first |
+| `429 Rate exceeded` | One heavy inference per instance (`concurrency=1`); overflow beyond `max-instances=3` is rejected | Retry; see [Load test](#load-test) |
+| `5xx` | Real server-side failure | Check Cloud Run logs; this is exactly what the [5xx alert](#set-up-the-5xx-alert) emails about |
 
 Working diagnosis order: *is anything listening? → right URL and verb? → valid
-body? → is the model loaded? → is it just cold?* — each step's symptom is
-unambiguous, so the ladder converges in five questions.
+body? → is the model loaded? → is it just cold?*; each step's symptom is
+unambiguous, so the diagnosis converges in five questions.
 
 #### Deploy to Cloud Run
 
@@ -796,7 +827,7 @@ gcloud builds submit --config=cloud/cloudbuild.api.yaml --project=paligemma-scie
 # !! 2026-07-11 by the in-image subpackage-drop bug; an import-guard step in
 # !! cloudbuild.api.yaml now gates every push (green since 2026-07-16). The
 # !! live service stays pinned to a verified digest until the next deliberate
-# !! redeploy — to reproduce the live revision exactly, use the digest form:
+# !! redeploy; to reproduce the live revision exactly, use the digest form:
 # !!   --image europe-west4-docker.pkg.dev/paligemma-scienceqa/mlops-images/paligemma-api@sha256:061ad5202756db5b5965c56f0b6468ba5dc9b6ad286275e768fd1e203b949412
 gcloud run deploy paligemma-api \
   --image europe-west4-docker.pkg.dev/paligemma-scienceqa/mlops-images/paligemma-api:latest \
@@ -812,13 +843,13 @@ gcloud run deploy paligemma-api \
 
 On success the terminal prints `Deploying container to Cloud Run service
 [paligemma-api] in project [paligemma-scienceqa] region [europe-west4]` and
-ends with the service URL — retrievable any time with:
+ends with the service URL, retrievable any time with:
 
 ```bash
 gcloud run services describe paligemma-api --region=europe-west4 --format="value(status.url)"
 ```
 
-Then verify the **live** service (not localhost — that's your local server):
+Then verify the **live** service (not localhost, which is your local server):
 
 ```bash
 curl https://paligemma-api-581237630637.europe-west4.run.app/   # health of the new revision
@@ -827,7 +858,7 @@ gcloud run revisions list --service=paligemma-api --region=europe-west4   # new 
 gcloud run services logs read paligemma-api --region=europe-west4 --limit=50   # if anything misbehaves
 ```
 
-If a fresh `:latest` fails to deploy ("container failed to start… PORT" — in
+If a fresh `:latest` fails to deploy ("container failed to start… PORT"; in
 our case an image whose in-image build dropped `scipali`'s subpackages), the
 service keeps serving the previous revision; redeploy by the last-good
 **digest** instead of the tag:
@@ -839,15 +870,15 @@ gcloud run revisions list --service=paligemma-api --region=europe-west4 \
 ```
 
 The service is CPU-only (8 vCPU / 32 GB), `min-instances 0` (scale-to-zero)
-with lazy model loading — an always-on GPU endpoint would cost more than a
-course project justifies. Cold `/predict` runs ~150–230 s (container start +
-model load + inference); warm calls ~25–80 s. Full latency breakdown in
+with lazy model loading, because an always-on GPU endpoint would cost more than
+a course project justifies. Cold `/predict` runs about 150 to 230 s (container
+start + model load + inference); warm calls take about 25 to 80 s. Full latency breakdown in
 [`docs/source/api.md`](docs/source/api.md); flag rationale in
 [`docs/source/usage.md`](docs/source/usage.md#deploy-to-cloud-run).
 
 Why Cloud Run and not Cloud Functions: this service is a long-lived container
-with a multi-GB lazy-loaded model and pinned system deps — Cloud Run's exact
-container model. Cloud Functions targets short stateless functions deployed
+with a multi-GB lazy-loaded model and pinned system deps, which is Cloud Run's
+exact container model. Cloud Functions targets short stateless functions deployed
 from source (its gen2 runtime is itself built on Cloud Run), so it adds
 constraints here without adding anything.
 
@@ -859,7 +890,7 @@ gcloud storage cp -r <new-adapter-dir> gs://mlops-paligemma-west4/models/product
 
 Then move the W&B `production` alias to the new version (W&B UI). The registry
 webhook fires the `model-registry-change` workflow, which rolls out a fresh
-Cloud Run revision and smoke-tests it — **no image rebuild needed**.
+Cloud Run revision and smoke-tests it; **no image rebuild is needed**.
 
 <a id="zone-monitoring-ops"></a>
 ### Monitoring & operations [[Back To Contents]](#command-guide)
@@ -891,7 +922,7 @@ uv run --group serving locust -f tests/load/locustfile.py \
 ```
 
 Locust prints a stats table every few seconds and a final summary. Our
-recorded run (2 users, 4 min — full analysis in `reports/load/README.md`)
+recorded run (2 users, 4 min; full analysis in `reports/load/README.md`)
 ended like this:
 
 ```text
@@ -901,10 +932,10 @@ GET    /               12   8(67%)   |  4.6 s   10 s    10 s
 ```
 
 The 429 failures *were* the finding: the initial deploy (`--max-instances 1`,
-`--concurrency 1`) served one request at a time and rejected the overflow —
+`--concurrency 1`) served one request at a time and rejected the overflow,
 which is why the service now runs `--max-instances 3`.
 
-The same command works against the local API (start it first — see
+The same command works against the local API (start it first; see
 [Serve the API locally](#serve-the-api-locally)); useful to demo the tool
 without cloud access:
 
@@ -931,17 +962,17 @@ semantics, so rerunning it is always safe; the manual equivalent is
 `gcloud alpha monitoring channels/policies create` from JSON files. The policy
 fires on any 5xx from the API within a 5-minute window and emails the verified
 channel (auto-closes after 30 min). Note `VERIFIED`: an email channel delivers
-nothing until its verification code is confirmed — we verified it end-to-end
+nothing until its verification code is confirmed, so we verified it end-to-end
 rather than assuming.
 
 In the console: **Monitoring → Alerting**
-([direct link](https://console.cloud.google.com/monitoring/alerting?project=paligemma-scienceqa))
-— policies, notification channels, and fired incidents all live on that page.
-(GCP's term is "alerting policy"; there is no "alarm" — that's AWS vocabulary.)
+([direct link](https://console.cloud.google.com/monitoring/alerting?project=paligemma-scienceqa)),
+where policies, notification channels, and fired incidents all live.
+(GCP's term is "alerting policy"; there is no "alarm", which is AWS vocabulary.)
 
 #### Manage secrets
 
-All credentials live in **Secret Manager** — never in git, images, or job
+All credentials live in **Secret Manager**, never in git, images, or job
 specs (job specs carry only secret *names*; previously the values were
 visible in plain `gcloud ai custom-jobs describe` output, which is exactly
 what this design removes):
@@ -954,14 +985,14 @@ printf '%s' "$NEW_KEY" | gcloud secrets versions add wandb-api-key --data-file=-
 
 How each consumer gets them:
 
-- **Vertex jobs** — `cloud/fetch_secrets.sh` at container start, via the job
+- **Vertex jobs**: `cloud/fetch_secrets.sh` at container start, via the job
   service account's `secretAccessor` role (google-auth ADC).
-- **Cloud Run** — mounted at deploy time: `--set-secrets HF_TOKEN=hf-token:latest`.
-- **GitHub Actions** — holds *no* cloud secrets at all: keyless auth via
+- **Cloud Run**: mounted at deploy time: `--set-secrets HF_TOKEN=hf-token:latest`.
+- **GitHub Actions**: holds *no* cloud secrets at all: keyless auth via
   Workload Identity Federation (the org forbids service-account keys).
-- **W&B webhook** — the GitHub PAT it needs is stored as a W&B secret, on
+- **W&B webhook**: the GitHub PAT it needs is stored as a W&B secret, on
   their side.
-- **Local dev** — your own `wandb login` / HF token; nothing project-managed.
+- **Local dev**: your own `wandb login` / HF token; nothing project-managed.
 
 #### Serve the docs site
 
@@ -973,6 +1004,8 @@ uv run inv build-docs        # static build (CI deploys via docs.yaml)
 #### Regenerate the result figures
 
 ```bash
+uv run inv figures           # regenerates all seven figures from the eval JSONs
+# or single figures, e.g.:
 uv run python -m scipali.models.visualize prune-curve reports/eval/prune_results.json
 uv run python -m scipali.models.visualize subject-accuracy reports/eval/production_eval_results.json
 ```
@@ -992,7 +1025,7 @@ gcloud billing projects describe paligemma-scienceqa --format="value(billingAcco
 ```
 
 **The recoverable failure (we lived it):** our first education billing account
-closed **mid-sweep** — Vertex killed the running trial (that is why
+closed **mid-sweep**: Vertex killed the running trial (that is why
 `sandy-sweep-7` has no training-time test score; see `reports/RESULTS.md`) and
 new jobs were rejected. Nothing else was lost, because adapters + metrics
 stream to W&B and data/models live in GCS. Recovery is one command once you
@@ -1004,20 +1037,20 @@ gcloud billing projects link paligemma-scienceqa --billing-account=<NEW-ACCOUNT-
 
 Relinking restores the *services*, not the killed *work*: the deployed Cloud
 Run service resumes on its own, but Vertex jobs that died stay dead and queued
-jobs are gone — rerun them (`bash cloud/watch_job.sh`). In our case the killed
+jobs are gone; rerun them (`bash cloud/watch_job.sh`). In our case the killed
 trial's checkpoint had already been saved, so instead of retraining we
 recovered its missing test score with a post-hoc standalone eval.
 
 **If it cannot be recovered** (no open account): the project gets suspended
 and later shut down. Rescue the irreplaceable artifacts while the bucket still
-answers — everything else already lives outside GCP (git, W&B):
+answers; everything else already lives outside GCP (git, W&B):
 
 ```bash
 gcloud storage cp -r gs://mlops-paligemma-west4/models/production ~/mlops-adapter-backup
 dvc pull                        # materialize the dataset locally
 ```
 
-— then run the teardown below so nothing keeps billing.
+Then run the teardown below so nothing keeps billing.
 
 #### Delete everything in Google Cloud
 
@@ -1038,7 +1071,7 @@ gcloud builds triggers delete mlops-ci-train --region=europe-west4
 # 4. container images
 gcloud artifacts repositories delete mlops-images --location=europe-west4
 
-# 5. storage — THIS DELETES THE DVC DATA + ALL ADAPTERS (backup exists at
+# 5. storage: THIS DELETES THE DVC DATA + ALL ADAPTERS (backup exists at
 #    ~/mlops-adapter-backup/); after this, `dvc pull` is dead
 gcloud storage rm -r gs://mlops-paligemma-west4
 
