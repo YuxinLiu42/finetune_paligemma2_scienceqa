@@ -898,13 +898,13 @@ signal); with more traffic we would change it to an error-rate condition.
 > Answer:
 
 The total usage across the project's two education billing accounts was
-**≈ $80**, fully covered by credits ($0 paid by us). The first account
+**≈ $80**, fully covered by credits ($0 paid by us). The first account from Yuxin Liu
 accrued $50.15 (Compute Engine $33.25 + AI Platform Training $13.06, which
 together form the Vertex L4 training stack, because the GPU VMs are billed
 as Compute Engine SKUs under the job orchestration, plus small Cloud Build /
 Artifact Registry / Storage / Cloud Run charges) and closed in the middle of
 the project, during a running sweep; the project was then re-linked to a
-second account, which accrued $29.47 (Vertex + Compute $10.97, Artifact
+second account from Duc-Anh Valentino Nguyen, which accrued $29.47 (Vertex + Compute $10.97, Artifact
 Registry $12.79 for the stored train images, Cloud Run $3.56, and the rest
 went to scanning, storage, and builds). The most expensive service was
 therefore the **Vertex AI training stack** (≈ $57 of ≈ $80), which is
