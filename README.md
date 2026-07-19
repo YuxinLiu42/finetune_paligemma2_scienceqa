@@ -123,17 +123,17 @@ git clone https://github.com/yuxinliu42/finetune_paligemma2_scienceqa.git
 cd finetune_paligemma2_scienceqa
 uv sync
 
-# 2. fetch the processed dataset (DVC remote on GCS; needs `gcloud auth login`)
+# 2. fetch the processed dataset (needs read access to our GCS bucket)
 dvc pull
+# ...or rebuild it from the public source (works for anyone, slower):
+uv run inv preprocess-data
 
 # 3. check that everything works: 137 CPU-only tests
 uv run pytest tests/
 
 # 4. ask the DEPLOYED model a question (public endpoint, no credentials needed)
 ./cloud/demo_api.sh              # health -> predict -> drift; cold start takes 2-4 min
-# ...or from the browser without any setup: open the live Swagger UI and use
-# POST /predict-file ("Try it out" -> upload an image file, choices as one
-# comma-separated line):
+# ...or from the browser without any setup: open the live Swagger UI
 #   https://paligemma-api-581237630637.europe-west4.run.app/docs
 
 # 5. launch the Streamlit UI from the screenshot above, pointed at the live
