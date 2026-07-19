@@ -18,18 +18,18 @@ accuracy on the 2,017-sample test split. Full results in
 ## Project description
 
 ### Goal
-The project has two goals: **improve the reasoning accuracy** of the pretrained
+The project has two goals: improve the reasoning accuracy of the pretrained
 PaliGemma foundation model on multimodal science questions, and do it inside a
-**complete, reproducible MLOps pipeline**: versioned data, configurable
+complete, reproducible MLOps pipeline: versioned data, configurable
 training, tracked experiments, automated deployment, and monitoring (diagrammed
 in [`reports/figures/architecture.jpg`](reports/figures/architecture.jpg)).
 
 ### Framework
-The Hugging Face **Transformers** framework. We build on its main strength,
+The Hugging Face Transformers framework. We build on its main strength,
 thousands of pretrained models, by starting from a pretrained PaliGemma2
 checkpoint and fine-tuning it on our data rather than training anything from
-scratch. Around it: **PEFT/LoRA** for parameter-efficient fine-tuning,
-**PyTorch Lightning** for the training loop, and **Hydra** for configuration
+scratch. Around it: PEFT/LoRA for parameter-efficient fine-tuning,
+PyTorch Lightning for the training loop, and Hydra for configuration
 management.
 
 ### Use case & target users
@@ -41,14 +41,14 @@ deployed behind a FastAPI service on Cloud Run with a Streamlit UI on top (see t
 [command guide](#command-guide)).
 
 ### Dataset
-**[`derek-thomas/ScienceQA`](https://huggingface.co/datasets/derek-thomas/ScienceQA)**,
+[`derek-thomas/ScienceQA`](https://huggingface.co/datasets/derek-thomas/ScienceQA),
 the image subset ("ScienceQA-IMG"): train 6,218 / val 2,097 / test 2,017. Each
 sample has an image, a question, answer choices, the answer index, and optional
 hint / lecture plus a subject label. (We initially planned `lmms-lab/ScienceQA`,
 but that mirror ships no train split, so we switched.)
 
 ### Model
-The **PaliGemma2-3B** vision-language model
+The PaliGemma2-3B vision-language model
 ([`google/paligemma2-3b-pt-224`](https://huggingface.co/google/paligemma2-3b-pt-224)),
 LoRA-adapted on the language-model attention projections (`q/k/v/o_proj`) with
 the vision encoder frozen: ~6.4 M trainable parameters against ~3 B frozen.
@@ -225,7 +225,7 @@ uv run pytest tests/            # green before pushing
 git push -u origin feat/<name>  # then open a pull request
 ```
 
-`main` is wired to CI **and** deployment (a push rebuilds the API image), so
+`main` is wired to CI and deployment (a push rebuilds the API image), so
 changes merge via pull request once CI is green, because a broken `main` has
 real consequences beyond review.
 
@@ -333,7 +333,7 @@ uv run --no-sync train "$@"
 #### Push the images to Artifact Registry
 
 Artifact Registry is GCP's private registry for build artifacts. For us it is
-a private Docker registry: the warehouse where Cloud Build deposits images and
+a private Docker registry: the place where Cloud Build stores images and
 Vertex AI / Cloud Run pull them, each addressed as
 `<region>-docker.pkg.dev/<project>/<repository>/<image>`, e.g.
 `europe-west4-docker.pkg.dev/paligemma-scienceqa/mlops-images/paligemma-api`.
@@ -414,7 +414,7 @@ docker system prune             # dangling layers + build cache
 
 #### Train locally
 
-This runs the **PyTorch Lightning** training loop (`train.py`: `Trainer` with
+This runs the PyTorch Lightning training loop (`train.py`: `Trainer` with
 gradient checkpointing, `ModelCheckpoint` + `EarlyStopping` on `val/accuracy`,
 and the end-of-training test pass), configured by Hydra:
 
@@ -504,7 +504,7 @@ gcloud compute instances list                                      # empty by de
 ```
 
 The GPU-is-linked check is the fail-fast CUDA assert at the top of the job
-(above): a CPU-only or driverless container dies in seconds instead of after a
+(above): a CPU-only or driverless container fails in seconds instead of after a
 long queue. No image install step exists anywhere: the job spec pins the
 Artifact Registry image by digest and Vertex pulls it. And when compute is
 scarce there is no error at submit time: the job sits in `JOB_STATE_PENDING`
@@ -519,7 +519,7 @@ gcloud compute accelerator-types list --filter="name=nvidia-l4"
 ```
 
 The fully manual alternative, `gcloud compute instances create <name>
---zone=… --accelerator=type=nvidia-l4,count=1 …`, spins up a raw GPU VM you
+--zone=… --accelerator=type=nvidia-l4,count=1 …`, creates a raw GPU VM you
 must SSH into, run, and remember to delete. We deliberately use managed Vertex
 custom jobs instead: the machine exists only for the job's lifetime, and the
 image, DVC data pull, and secrets are wired in automatically.
@@ -563,7 +563,7 @@ gcloud logging read "resource.labels.job_id=\"${JOB##*/}\"" \
   --project=paligemma-scienceqa --limit=50   # past logs (numeric id = last path segment)
 ```
 
-Hard-won practices baked into the scripts (each debugged a real failure here):
+Practices we added to the scripts after debugging real failures here:
 
 - **`PYTHONUNBUFFERED=1`** in the job scripts: a signal-killed process (OOM)
   loses its buffered stdout, so without this our first pruning crash logged
@@ -608,8 +608,8 @@ Lightning profiler prints its report when the run ends.
 
 #### Distributed training, data, and model
 
-None of the three is needed at this scale, because **LoRA removes the need
-for all of them** (full argument + measurements in
+None of the three is needed at this scale, because LoRA removes the need
+for all of them (full argument + measurements in
 [`reports/RESULTS.md`](reports/RESULTS.md)):
 
 - **Distributed (data-parallel) training / DDP**: everything fits one L4
@@ -665,7 +665,7 @@ python -m scipali.models.optimize benchmark <adapter_dir> \
 ```
 
 Measured result (full table in [`reports/RESULTS.md`](reports/RESULTS.md)):
-**int4 halves peak GPU memory** (6.87 → 3.38 GB) for ~9 % latency cost, while
+int4 halves peak GPU memory (6.87 → 3.38 GB) for ~9 % latency cost, while
 `torch.compile` matched bf16 latency but *raised* memory to 8.26 GB, with no
 win at this batch size.
 
@@ -726,7 +726,7 @@ base model from the local HF cache when no HF token is configured.
 The FastAPI service (`src/scipali/serving/api.py`) serves single-sample
 ScienceQA predictions. `CHECKPOINT_PATH` accepts a local adapter dir, a `.ckpt`
 file, or a `gs://` directory; the stable production path is fetched at
-startup, so a promoted adapter needs **no rebuild or redeploy**:
+startup, so a promoted adapter needs no rebuild or redeploy:
 
 ```bash
 uv run inv serve-api         # shortcut for the first command below
@@ -743,7 +743,7 @@ CHECKPOINT_PATH=checkpoints/adapter-production PREDICT_DEVICE=cpu \
 ```
 
 Once up: `curl localhost:8000/` for health, or open <http://localhost:8000/docs>,
-FastAPI's interactive Swagger UI, where you can fire a `/predict` from the
+FastAPI's interactive Swagger UI, where you can send a `/predict` from the
 browser.
 
 #### Launch the Streamlit UI
@@ -769,8 +769,8 @@ Two modes: "Ask your own" (type a free question) and "Pick from ScienceQA"
 The first call on a scaled-to-zero instance takes about 2 to 4 min while the container
 starts and the model loads.
 
-The service is public, so a prediction works from **any machine with zero
-setup**: no repo, no Python env, no credentials:
+The service is public, so a prediction works from any machine with zero
+setup: no repo, no Python env, no credentials:
 
 - **Browser only:** open the live Swagger UI at
   <https://paligemma-api-581237630637.europe-west4.run.app/docs> and fire
@@ -849,7 +849,7 @@ ends with the service URL, retrievable any time with:
 gcloud run services describe paligemma-api --region=europe-west4 --format="value(status.url)"
 ```
 
-Then verify the **live** service (not localhost, which is your local server):
+Then verify the live service (not localhost, which is your local server):
 
 ```bash
 curl https://paligemma-api-581237630637.europe-west4.run.app/   # health of the new revision
@@ -861,7 +861,7 @@ gcloud run services logs read paligemma-api --region=europe-west4 --limit=50   #
 If a fresh `:latest` fails to deploy ("container failed to start… PORT"; in
 our case an image whose in-image build dropped `scipali`'s subpackages), the
 service keeps serving the previous revision; redeploy by the last-good
-**digest** instead of the tag:
+digest instead of the tag:
 
 ```bash
 gcloud run revisions list --service=paligemma-api --region=europe-west4 \
@@ -890,7 +890,7 @@ gcloud storage cp -r <new-adapter-dir> gs://mlops-paligemma-west4/models/product
 
 Then move the W&B `production` alias to the new version (W&B UI). The registry
 webhook fires the `model-registry-change` workflow, which rolls out a fresh
-Cloud Run revision and smoke-tests it; **no image rebuild is needed**.
+Cloud Run revision and smoke-tests it; no image rebuild is needed.
 
 <a id="zone-monitoring-ops"></a>
 ### Monitoring & operations [[Back To Contents]](#command-guide)
@@ -972,7 +972,7 @@ where policies, notification channels, and fired incidents all live.
 
 #### Manage secrets
 
-All credentials live in **Secret Manager**, never in git, images, or job
+All credentials live in Secret Manager, never in git, images, or job
 specs (job specs carry only secret *names*; previously the values were
 visible in plain `gcloud ai custom-jobs describe` output, which is exactly
 what this design removes):
@@ -1024,8 +1024,8 @@ gcloud billing projects describe paligemma-scienceqa --format="value(billingAcco
 # -> billingAccounts/01AB7A-...  True
 ```
 
-**The recoverable failure (we lived it):** our first education billing account
-closed **mid-sweep**: Vertex killed the running trial (that is why
+**The recoverable failure (we experienced it):** our first education billing
+account closed mid-sweep: Vertex killed the running trial (that is why
 `sandy-sweep-7` has no training-time test score; see `reports/RESULTS.md`) and
 new jobs were rejected. Nothing else was lost, because adapters + metrics
 stream to W&B and data/models live in GCS. Recovery is one command once you

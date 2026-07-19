@@ -2,12 +2,12 @@
 
 > The full-data r=16 retrain completed (job
 > `3661126192938876928`, ~28.7 h, all 8 sweep trials). The winner
-> **`sandy-sweep-7`** (test **72.19%**, 1456/2017) is now **promoted to
-> production** (GCS `models/production/` + W&B `:production` v16). All key adapters are backed up at
+> `sandy-sweep-7` (test **72.19%**, 1456/2017) is now promoted to
+> production (GCS `models/production/` + W&B `:production` v16). All key adapters are backed up at
 > `~/mlops-adapter-backup/`.
 
 Self-contained results summary backing the exam report (`reports/README.md`).
-All numbers are exact-match accuracy of the generated answer **letter** on the
+All numbers are exact-match accuracy of the generated answer letter on the
 held-out ScienceQA-IMG test split (2017 samples).
 
 **Pipeline.** The end-to-end MLOps pipeline that produced these numbers (data
@@ -21,7 +21,7 @@ wrapped or repeated outputs that greedy decoding can emit (`(A)`, `A.`, `AA`),
 and compare it against the gold letter. This is more robust than full-string
 equality, which would score a stray token as wrong even when the chosen letter
 is right. On the archived `sandy-sweep-7` test run the hardened matcher changes
-exactly **one** of 2017 predictions (a single `AA`→`A`): 72.19% (1456/2017)
+exactly one of 2017 predictions (a single `AA`→`A`): 72.19% (1456/2017)
 strict vs 72.24% (1457/2017) hardened. We report the strict **72.19%** from the
 archived run; `extract_answer_letter` is what the current `evaluate.py` and
 serving path use going forward, so the headline is robust either way.
@@ -38,8 +38,8 @@ serving path use going forward, so the headline is robust either way.
 (The second-best full-data trial is `autumn-sweep-2` at 71.3%. Two trials at
 lr ≈ 1.33e-4 both landing near 72% indicate a robust optimum, not noise.)
 
-Headline finding: **fixing the data pipeline (1,677 → 6,218 train examples) +
-raising LoRA rank (8 → 16) lifted test accuracy 64.1% → 72.19% (+8.1 pts)** on the
+Headline finding: fixing the data pipeline (1,677 → 6,218 train examples) and
+raising LoRA rank (8 → 16) lifted test accuracy **64.1% → 72.19% (+8.1 pts)** on the
 same 2017-sample test set, with the gains in the image-heavy subjects (natural
 +7.6, social +9.1). Reaching above 80% would need higher resolution (448),
 unfreezing the vision encoder, or chain-of-thought prompting, which we did not
@@ -47,8 +47,8 @@ attempt here.
 
 By topic (`accuracy_by_topic.png`, topics with ≥20 test samples), the
 per-subject view masks a wide *within-subject* spread: in natural science,
-biology (74.7%) and physics (68.7%) are far ahead of **chemistry (48.9%) and
-earth-science (54.5%)**. These two are the genuine weak spots and clearer
+biology (74.7%) and physics (68.7%) are far ahead of chemistry (48.9%) and
+earth-science (54.5%). These two are the genuine weak spots and clearer
 improvement targets than the subject average.
 
 The deployed adapter is now `sandy-sweep-7` at
@@ -101,7 +101,7 @@ which is why the 224 resolution caps it, but it still gained +7.6 pts vs the old
 (57.2% → 64.8%); social science gained +9.1 (76.2% → 85.3%). Source:
 `reports/eval/production_eval_results.json` (the chained-eval output for
 `sandy-sweep-7`). A standalone re-evaluation on Vertex (job
-`6466991906093006848`, 2026-06-15) **reproduced these figures exactly**
+`6466991906093006848`, 2026-06-15) reproduced these figures exactly
 (1456/2017 = 72.19% with the identical per-subject split), confirming the result
 is reproducible from the promoted adapter. This standalone eval uses the same
 test split, greedy generation, and exact-match metric as the training-time
@@ -110,7 +110,7 @@ test split, greedy generation, and exact-match metric as the training-time
 ## Methodology note: why we optimise `val/accuracy`, not `val/loss`
 
 Sweep #1 optimised `val/loss` and promoted a trial that lost to the baseline on
-test accuracy. Sweep #2 confirms why: the two metrics **disagree**.
+test accuracy. Sweep #2 confirms why: the two metrics disagree.
 `dutiful-sweep-5` has the *best* `val/loss` (0.464) but nearly the *worst*
 `val/accuracy` (0.619); the winner has a *higher* loss (0.511) but the *best*
 accuracy (0.702). Because the task is scored on exact-match of the answer
@@ -120,7 +120,8 @@ checkpoints / early-stop on it (`mode=max`). See `reports/figures/sweep3_compari
 
 The LR pattern also held: trials at `base_lr` between 1.8e-4 and 1.96e-4
 reached 0.65 to 0.70 `val/accuracy`, while the two low-LR trials (~8e-5) sat at
-the bottom. This is why sweep #2 raised the LR floor above sweep #1's dead zone.
+the bottom. This is why sweep #2 raised the LR floor above the low-LR range
+that wasted trials in sweep #1.
 
 ## Full-data retrain (r=16, W&B sweep `win9arpw`)
 
@@ -166,16 +167,16 @@ notes on why this is sound rather than a gap:
   estimate, so the test gap alone would not be decisive. But validation (0.714
   vs 0.699) and test (72.19% vs 71.29%) rank the two trials the same way, and
   the standalone re-eval reproduced the figure exactly, so the choice is
-  consistent across every measurement rather than a lucky draw on one.
+  consistent across every measurement rather than a coincidence on one.
 
 ## Distributed training & data loading
 
-Both are **not applicable** at this scale:
-- **Distributed training:** training runs on a **single L4**. LoRA on
+Both are not applicable at this scale:
+- **Distributed training:** training runs on a single L4. LoRA on
   PaliGemma2-3B (~6.4 M trainable params, ~3 B frozen) fits one GPU, so
   multi-GPU DDP would add complexity with no benefit. PyTorch-Lightning would
   enable it via `Trainer(devices=…, strategy="ddp")` if more GPUs were available.
-- **Distributed data loading:** we use a **multi-worker `DataLoader`**
+- **Distributed data loading:** we use a multi-worker `DataLoader`
   (`data.num_workers`), which is the relevant loading optimisation here; sharded
   loading is unnecessary for a single-GPU job over a ~700 MB processed dataset.
   Profiling confirms this empirically: loading is image-bound (~45% PIL
@@ -187,16 +188,16 @@ Both are **not applicable** at this scale:
   (gradients/optimizer state exist only for the ~6.4 M LoRA params; gradient
   checkpointing caps activations), so the model never needs to be sharded
   across devices. If it did not fit, Lightning's FSDP/DeepSpeed strategies
-  would be the lever, which is a config change, not a rewrite. In short,
-  **LoRA is what removes the need for all three kinds of distribution.**
+  would be the solution, which is a config change, not a rewrite. In short,
+  LoRA is what removes the need for all three kinds of distribution.
 
 ## Data-drift monitoring
 
-We monitor the **input** distribution the served model sees (there are no
+We monitor the input distribution the served model sees (there are no
 ground-truth labels in production). `monitoring.py` derives lightweight features
 per sample (question char/word length, number of choices, hint/lecture
 presence, image dimensions), and Evidently (`DataDriftPreset`) compares a
-**reference** (training inputs, `reference.csv`) against a **current**
+reference (training inputs, `reference.csv`) against a current
 distribution. The loop is closed end-to-end:
 
 1. `/predict` logs one structured line per request to Cloud Logging (derived
@@ -218,7 +219,7 @@ The serving API surface (`GET /`, `POST /predict`, `GET /monitor/drift`), the
 request/response contracts, a request-flow + drift-loop diagram, and the
 serving-architecture rationale (on-demand scale-to-zero CPU container, lazy
 model load, adapter pulled from `gs://…/models/production`, single-line-JSON
-prediction logging) are documented on the **API design** page,
+prediction logging) are documented on the API design page,
 [`docs/source/api.md`](../docs/source/api.md). OpenAPI/Swagger is also
 auto-served at `/docs` (and ReDoc at `/redoc`).
 
@@ -234,10 +235,10 @@ Quantization benchmark (bf16 vs int4 vs bf16+compile) on an L4 via
 | int4 (bitsandbytes) | 3.9 | 0.787 | 0.098 | **3.38** |
 | bf16 + `torch.compile` | 3.4 | **0.717** | 0.090 | 8.26 |
 
-- **int4 halves the GPU memory** (3.38 vs 6.87 GB, −51 %) for a ~9 % per-sample
+- int4 halves the GPU memory (3.38 vs 6.87 GB, −51 %) for a ~9 % per-sample
   latency cost (0.098 vs 0.090 s). It is the clear choice when VRAM is the
   constraint, since it lets the 3B model fit a smaller and cheaper GPU.
-- **`torch.compile` did not pay off here**: latency matches bf16 (0.090 s/sample)
+- `torch.compile` did not pay off here: latency matches bf16 (0.090 s/sample)
   while peak memory rises to 8.26 GB (compile/cudagraph buffers). At this batch
   size the compile overhead is not amortised.
 - \*The bf16 `load (s)` is the first cold load (base-model download/init);
@@ -247,7 +248,7 @@ Quantization benchmark (bf16 vs int4 vs bf16+compile) on an L4 via
 ### Weight pruning: accuracy vs. sparsity
 
 Global L1-unstructured magnitude pruning of the merged model's `nn.Linear`
-weights, swept over four sparsity levels on the **full 2,017-sample test split**
+weights, swept over four sparsity levels on the full 2,017-sample test split
 (`cloud/run_optimize.sh` with `SKIP_BENCHMARK=1`, job `6309659488739655680`,
 `reports/eval/prune_results.json`; plotted in
 `reports/figures/prune_sparsity_curve.png`):
@@ -259,30 +260,30 @@ weights, swept over four sparsity levels on the **full 2,017-sample test split**
 | 0.5 → 0.500 | 34.66 % | 699 / 2017 | 0.986 |
 | 0.7 → 0.701 | 4.41 % | 89 / 2017 | 0.977 |
 
-- **Accuracy degrades gracefully to ~30 % sparsity** (71.8 → 63.3 %, −8.5 pts),
+- Accuracy degrades gracefully to ~30 % sparsity (71.8 → 63.3 %, −8.5 pts),
   then collapses: 50 % roughly halves it (34.7 %) and 70 % destroys the model
   (4.4 %, *below* chance, because the model stops emitting a valid answer
   letter). The
   0 %-prune baseline (71.8 %) closely matches the deployed model's 72.19 % test
   accuracy (an 8-sample gap from the merged-model vs adapter eval paths),
   confirming the merge-and-score path is faithful.
-- **A single global magnitude threshold** across all layers (computed with
+- A single global magnitude threshold across all layers (computed with
   `torch.kthvalue`, not the per-layer `amount`). The achieved sparsity lands
   within 0.001 of target at every level, so the curve is plotted against real
   sparsity.
-- **No latency benefit**: unstructured pruning only zeros weights, so the dense
+- No latency benefit: unstructured pruning only zeros weights, so the dense
   GEMM kernels still do the full matmul; a speedup would need sparse
-  kernels or hardware. The *rise* at 50/70 % is the degraded model rambling to the
-  `max_new_tokens` cap instead of emitting an answer and stopping, not a pruning
-  cost. The deliverable is the accuracy/sparsity trade-off, not a latency win.
+  kernels or hardware. The *rise* at 50/70 % comes from the degraded model
+  generating until the `max_new_tokens` cap instead of emitting an answer and
+  stopping, not from a pruning cost. The deliverable is the accuracy/sparsity trade-off, not a latency win.
 
 ### Pruned-model fine-tuning: recovery at 50 % sparsity
 
 Fine-tuning the 50 %-pruned model to recover accuracy
 (`scipali.models.optimize prune-finetune`, job `6483100850951553024`,
 `reports/eval/prune_finetune_results.json`): prune the merged model to 0.5
-sparsity, freeze the vision tower, then train the language model for **300
-steps** (batch 1, lr 1e-5, 8-bit AdamW, gradient checkpointing) on a single
+sparsity, freeze the vision tower, then train the language model for 300
+steps (batch 1, lr 1e-5, 8-bit AdamW, gradient checkpointing) on a single
 24 GB L4. Pruned weights are held at zero during training via gradient masking
 (backward hooks multiply each Linear's gradient by `weight != 0`), so the model
 stays exactly as sparse as it started: the achieved sparsity is 0.5005 before
@@ -330,7 +331,7 @@ real screenshots of the working system):
 |---|---|
 | `accuracy_by_subject.png` | deployed `sandy-sweep-7` per-subject accuracy (social 85.3% / natural 64.8% / language 45.5%) |
 | `accuracy_by_topic.png` | deployed `sandy-sweep-7` per-topic accuracy (≥20-sample topics, `n` annotated); weak spots: chemistry 48.9%, earth-science 54.5% |
-| `sweep3_comparison.png` | **full-data r=16 sweep (`win9arpw`)**: per-trial val/accuracy + the val/loss↔val/accuracy disagreement (winner `autumn-sweep-2` → test 71.3%) |
+| `sweep3_comparison.png` | full-data r=16 sweep (`win9arpw`): per-trial val/accuracy + the val/loss↔val/accuracy disagreement (winner `autumn-sweep-2` → test 71.3%) |
 | `sweep2_comparison.png` | earlier sweep (`xptwdnis`, old data r=8); the same chart for the 64% period |
 | `prediction_length_dist.png` | predicted answer length (sanity: single letters) |
 | `error_samples.png` | qualitative grid of misclassified samples |
@@ -355,7 +356,7 @@ python -m scipali.models.visualize error-samples     reports/eval/production_eva
 
 ## Cloud workload inventory (what runs where, and why)
 
-Every GPU-bound workload runs on **Vertex AI custom jobs** (single L4,
+Every GPU-bound workload runs on Vertex AI custom jobs (single L4,
 `europe-west4`, Flex Start to queue for capacity). Everything else is CPU and
 stays local/CI by design.
 
@@ -373,11 +374,11 @@ stays local/CI by design.
 Notes:
 - Secrets (W&B key, HF token) are fetched at container start from Secret
   Manager via google-auth ADC (`cloud/fetch_secrets.sh`); job specs carry only
-  secret **names**. Jobs run as the compute service account, which holds
+  secret names. Jobs run as the compute service account, which holds
   `secretmanager.secretAccessor`.
-- Job images are pinned by **digest** at submit time (Vertex resolves `:latest`
+- Job images are pinned by digest at submit time (Vertex resolves `:latest`
   at container start, which can drift across a long Flex Start queue).
-- Serving is intentionally **not** an always-on GPU endpoint: a 3B model needs a
+- Serving is intentionally not an always-on GPU endpoint: a 3B model needs a
   GPU for interactive latency, and an always-on L4 endpoint costs more than this
   project warrants. The API reads its adapter from `CHECKPOINT_PATH`, which
   accepts a `gs://` path, so promoting a new adapter needs no redeploy.
@@ -389,13 +390,14 @@ accuracy using the PaliGemma foundation model,"_ with the Transformers
 framework, the PaliGemma VLM, and the `lmms-lab/ScienceQA` data.
 
 **Did we meet it?** Largely yes. LoRA fine-tuning of `paligemma2-3b-pt-224` on
-ScienceQA took the model from a base checkpoint that rambles to one that answers
-the multiple-choice letter cleanly, reaching **72.19% test accuracy**
+ScienceQA took the model from a base checkpoint that produces long unfocused
+text to one that answers the multiple-choice letter cleanly, reaching **72.19%
+test accuracy**
 (`sandy-sweep-7`), reproducibly (the standalone eval re-confirmed the training
-number). The "techniques that improve accuracy" turned out to be three: **LoRA**
-(parameter-efficient fine-tuning), a **prompt-ordering fix** (putting Choices
+number). The "techniques that improve accuracy" turned out to be three: LoRA
+(parameter-efficient fine-tuning), a prompt-ordering fix (putting Choices
 before Hint/Lecture so the answer options are never truncated, worth about
-+16 pts), and a **hyperparameter sweep on `val/accuracy`** rather than `val/loss`.
++16 pts), and a hyperparameter sweep on `val/accuracy` rather than `val/loss`.
 
 **What changed from the initial plan:**
 - **Data source:** switched `lmms-lab/ScienceQA` → `derek-thomas/ScienceQA`
@@ -408,7 +410,7 @@ before Hint/Lecture so the answer options are never truncated, worth about
   alerts, quantization benchmarking, and docs on GitHub Pages.
 
 **Honest limitations:**
-- The **224-px** input resolution caps diagram-heavy questions: natural science
+- The 224-px input resolution caps diagram-heavy questions: natural science
   64.8% vs social science 85.3%; language science is only 45.5% (but n=44).
 - Accuracy is solid but not state-of-the-art; the emphasis was a complete,
   reproducible MLOps lifecycle rather than squeezing out the last accuracy points.

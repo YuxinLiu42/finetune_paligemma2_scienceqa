@@ -123,15 +123,15 @@ Duc-Anh Valentino Nguyen 12433139</p>
 </blockquote>
 <p>Beyond the course-covered stack (Transformers, Lightning, Hydra, W&amp;B, FastAPI,
 DVC, Docker), we used several open-source packages not covered in the course.
-<strong>uv</strong> manages the environment and lockfile (replacing conda/pip), and its
-build backend packages our wheel. <strong>PEFT</strong> and <strong>bitsandbytes</strong> provide the
+uv manages the environment and lockfile (replacing conda/pip), and its
+build backend packages our wheel. PEFT and bitsandbytes provide the
 LoRA adapters and 4-bit quantization; together they made fine-tuning and
-benchmarking a 3B-parameter model tractable on a single L4 GPU. <strong>Evidently</strong>
-powers the data-drift reports, and <strong>prometheus-fastapi-instrumentator</strong>
-exposes system metrics at <code>/metrics</code>. <strong>locust</strong> load-tested the deployed API
-(its findings changed our scaling configuration). <strong>BentoML</strong> provides an
-alternative specialized serving path, <strong>Streamlit</strong> the demo frontend, and
-<strong>Typer</strong> the command-line interfaces. Each filled a gap the core stack does
+benchmarking a 3B-parameter model tractable on a single L4 GPU. Evidently
+powers the data-drift reports, and prometheus-fastapi-instrumentator
+exposes system metrics at <code>/metrics</code>. locust load-tested the deployed API
+(its findings changed our scaling configuration). BentoML provides an
+alternative specialized serving path, Streamlit the demo frontend, and
+Typer the command-line interfaces. Each filled a gap the core stack does
 not cover. All are pinned in <code>uv.lock</code> except two deliberate outliers:
 Streamlit runs isolated via <code>uvx</code> (<code>streamlit==1.53.0</code>) because its Starlette
 pin conflicts with FastAPI's, and bitsandbytes is installed at runtime on the
@@ -151,7 +151,7 @@ how you managed dependencies, the structure of your code and how you managed cod
 <em>complete copy of our development environment, one would have to run the following commands</em></p>
 <p>Answer:</p>
 </blockquote>
-<p>We manage dependencies with <strong><code>uv</code></strong>, not conda/pip. <code>pyproject.toml</code> declares
+<p>We manage dependencies with <code>uv</code>, not conda/pip. <code>pyproject.toml</code> declares
 the dependencies and dependency-groups (<code>dev</code>, <code>serving</code>, <code>monitoring</code>, <code>data</code>),
 and <code>uv.lock</code> pins exact resolved versions; <code>.python-version</code> pins the
 interpreter. CI and Docker builds use <code>uv sync --frozen</code>/<code>--locked</code> so the
@@ -203,9 +203,9 @@ template doesn't anticipate a deployed-model monitoring loop.</p>
 <em>concepts are important in larger projects because ... . For example, typing ...</em></p>
 <p>Answer:</p>
 </blockquote>
-<p>Yes. We use <strong>ruff</strong> for both linting and formatting (replacing
-black/isort/flake8 with one faster tool), <strong>mypy</strong> for static type checking,
-and <strong>pre-commit</strong> hooks (<code>trailing-whitespace</code>, <code>end-of-file-fixer</code>,
+<p>Yes. We use ruff for both linting and formatting (replacing
+black/isort/flake8 with one faster tool), mypy for static type checking,
+and pre-commit hooks (<code>trailing-whitespace</code>, <code>end-of-file-fixer</code>,
 <code>check-yaml</code>, <code>check-added-large-files</code>, <code>ruff --fix</code>, <code>ruff-format</code>) that run
 on every commit. All three (ruff lint, ruff format check, mypy) are also
 enforced in CI (<code>.github/workflows/linting.yaml</code>), so a non-compliant change
@@ -326,16 +326,16 @@ because the former ships no train split) did not require any special handling:
 </blockquote>
 <p>CI is split across several GitHub Actions workflows:</p>
 <ul>
-<li><strong><code>tests.yaml</code></strong>: runs <code>pytest</code> + <code>coverage</code> across a <strong>3 × 2 matrix</strong>
+<li><code>tests.yaml</code>: runs <code>pytest</code> + <code>coverage</code> across a 3 × 2 matrix
   (<code>ubuntu-latest</code> / <code>windows-latest</code> / <code>macos-latest</code> × Python <code>3.11</code> /
   <code>3.12</code>, six combinations total), using <code>astral-sh/setup-uv</code> with
   <code>enable-cache: true</code> for dependency caching. Coverage is uploaded to Codecov
   from the ubuntu/3.11 cell.</li>
-<li><strong><code>linting.yaml</code></strong>: <code>ruff check</code>, <code>ruff format --check</code>, and <code>mypy</code>, run on
+<li><code>linting.yaml</code>: <code>ruff check</code>, <code>ruff format --check</code>, and <code>mypy</code>, run on
   every push/PR to <code>main</code>.</li>
-<li><strong><code>docs.yaml</code></strong>: builds and publishes the MkDocs site to GitHub Pages
+<li><code>docs.yaml</code>: builds and publishes the MkDocs site to GitHub Pages
   (<code>mkdocs gh-deploy</code>) on changes to <code>docs/</code>/<code>src/</code>.</li>
-<li><strong><code>data-change.yaml</code></strong> and <strong><code>model-registry-change.yaml</code></strong>: two additional
+<li><code>data-change.yaml</code> and <code>model-registry-change.yaml</code>: two additional
   continuous workflows: the first runs data-integrity checks when the DVC
   pointer files change, the second reacts to a real Weights &amp; Biases webhook
   when the <code>production</code> model alias moves, and automatically rolls the newly
@@ -343,7 +343,7 @@ because the former ships no train split) did not require any special handling:
 </ul>
 <p>The matrix exists because path handling and multiprocessing differ across
 operating systems, which also forces the suite to stay CPU-only and hermetic. We
-deliberately do <strong>not</strong> matrix PyTorch versions: <code>uv.lock</code> pins exactly one,
+deliberately do not matrix PyTorch versions: <code>uv.lock</code> pins exactly one,
 and testing versions we never ship would validate configurations that cannot
 reach production. Dependency caching via <code>astral-sh/setup-uv</code> keeps a full
 six-cell matrix run to a few minutes. Together with the Cloud Build trigger
@@ -365,7 +365,7 @@ especially the reproducibility of your experiments.</p>
 <em>We used a simple argparser, that worked in the following way: Python  my_script.py --lr 1e-3 --batch_size 25</em></p>
 <p>Answer:</p>
 </blockquote>
-<p>We used <strong>Hydra</strong> configs under <code>configs/</code> (<code>data/</code>, <code>model/</code>, <code>trainer/</code>,
+<p>We used Hydra configs under <code>configs/</code> (<code>data/</code>, <code>model/</code>, <code>trainer/</code>,
 <code>sweep/</code> groups), composed at runtime by the <code>train</code> entry point. Any nested
 key can be overridden from the CLI, e.g.:</p>
 <p><code>bash
@@ -495,21 +495,21 @@ it.</p>
 <p>Answer:</p>
 </blockquote>
 <ul>
-<li><strong>Cloud Storage (GCS)</strong>: the DVC remote for versioned data, the model
+<li>Cloud Storage (GCS): the DVC remote for versioned data, the model
   registry's artifact store (<code>models/production/</code>), and the drift-monitoring
   reference/production tables.</li>
-<li><strong>Vertex AI</strong>: runs all GPU work as custom jobs (training, hyperparameter
+<li>Vertex AI: runs all GPU work as custom jobs (training, hyperparameter
   sweeps, standalone evaluation, quantization/pruning) on single-L4 machines.</li>
-<li><strong>Cloud Build</strong>: builds the Docker images; a trigger auto-rebuilds the API
+<li>Cloud Build: builds the Docker images; a trigger auto-rebuilds the API
   image on every push to <code>main</code>.</li>
-<li><strong>Artifact Registry</strong>: stores the built container images.</li>
-<li><strong>Cloud Run</strong>: serves the FastAPI inference app: CPU-only, scale-to-zero,
+<li>Artifact Registry: stores the built container images.</li>
+<li>Cloud Run: serves the FastAPI inference app: CPU-only, scale-to-zero,
   lazy model loading.</li>
-<li><strong>Secret Manager</strong>: holds the Hugging Face token and W&amp;B API key, fetched
+<li>Secret Manager: holds the Hugging Face token and W&amp;B API key, fetched
   at container start rather than baked into images.</li>
-<li><strong>Cloud Monitoring</strong>: an alert policy on repeated 5xx responses, with a
+<li>Cloud Monitoring: an alert policy on repeated 5xx responses, with a
   verified email notification channel.</li>
-<li><strong>IAM / Workload Identity Federation</strong>: keyless GCP auth for the GitHub
+<li>IAM / Workload Identity Federation: keyless GCP auth for the GitHub
   Actions workflow that rolls a newly-promoted model out to Cloud Run.</li>
 </ul>
 <h3>Question 18</h3>
@@ -523,7 +523,7 @@ it.</p>
 <p>Answer:</p>
 </blockquote>
 <p>We did not provision or manage Compute Engine VMs directly. All GPU work runs
-as <strong>Vertex AI custom jobs</strong>, which provision the underlying VM for us
+as Vertex AI custom jobs, which provision the underlying VM for us
 (<code>g2-standard-8</code>: 8 vCPU / 32 GB RAM / 1× NVIDIA L4, via the Flex Start queue,
 in <code>europe-west4</code>, the only region where we had both G2 machine availability
 and L4 quota). Serving uses Cloud Run instead of a hand-managed VM. So our use
@@ -576,7 +576,7 @@ bare git checkout.</p>
 <p>Recent API builds may show <strong>FAILURE</strong>, and this is deliberate: a base-image toolchain
 drift began producing images that <em>built</em> green but could not import the
 application (caught only when a Cloud Run deploy died), so we added an import
-smoke-test step to <code>cloudbuild.api.yaml</code>. Broken images now fail <strong>in CI</strong>
+smoke-test step to <code>cloudbuild.api.yaml</code>. Broken images now fail in CI
 with a one-line reason and are never pushed; the builds stay red until the
 underlying dockerfile fix lands. The live service was unaffected throughout:
 Cloud Run kept traffic on the last healthy revision, and deploys are pinned
@@ -591,7 +591,7 @@ to a known-good image digest in the meantime.</p>
 <em>was because ...</em></p>
 <p>Answer:</p>
 </blockquote>
-<p>Yes. Every GPU workload trains as a <strong>Vertex AI custom job</strong>; we deliberately
+<p>Yes. Every GPU workload trains as a Vertex AI custom job; we deliberately
 provisioned no Compute Engine VMs (nothing to SSH into or forget to delete;
 <code>gcloud compute instances list</code> is empty by design). A job is one template
 (<code>cloud/vertex_config.template.yaml</code>) rendered with <code>envsubst</code> and submitted
@@ -616,15 +616,15 @@ explicitly to survive stockouts.</p>
 <em>to the API to make it more ...</em></p>
 <p>Answer:</p>
 </blockquote>
-<p>Yes, a <strong>FastAPI</strong> application (<code>scipali.serving.api</code>). <code>POST /predict</code>
+<p>Yes, a FastAPI application (<code>scipali.serving.api</code>). <code>POST /predict</code>
 takes a Pydantic-validated JSON body (<code>question</code>, <code>choices</code>, optional
 <code>hint</code>/<code>lecture</code>, and a base64-encoded <code>image_b64</code>) and returns
 <code>{"prediction": "&lt;letter&gt;"}</code>; <code>GET /</code> reports health and whether the model is
 loaded; <code>GET /monitor/drift</code> and <code>GET /metrics</code> expose monitoring. Two design
-decisions matter most: <strong>lazy model loading</strong> (the app starts and passes
+decisions matter most: lazy model loading (the app starts and passes
 startup probes in seconds and loads the 3B model on the first prediction,
-which is required for Cloud Run), and the <strong>adapter is read from a <code>gs://</code>
-path at startup</strong>, decoupling model updates from the container image. Every
+which is required for Cloud Run), and the adapter is read from a <code>gs://</code>
+path at startup, decoupling model updates from the container image. Every
 prediction also emits one structured JSON log line (derived features +
 prediction) that feeds the drift-monitoring pipeline. FastAPI auto-serves
 interactive OpenAPI docs at <code>/docs</code>, which we use for live demos; the full
@@ -640,8 +640,8 @@ contracts and request-flow diagram are documented in <code>docs/source/api.md</c
 <em><code>curl -X POST -F "file=@file.json"&lt;weburl&gt;</code></em></p>
 <p>Answer:</p>
 </blockquote>
-<p>Yes, both locally and in the cloud. The FastAPI app is deployed to <strong>Cloud
-Run</strong> (<code>paligemma-api</code>, <code>europe-west4</code>): CPU-only (8 vCPU / 32 GB),
+<p>Yes, both locally and in the cloud. The FastAPI app is deployed to Cloud
+Run (<code>paligemma-api</code>, <code>europe-west4</code>): CPU-only (8 vCPU / 32 GB),
 scale-to-zero, <code>concurrency 1</code> (one heavy 3B inference per container) with
 overflow to at most 3 instances; these capacity settings came from load
 testing (Question 25). Lazy model loading lets the container pass its startup
@@ -670,7 +670,7 @@ a shell demo (<code>cloud/demo_api.sh</code>) drive the same live endpoint.</p>
 </blockquote>
 <p>Yes, both. <strong>Functional tests</strong>: 19 tests in <code>tests/test_api.py</code> drive the
 app through FastAPI's <code>TestClient</code> (the health contract, the <code>/predict</code>
-happy path and validation failures with 422 on malformed bodies, the drift
+success path and validation failures with 422 on malformed bodies, the drift
 endpoint, and the metrics instrumentation) and run in CI on every push
 across the 3 OS × 2 Python matrix. <strong>Load testing</strong>: locust against the
 deployed service (<code>tests/load/locustfile.py</code>; recorded run and analysis in
@@ -701,7 +701,7 @@ self-comparison trap of "reference vs a held-out slice of the same dataset".
 counts/latency/sizes at <code>/metrics</code>. <strong>Alerting</strong>: a Cloud Monitoring policy
 fires on any 5xx within 5 minutes, emailing a notification channel we
 verified end-to-end (<code>verificationStatus: VERIFIED</code>) rather than assuming
-delivery. The alert has also <strong>fired for real</strong>: during a load-test probe,
+delivery. The alert has also fired in a real case: during a load-test probe,
 two <code>/predict</code> requests returned 500 under concurrent cold-start pressure;
 the incident opened and emailed us within minutes, then auto-resolved. The
 zero threshold is deliberate at our near-zero baseline traffic (a single
@@ -721,16 +721,16 @@ as traffic grows.</p>
 <em>costing the most was ... due to ... . Working in the cloud was ...</em></p>
 <p>Answer:</p>
 </blockquote>
-<p>Total usage across the project's <strong>two</strong> education billing accounts was
-<strong>≈ $70, fully covered by credits ($0 out of pocket)</strong>. The first account
+<p>Total usage across the project's two education billing accounts was
+<strong>≈ $70</strong>, fully covered by credits ($0 paid by us). The first account
 accrued $50.15 (Compute Engine $33.25 + AI Platform Training $13.06, together
 the Vertex L4 training stack because the GPU VMs bill as Compute Engine
 SKUs under the job orchestration, plus small Cloud Build / Artifact Registry
-/ Storage / Cloud Run charges) and <strong>closed mid-project, mid-sweep</strong>; the
+/ Storage / Cloud Run charges) and closed mid-project, mid-sweep; the
 project was re-linked to a second account, which accrued $19.77 (Vertex +
 Compute $10.97, Artifact Registry $7.07 for the ~3.4 GB train images, the
 rest storage and serving). The most expensive service was therefore the
-<strong>Vertex AI training stack (≈ $57 of ≈ $70)</strong>, which is consistent with 73 custom
+<strong>Vertex AI training stack</strong> (≈ $57 of ≈ $70), which is consistent with 73 custom
 jobs and ~47 h of billed GPU runtime, while Flex-Start queue waits were
 unbilled. Storage, builds, and scale-to-zero serving added only a few dollars
 combined.</p>
@@ -756,10 +756,10 @@ with results in <code>reports/RESULTS.md</code>. <strong>Automated model rollout
 <code>production</code> alias in the W&amp;B model registry fires a webhook →
 <code>repository_dispatch</code> → GitHub Actions (keyless Workload Identity Federation)
 → a fresh Cloud Run revision plus smoke test, verified live. <strong>A CI import
-guard born from a real incident</strong>: a base-image drift produced images that
+guard</strong>, added after a real incident: a base-image drift produced images that
 built green but could not import the application; Cloud Build now runs an
 import smoke test, so broken images fail in CI and are never pushed. Plus a
-two-mode <strong>Streamlit</strong> frontend, a <strong>BentoML</strong> serving alternative, and an
+two-mode Streamlit frontend, a BentoML serving alternative, and an
 exhaustive command guide in the README with real expected outputs.</p>
 <h3>Question 29</h3>
 <blockquote>
@@ -817,7 +817,7 @@ stored service-account keys).</p>
 <em>The biggest challenges in the project was using ... tool to do ... . The reason for this was ...</em></p>
 <p>Answer:</p>
 </blockquote>
-<p>The single biggest accuracy bug was a <strong>prompt-ordering mistake</strong>: placing the
+<p>The single biggest accuracy bug was a prompt-ordering mistake: placing the
 optional Hint/Lecture text before the answer Choices meant the tokenizer's
 <code>max_length</code> sometimes truncated the choices themselves. This was worth
 roughly <strong>16 points</strong> of test accuracy once diagnosed and fixed by reordering
@@ -834,8 +834,8 @@ errors, a CUDA out-of-memory during pruning, a packaging bug that dropped
 subpackages from an in-image-built wheel (fixed by building the wheel outside
 the image and shipping it in), and a host-RAM OOM from naively pooling ~3B
 weights to float32 (fixed with a histogram-based global threshold instead).</p>
-<p>A live production bug: Rich's fixed-width log wrapping shredded the
-drift-monitoring JSON payload once it hit Cloud Logging, silently breaking the
+<p>A live production bug: Rich's fixed-width log wrapping broke the
+drift-monitoring JSON payload apart once it reached Cloud Logging, silently breaking the
 collect → drift loop. We fixed it by logging structured JSON straight to
 stdout instead of through the Rich logger. Separately, a GCP org policy disabling
 service-account key creation forced the model-registry-change CI workflow's
