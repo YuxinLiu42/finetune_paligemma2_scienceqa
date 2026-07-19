@@ -1,10 +1,7 @@
 # Command guide
 
 This file collects copy-paste commands for every routine operation of
-[scipali](README.md). For a minimal quick start (clone → data → tests → demo),
-see the [README](README.md#quick-start). Details and variants are in
-[`docs/source/usage.md`](docs/source/usage.md); the results they produce are
-in [`reports/RESULTS.md`](reports/RESULTS.md).
+[scipali](README.md).
 
 **Contents**
 
