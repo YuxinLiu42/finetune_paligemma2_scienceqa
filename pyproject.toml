@@ -11,6 +11,7 @@ version = "0.0.1"
 description = "LoRA fine-tuning of PaliGemma2-3B for image-grounded ScienceQA multiple-choice question answering, with an end-to-end MLOps pipeline."
 authors = [
   { name = "Yuxin Liu" },
+  { name = "Duc-Anh Valentino Nguyen" },
 ]
 license = { file = "LICENSE" }
 keywords = ["machine learning", "MLOps"]
