@@ -143,16 +143,16 @@ API_URL=https://paligemma-api-581237630637.europe-west4.run.app \
   streamlit run src/scipali/serving/frontend.py
 
 # 6. or serve the API locally, then open http://localhost:8000/docs
+uv run hf auth login             # one-time: paste a read token from your HF account
 uv run inv serve-api
 
 # 7. training smoke run (one batch; real training runs on Vertex AI)
 uv run train trainer.fast_dev_run=true trainer.wandb.enabled=false
 ```
 
-Steps 6 and 7 need access to the gated PaliGemma2 base model (a Hugging Face
-token); a W&B login is only needed for tracked training runs. All other
-operations (Docker images, Vertex AI training and sweeps, deployment,
-monitoring, billing, and teardown) are in the [command guide](COMMANDS.md).
+Steps 6 and 7 need access to the gated PaliGemma2 base model (a Hugging Face token); a W&B login is only needed for tracked training runs. All other operations (Docker
+images, Vertex AI training and sweeps, deployment, monitoring, billing, and
+teardown) are in the [command guide](COMMANDS.md).
 
 
 ---

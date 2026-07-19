@@ -68,10 +68,17 @@ cd finetune_paligemma2_scienceqa
 ```bash
 uv sync                      # creates .venv from uv.lock (Python 3.11)
 uv run inv dev-requirements  # full environment matching CI (adds the monitoring group)
+uv run hf auth login         # one-time: the PaliGemma2 base model is gated on Hugging Face
 ```
 
-Cloud commands additionally need `gcloud auth login`; training/prediction needs
-access to the gated PaliGemma2 base model (HF token) and W&B login for tracking.
+Cloud commands additionally need `gcloud auth login`. Anything that loads the
+model locally (training, prediction, serving) needs the Hugging Face login
+above (or an exported `HF_TOKEN`): the base-model repository is gated, so
+without credentials every Hub request returns a 401 `GatedRepoError` — even
+when the model is already cached, because transformers first asks the Hub
+whether the cached files are up to date. (The old `huggingface-cli login` is
+deprecated and no longer works; use `hf auth login`.) A W&B login is needed
+for tracked training runs.
 
 #### Get the data
 
@@ -656,7 +663,16 @@ uv run --group serving bentoml serve scipali.serving.bento_service:ScienceQAServ
 # direct-run variant (module's own __main__ starts uvicorn on :8000):
 CHECKPOINT_PATH=checkpoints/adapter-production PREDICT_DEVICE=cpu \
   uv run python -m scipali.serving.api
+# no HF credentials in this shell? serve fully offline from the local cache:
+HF_HUB_OFFLINE=1 CHECKPOINT_PATH=checkpoints/adapter-production PREDICT_DEVICE=cpu \
+  uv run uvicorn scipali.serving.api:app --port 8000
 ```
+
+If startup fails with `GatedRepoError: 401`, the shell has no Hugging Face
+credentials (the base model is gated): run `uv run hf auth login` once — see
+[Set up the environment](#set-up-the-environment) — or use the offline
+variant above. On Cloud Run this never happens, because `HF_TOKEN` is mounted
+from Secret Manager.
 
 Once the server is up: `curl localhost:8000/` for a health check, or open
 <http://localhost:8000/docs>, FastAPI's interactive Swagger UI, where you can
