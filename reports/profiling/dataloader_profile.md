@@ -1,8 +1,9 @@
 # Data-loading profile
 
-**What / why.** "Use profiling to optimize your code". This profiles the
-training `DataLoader`, the exact pipeline used during fine-tuning, to find
-where data-loading time goes and whether it is worth optimizing.
+**What / why.** The course checklist asks us to "use profiling to optimize
+your code". This profiles the training `DataLoader`, the exact pipeline used
+during fine-tuning, to find where the data-loading time goes and whether it
+is worth optimizing.
 
 **How (reproducible, CPU-only, no GPU, no network):**
 
@@ -43,30 +44,31 @@ text tokenisation is a minor part. **≈77% of data-loading time is image handli
 | **4 (training default)** | 448.4 | 8.9 |
 | 8 | 805.3 | 5.0 |
 
-Multi-worker loading helps (best observed ~2.3× at 8 workers) but is noisy and
-non-monotonic on this CPU machine (2 > 4): macOS `spawn` makes each worker re-import
-torch/transformers, and at small batch sizes that fixed cost competes with the
-parallelism gain. The absolute ranking is machine- and noise-dependent; the
-robust takeaway is the per-batch cost (~11 ms single-process) and the hotspot
-ranking above, not the exact best worker count.
+Multi-worker loading helps (the best observed speedup is ~2.3× at 8 workers)
+but is noisy and non-monotonic on this CPU machine (2 > 4): macOS `spawn`
+makes each worker re-import torch/transformers, and at small batch sizes that
+fixed cost competes with the parallelism gain. The absolute ranking depends on the machine and on noise;
+the reliable conclusion is the per-batch cost (~11 ms single-process) and the
+hotspot ranking above, not the exact best worker count.
 
 ## Findings / optimization conclusions
 
 1. **The loader is image-bound, not text-bound.** ~45% is PIL decoding the stored
    image bytes every epoch and ~28% is resizing them to 224. The concrete
-   code-level change would therefore be in `data.py:preprocess()`: store images
-   already resized to 224×224 (and/or as raw arrays) so train-time decode is
-   cheaper and the processor's resize becomes a near no-op. That would cut the
-   bulk of the ~73% image cost.
+   code-level change would therefore be in `data.py:preprocess()`: store the
+   images already resized to 224×224 (and/or as raw arrays), so that decoding
+   at training time is cheaper and the processor's resize becomes almost a
+   no-op. That would remove
+   most of the ~73% image cost.
 
 2. **However, the loader is not the training bottleneck, so this optimization
    was not needed.** Even single-process loading delivers ~354 samples/s
    (~11 ms/batch). A single LoRA training *step* for a 3B model (batch 4,
-   seq 512, gradient checkpointing) on the L4 is far slower than 11 ms, so data
-   preparation fully overlaps with GPU compute; even `num_workers=0` would not
-   starve the GPU.
-   The training default `num_workers=4` is a safe choice with headroom; raising
-   it would not speed up training.
+   seq 512, gradient checkpointing) on the L4 is far slower than 11 ms, so
+   data preparation fully overlaps with the GPU compute; even `num_workers=0`
+   would not leave the GPU waiting for data.
+   The training default `num_workers=4` is a safe choice with some margin;
+   raising it would not speed up training.
 
 3. **This empirically supports the decision not to use distributed data loading**:
    loading is cheap relative to compute and is not the limiting factor, so

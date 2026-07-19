@@ -3,7 +3,7 @@
 All commands assume the project environment is synced (`uv sync`). A fuller
 command catalog — including CI, debugging, billing, and teardown, with
 expected outputs — is the
-[README's command guide](https://github.com/yuxinliu42/finetune_paligemma2_scienceqa#command-guide).
+[command guide (`COMMANDS.md`)](https://github.com/yuxinliu42/finetune_paligemma2_scienceqa/blob/main/COMMANDS.md).
 
 ## Data
 

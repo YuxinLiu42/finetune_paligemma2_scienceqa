@@ -6,9 +6,9 @@
 > production (GCS `models/production/` + W&B `:production` v16). All key adapters are backed up at
 > `~/mlops-adapter-backup/`.
 
-Self-contained results summary backing the exam report (`reports/README.md`).
-All numbers are exact-match accuracy of the generated answer letter on the
-held-out ScienceQA-IMG test split (2017 samples).
+This is a self-contained results summary that supports the exam report
+(`reports/README.md`). All numbers are exact-match accuracy of the generated
+answer letter on the held-out ScienceQA-IMG test split (2017 samples).
 
 **Pipeline.** The end-to-end MLOps pipeline that produced these numbers (data
 versioning, training, evaluation, model registry, serving, drift monitoring, and
@@ -16,7 +16,7 @@ the inference optimization reported below) is diagrammed in
 [`figures/architecture.jpg`](figures/architecture.jpg).
 
 **Answer matching.** Accuracy is exact match on the *extracted answer letter*:
-we take the first letter of the model's greedy generation, tolerating the rare
+we take the first letter of the model's greedy generation, accepting the rare
 wrapped or repeated outputs that greedy decoding can emit (`(A)`, `A.`, `AA`),
 and compare it against the gold letter. This is more robust than full-string
 equality, which would score a stray token as wrong even when the chosen letter
@@ -24,9 +24,9 @@ is right. On the archived `sandy-sweep-7` test run the hardened matcher changes
 exactly one of 2017 predictions (a single `AA`→`A`): 72.19% (1456/2017)
 strict vs 72.24% (1457/2017) hardened. We report the strict **72.19%** from the
 archived run; `extract_answer_letter` is what the current `evaluate.py` and
-serving path use going forward, so the headline is robust either way.
+serving path use from now on, so the reported number is safe either way.
 
-## Headline
+## Main results
 
 | Model | Data | LoRA | Test accuracy | Status |
 |---|---|---|---|---|
@@ -36,19 +36,20 @@ serving path use going forward, so the headline is robust either way.
 | **`sandy-sweep-7`** (full-data retrain winner) | **full (6,218)** | **r=16** | **72.19%** (1456/2017) | **deployed production** (W&B v16) |
 
 (The second-best full-data trial is `autumn-sweep-2` at 71.3%. Two trials at
-lr ≈ 1.33e-4 both landing near 72% indicate a robust optimum, not noise.)
+lr ≈ 1.33e-4 both land near 72%, which indicates a stable optimum rather than
+noise.)
 
-Headline finding: fixing the data pipeline (1,677 → 6,218 train examples) and
-raising LoRA rank (8 → 16) lifted test accuracy **64.1% → 72.19% (+8.1 pts)** on the
+Main finding: fixing the data pipeline (1,677 → 6,218 train examples) and
+raising LoRA rank (8 → 16) improved test accuracy **64.1% → 72.19% (+8.1 pts)** on the
 same 2017-sample test set, with the gains in the image-heavy subjects (natural
 +7.6, social +9.1). Reaching above 80% would need higher resolution (448),
 unfreezing the vision encoder, or chain-of-thought prompting, which we did not
 attempt here.
 
 By topic (`accuracy_by_topic.png`, topics with ≥20 test samples), the
-per-subject view masks a wide *within-subject* spread: in natural science,
-biology (74.7%) and physics (68.7%) are far ahead of chemistry (48.9%) and
-earth-science (54.5%). These two are the genuine weak spots and clearer
+per-subject view hides a wide *within-subject* spread: in natural science,
+biology (74.7%) and physics (68.7%) are clearly ahead of chemistry (48.9%) and
+earth-science (54.5%). These two are the real weak spots and clearer
 improvement targets than the subject average.
 
 The deployed adapter is now `sandy-sweep-7` at
@@ -97,7 +98,7 @@ accumulation are compared at a comparable LR.
 | language science | 45.5% (20/44) | 44 |
 
 Natural science is the weakest split because it is the most diagram-dependent,
-which is why the 224 resolution caps it, but it still gained +7.6 pts vs the old r=8 model
+so the 224 resolution limits it, but it still gained +7.6 pts vs the old r=8 model
 (57.2% → 64.8%); social science gained +9.1 (76.2% → 85.3%). Source:
 `reports/eval/production_eval_results.json` (the chained-eval output for
 `sandy-sweep-7`). A standalone re-evaluation on Vertex (job
@@ -109,8 +110,8 @@ test split, greedy generation, and exact-match metric as the training-time
 
 ## Methodology note: why we optimise `val/accuracy`, not `val/loss`
 
-Sweep #1 optimised `val/loss` and promoted a trial that lost to the baseline on
-test accuracy. Sweep #2 confirms why: the two metrics disagree.
+Sweep #1 optimised `val/loss` and promoted a trial that was worse than the
+baseline on test accuracy. Sweep #2 confirms why: the two metrics disagree.
 `dutiful-sweep-5` has the *best* `val/loss` (0.464) but nearly the *worst*
 `val/accuracy` (0.619); the winner has a *higher* loss (0.511) but the *best*
 accuracy (0.702). Because the task is scored on exact-match of the answer
@@ -118,16 +119,16 @@ letter, we log a generation-based `val/accuracy` each epoch and select
 checkpoints / early-stop on it (`mode=max`). See `reports/figures/sweep3_comparison.png`
 (full-data r=16 sweep) and `sweep2_comparison.png` (earlier).
 
-The LR pattern also held: trials at `base_lr` between 1.8e-4 and 1.96e-4
-reached 0.65 to 0.70 `val/accuracy`, while the two low-LR trials (~8e-5) sat at
-the bottom. This is why sweep #2 raised the LR floor above the low-LR range
-that wasted trials in sweep #1.
+The learning-rate pattern was consistent as well: trials at `base_lr` between
+1.8e-4 and 1.96e-4 reached 0.65 to 0.70 `val/accuracy`, while the two low-LR
+trials (~8e-5) stayed at the bottom. This is why sweep #2 raised the LR floor
+above the low-LR range that wasted trials in sweep #1.
 
 ## Full-data retrain (r=16, W&B sweep `win9arpw`)
 
 After switching the data source to [`derek-thomas/ScienceQA`](https://huggingface.co/datasets/derek-thomas/ScienceQA) (the lmms-lab mirror
-provides no train split, which had forced us to carve a "train" part out of
-validation), the
+provides no train split, which had forced us to build a "train" part from the
+validation split), the
 real splits are train 6,218 / val 2,097 / test 2,017, and LoRA rank was raised
 8 → 16. A baseline + Bayesian sweep (metric `val/accuracy`) ran; the GCP billing
 account closed mid-sweep (after trial 7), but the completed trials' adapters and
@@ -149,16 +150,16 @@ test eval before exiting; their artifacts/metrics are intact.
 
 Winner `autumn-sweep-2`: r=16, alpha=32, base_lr 1.33e-4, accum 4 (eff. batch
 16); same frozen-vision / `max_length` 512 / EarlyStopping-on-`val/accuracy`
-setup. `sandy-sweep-7` had the highest *val* (0.714) but was cut off before its
-test eval, so `autumn-sweep-2` is the best *completed* model.
+setup. `sandy-sweep-7` had the highest *val* (0.714) but was interrupted
+before its test eval, so `autumn-sweep-2` is the best *completed* model.
 
-**How `sandy-sweep-7` wins without a sweep-time test score.** Its 72.19% was
+**How `sandy-sweep-7` can win without a sweep-time test score.** Its 72.19% was
 measured *after* the sweep, on the saved adapter (the chained eval behind
 `production_eval_results.json`, reproduced exactly by the standalone Vertex
 eval `6466991906093006848` above), and it was promoted on that basis. Two
-notes on why this is sound rather than a gap:
+notes on why this is sound and not a methodological gap:
 
-- **The interruption accidentally enforced the textbook protocol.** The trial
+- **The interruption accidentally enforced the standard protocol.** The trial
   was *selected* on validation alone (`val/accuracy`, the sweep metric, where
   it led with 0.714), and the test split was consulted exactly once afterwards,
   as the final check. The test set never took part in the selection.
@@ -168,11 +169,11 @@ notes on why this is sound rather than a gap:
   estimate, so the test gap alone would not be decisive. But validation (0.714
   vs 0.699) and test (72.19% vs 71.29%) rank the two trials the same way, and
   the standalone re-eval reproduced the figure exactly, so the choice is
-  consistent across every measurement rather than a coincidence on one.
+  consistent across every measurement and not a coincidence on a single one.
 
 ## Distributed training & data loading
 
-Both are not applicable at this scale:
+None of them is applicable at this scale:
 - **Distributed training:** training runs on a single L4. LoRA on
   PaliGemma2-3B (~6.4 M trainable params, ~3 B frozen) fits one GPU, so
   multi-GPU DDP would add complexity with no benefit. PyTorch-Lightning would
@@ -210,9 +211,10 @@ distribution. The loop is closed end-to-end:
    `current_source` that was used, and falls back to a held-out demo sample
    only before any production data has been collected.
 
-This avoids the self-comparison trap (reference vs a held-out slice of the same
-dataset trivially reports "no drift"): once traffic exists, the default current
-distribution is the real collected production input.
+This avoids the self-comparison problem (a reference compared against a
+held-out slice of the same dataset trivially reports "no drift"): once traffic
+exists, the default current distribution is the real collected production
+input.
 
 ## Serving API design
 
@@ -238,8 +240,8 @@ Quantization benchmark (bf16 vs int4 vs bf16+compile) on an L4 via
 
 - int4 halves the GPU memory (3.38 vs 6.87 GB, −51 %) for a ~9 % per-sample
   latency cost (0.098 vs 0.090 s). It is the clear choice when VRAM is the
-  constraint, since it lets the 3B model fit a smaller and cheaper GPU.
-- `torch.compile` did not pay off here: latency matches bf16 (0.090 s/sample)
+  constraint, because it lets the 3B model fit on a smaller and cheaper GPU.
+- `torch.compile` did not bring a benefit here: latency matches bf16 (0.090 s/sample)
   while peak memory rises to 8.26 GB (compile/cudagraph buffers). At this batch
   size the compile overhead is not amortised.
 - \*The bf16 `load (s)` is the first cold load (base-model download/init);
@@ -261,13 +263,13 @@ weights, swept over four sparsity levels on the full 2,017-sample test split
 | 0.5 → 0.500 | 34.66 % | 699 / 2017 | 0.986 |
 | 0.7 → 0.701 | 4.41 % | 89 / 2017 | 0.977 |
 
-- Accuracy degrades gracefully to ~30 % sparsity (71.8 → 63.3 %, −8.5 pts),
-  then collapses: 50 % roughly halves it (34.7 %) and 70 % destroys the model
-  (4.4 %, *below* chance, because the model stops emitting a valid answer
-  letter). The
+- Accuracy degrades gracefully up to ~30 % sparsity (71.8 → 63.3 %,
+  −8.5 pts), then collapses: 50 % roughly halves it (34.7 %) and 70 % breaks
+  the model (4.4 %, below chance, because the model stops emitting a valid
+  answer letter). The
   0 %-prune baseline (71.8 %) closely matches the deployed model's 72.19 % test
   accuracy (an 8-sample gap from the merged-model vs adapter eval paths),
-  confirming the merge-and-score path is faithful.
+  which confirms that the merge-and-score path is correct.
 - A single global magnitude threshold across all layers (computed with
   `torch.kthvalue`, not the per-layer `amount`). The achieved sparsity lands
   within 0.001 of target at every level, so the curve is plotted against real
@@ -276,7 +278,8 @@ weights, swept over four sparsity levels on the full 2,017-sample test split
   GEMM kernels still do the full matmul; a speedup would need sparse
   kernels or hardware. The *rise* at 50/70 % comes from the degraded model
   generating until the `max_new_tokens` cap instead of emitting an answer and
-  stopping, not from a pruning cost. The deliverable is the accuracy/sparsity trade-off, not a latency win.
+  stopping, not from a pruning cost. The result here is the accuracy/sparsity
+  trade-off, not a latency improvement.
 
 ### Pruned-model fine-tuning: recovery at 50 % sparsity
 
@@ -295,12 +298,13 @@ stays exactly as sparse as it started: the achieved sparsity is 0.5005 before
 | 0.5005 | 33.56 % | 34.61 % | **+1.04 pts** |
 
 - Recovery is real but modest. 300 steps at batch 1 correspond to only ~300
-  training samples, a deliberately small budget chosen to fit the L4. The takeaway is the
-  mechanics (sparsity survives training, accuracy moves the right way), not a
-  full recovery, which would need a much longer schedule.
+  training samples, a deliberately small budget chosen to fit the L4. The main
+  point is the mechanics (sparsity survives training, accuracy moves in the
+  right direction), not a full recovery, which would need a much longer
+  schedule.
 - The one-shot 33.6 % differs slightly from the sweep row above (34.7 % at the
   same 0.5005 sparsity): the fine-tune run used the later histogram-based
-  threshold, which lands on the same sparsity but a marginally different weight
+  threshold, which reaches the same sparsity but a slightly different weight
   set than the sweep's `kthvalue` threshold.
 
 ## Serving demonstration
@@ -381,7 +385,7 @@ Notes:
   at container start, which can drift across a long Flex Start queue).
 - Serving is intentionally not an always-on GPU endpoint: a 3B model needs a
   GPU for interactive latency, and an always-on L4 endpoint costs more than this
-  project warrants. The API reads its adapter from `CHECKPOINT_PATH`, which
+  project justifies. The API reads its adapter from `CHECKPOINT_PATH`, which
   accepts a `gs://` path, so promoting a new adapter needs no redeploy.
 
 ## Retrospective: did the project turn out as planned?
@@ -392,7 +396,7 @@ framework, the PaliGemma VLM, and the `lmms-lab/ScienceQA` data.
 
 **Did we meet it?** Yes, to a large extent. LoRA fine-tuning of `paligemma2-3b-pt-224` on
 ScienceQA took the model from a base checkpoint that produces long unfocused
-text to one that answers the multiple-choice letter cleanly, reaching **72.19%
+text to one that answers directly with the multiple-choice letter, reaching **72.19%
 test accuracy**
 (`sandy-sweep-7`), reproducibly (the standalone eval re-confirmed the training
 number). The "techniques that improve accuracy" turned out to be three: LoRA
@@ -414,6 +418,6 @@ before Hint/Lecture so the answer options are never truncated, worth about
 - The 224-px input resolution caps diagram-heavy questions: natural science
   64.8% vs social science 85.3%; language science is only 45.5% (but n=44).
 - Accuracy is solid but not state-of-the-art; the emphasis was a complete,
-  reproducible MLOps lifecycle rather than squeezing out the last accuracy points.
-- A higher-resolution PaliGemma variant (448/896) would likely lift the
-  diagram-dependent splits, at higher training/serving cost.
+  reproducible MLOps lifecycle rather than the last few accuracy points.
+- A higher-resolution PaliGemma variant (448/896) would probably improve the
+  diagram-dependent splits, at a higher training/serving cost.
