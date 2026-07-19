@@ -744,19 +744,21 @@ signal); with more traffic we would change it to an error-rate condition.</p>
 <p>Answer:</p>
 </blockquote>
 <p>The total usage across the project's two education billing accounts was
-<strong>≈ $80</strong>, fully covered by credits ($0 paid by us). The first account
-accrued $50.15 (Compute Engine $33.25 + AI Platform Training $13.06, which
-together form the Vertex L4 training stack, because the GPU VMs are billed
-as Compute Engine SKUs under the job orchestration, plus small Cloud Build /
-Artifact Registry / Storage / Cloud Run charges) and closed in the middle of
-the project, during a running sweep; the project was then re-linked to a
-second account, which accrued $29.47 (Vertex + Compute $10.97, Artifact
-Registry $12.79 for the stored train images, Cloud Run $3.56, and the rest
-went to scanning, storage, and builds). The most expensive service was
-therefore the <strong>Vertex AI training stack</strong> (≈ $57 of ≈ $80), which is
-consistent with 73 custom jobs and ~47 h of billed GPU runtime; the
-Flex-Start queue waiting time was not billed. Storage, builds, and
-scale-to-zero serving added only a few dollars in total.</p>
+<strong>≈ $80</strong>, fully covered by credits ($0 paid by us). The first account from
+Yuxin Liu accrued $50.15 (Compute Engine $33.25 + AI Platform Training
+$13.06, together the Vertex L4 training stack, since the GPU VMs are billed
+as Compute Engine SKUs, plus small build/registry/storage/serving charges)
+and closed in the middle of a running sweep; the project was then re-linked
+to a second account from Duc-Anh Valentino Nguyen, which accrued $29.47
+(Vertex + Compute $10.97, Artifact Registry $12.79, Cloud Run $3.56). The
+most expensive service was therefore the <strong>Vertex AI training stack</strong>
+(≈ $57 of ≈ $80), consistent with 73 custom jobs and ~47 h of billed GPU
+runtime; the Flex-Start queue waiting time was not billed.</p>
+<p>In general, working in the cloud was positive: we trained on an L4 GPU
+without owning one and paid nothing while idle. The account closure showed
+the risk: infrastructure can disappear at any moment. Since the adapters and
+metrics were already in W&amp;B and GCS, we lost no work and recovered with one
+re-link command; a pipeline must simply be restartable at any point.</p>
 <p><img alt="Billing: first education account" src="figures/billing_Yuxin.png" /></p>
 <p><img alt="Billing: second education account" src="figures/billing_duc.png" /></p>
 <h3>Question 28</h3>
@@ -888,8 +890,7 @@ traced them back to the sync behaviour.</p>
 <em>We have used ChatGPT to help debug our code. Additionally, we used GitHub Copilot to help write some of our code.</em>
 Answer:</p>
 </blockquote>
-<p>Based on the repository's commit history: <strong>Duc-Anh Valentino Nguyen</strong> set up
-the initial repository scaffold (the cookiecutter-based initial commit) and
+<p><strong>Duc-Anh Valentino Nguyen</strong> set up  the initial repository scaffold (the cookiecutter-based initial commit) and
 early iterations of the project README (framework overview, team-member
 listing). <strong>Yuxin Liu</strong> implemented the data pipeline and the DVC setup, the
 model/training code and Hydra configs, the Vertex AI training/sweep/
@@ -901,3 +902,6 @@ documentation site, and this results write-up. This split is directly
 visible in the history: the large majority of commits on <code>main</code> are under
 Yuxin Liu's git identities, and the remainder under Duc-Anh Valentino
 Nguyen; this can be verified at any time with <code>git shortlog -sn main</code>.</p>
+<p>We also used generative AI tools: GitHub Copilot for code completion, and
+Claude as an assistant for debugging. All design decisions
+were made and verified by ourselves.</p>
