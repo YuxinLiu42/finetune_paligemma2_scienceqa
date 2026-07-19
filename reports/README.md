@@ -866,7 +866,7 @@ cold starts, which our 5xx alert caught and reported by email within minutes
 > Answer:
 
 Yes, three layers.
-1. Data drift**: `monitoring.py` derives lightweight
+1. Data drift: `monitoring.py` derives lightweight
 features per request (question length, number of choices, hint/lecture
 presence, image dimensions); `GET /monitor/drift` compares the training
 reference against production features collected from real `/predict` traffic

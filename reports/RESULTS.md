@@ -112,8 +112,8 @@ test split, greedy generation, and exact-match metric as the training-time
 
 Sweep #1 optimised `val/loss` and promoted a trial that was worse than the
 baseline on test accuracy. Sweep #2 confirms why: the two metrics disagree.
-`dutiful-sweep-5` has the *best* `val/loss` (0.464) but nearly the *worst*
-`val/accuracy` (0.619); the winner has a *higher* loss (0.511) but the *best*
+`dutiful-sweep-5` has the best `val/loss` (0.464) but nearly the *worst*
+`val/accuracy` (0.619); the winner has a higher loss (0.511) but the *best*
 accuracy (0.702). Because the task is scored on exact-match of the answer
 letter, we log a generation-based `val/accuracy` each epoch and select
 checkpoints / early-stop on it (`mode=max`). See `reports/figures/sweep3_comparison.png`
@@ -153,17 +153,17 @@ Winner `autumn-sweep-2`: r=16, alpha=32, base_lr 1.33e-4, accum 4 (eff. batch
 setup. `sandy-sweep-7` had the highest *val* (0.714) but was interrupted
 before its test eval, so `autumn-sweep-2` is the best *completed* model.
 
-**How `sandy-sweep-7` can win without a sweep-time test score.** Its 72.19% was
-measured *after* the sweep, on the saved adapter (the chained eval behind
+How `sandy-sweep-7` can win without a sweep-time test score. Its 72.19% was
+measured after the sweep, on the saved adapter (the chained eval behind
 `production_eval_results.json`, reproduced exactly by the standalone Vertex
 eval `6466991906093006848` above), and it was promoted on that basis. Two
 notes on why this is sound and not a methodological gap:
 
-- **The interruption accidentally enforced the standard protocol.** The trial
+- The interruption accidentally enforced the standard protocol. The trial
   was *selected* on validation alone (`val/accuracy`, the sweep metric, where
   it led with 0.714), and the test split was consulted exactly once afterwards,
   as the final check. The test set never took part in the selection.
-- **The promotion does not depend on a noise-level test gap.** `sandy-sweep-7`
+- The promotion does not depend on a noise-level test gap. `sandy-sweep-7`
   and `autumn-sweep-2` differ by 0.9 pts on the 2,017-sample test split (1456 vs
   1438 correct, 18 answers), well within the roughly ±2 pt 95% CI of either
   estimate, so the test gap alone would not be decisive. But validation (0.714
@@ -173,7 +173,9 @@ notes on why this is sound and not a methodological gap:
 
 ## Distributed training & data loading
 
-None of them is applicable at this scale:
+None of them is needed in its multi-node form at this scale; the applicable
+single-node form — parallel data loading with a multi-worker `DataLoader` —
+is the one we use:
 - **Distributed training:** training runs on a single L4. LoRA on
   PaliGemma2-3B (~6.4 M trainable params, ~3 B frozen) fits one GPU, so
   multi-GPU DDP would add complexity with no benefit. PyTorch-Lightning would
@@ -390,11 +392,11 @@ Notes:
 
 ## Retrospective: did the project turn out as planned?
 
-**The initial goal** (README): _"develop techniques that improve reasoning
+The initial goal (README): _"develop techniques that improve reasoning
 accuracy using the PaliGemma foundation model,"_ with the Transformers
 framework, the PaliGemma VLM, and the `lmms-lab/ScienceQA` data.
 
-**Did we meet it?** Yes, to a large extent. LoRA fine-tuning of `paligemma2-3b-pt-224` on
+Did we meet it? Yes, to a large extent. LoRA fine-tuning of `paligemma2-3b-pt-224` on
 ScienceQA took the model from a base checkpoint that produces long unfocused
 text to one that answers directly with the multiple-choice letter, reaching **72.19%
 test accuracy**
@@ -404,11 +406,11 @@ number). The "techniques that improve accuracy" turned out to be three: LoRA
 before Hint/Lecture so the answer options are never truncated, worth about
 +16 pts), and a hyperparameter sweep on `val/accuracy` rather than `val/loss`.
 
-**What changed from the initial plan:**
-- **Data source:** switched `lmms-lab/ScienceQA` → `derek-thomas/ScienceQA`
+What changed from the initial plan:
+1. Data source: switched `lmms-lab/ScienceQA` → `derek-thomas/ScienceQA`
   because the former is eval-only (no train split). This reshaped the splits to
   train 6218 / val 2097 / test 2017.
-- **Scope:** the initial description was a modelling goal; the delivered project
+2. Scope: the initial description was a modelling goal; the delivered project
   is a full MLOps pipeline around it: DVC + GCS, Hydra, W&B sweeps + registry,
   Vertex training/eval/optimize, Cloud Run serving, drift monitoring, BentoML,
   a Streamlit frontend, CI/CD with auto-build triggers, cloud monitoring +
