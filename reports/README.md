@@ -579,8 +579,8 @@ Debugging was a mix of the VS Code debugger, logging, and, for the harder
 bugs, inspecting intermediate tensors and logs. Two concrete examples:
 (1) the training loss was stuck early in the project because of a stale
 `subjects`/`max_length` handling bug in the data pipeline; (2) a prompt that
-put the Hint/Lecture text *before* the answer Choices silently truncated the
-choices once the token limit was reached, which cost roughly **16 points** of
+put the Hint/Lecture text before the answer Choices silently truncated the
+choices once the token limit was reached, which cost roughly 16 points of
 test accuracy; we traced it by inspecting the actual tokenized prompts and
 fixed it by reordering `build_prompt`.
 
@@ -711,7 +711,7 @@ to `main` that touches `src/scipali/**`; the train image's trigger
 built wheel injected into the build context (see Question 15), so it is built
 manually rather than from a bare git checkout.
 
-The build history also shows several **FAILURE** builds, and these are
+The build history also shows several failure builds, and these are
 intentional: a toolchain drift in the base image started to produce images
 that built successfully but could not import the application (we only
 noticed this when a Cloud Run deploy failed), so we added an import
@@ -835,11 +835,13 @@ live endpoint.
 >
 > Answer:
 
-Yes, both. **Functional tests**: 24 tests in `tests/test_api.py` call the
+Yes, both.
+1. Functional tests: 24 tests in `tests/test_api.py` call the
 app through FastAPI's `TestClient` (the health contract, the `/predict` and
 `/predict-file` success paths and validation failures with 422 on malformed
 bodies, the drift endpoint, and the metrics instrumentation) and run in CI
-on every push across the 3 OS × 2 Python matrix. **Load testing**: locust against the
+on every push across the 3 OS × 2 Python matrix.
+2. Load testing: locust against the
 deployed service (`tests/load/locustfile.py`; the recorded run and its
 analysis are in `reports/load/`). Warm `/predict` showed p50 ≈ 10 s /
 p95 ≈ 27 s, and under concurrent users the initial deployment returned 429s
@@ -863,14 +865,17 @@ cold starts, which our 5xx alert caught and reported by email within minutes
 >
 > Answer:
 
-Yes, three layers. **Data drift**: `monitoring.py` derives lightweight
+Yes, three layers.
+1. Data drift**: `monitoring.py` derives lightweight
 features per request (question length, number of choices, hint/lecture
 presence, image dimensions); `GET /monitor/drift` compares the training
 reference against production features collected from real `/predict` traffic
 via Cloud Logging (Evidently `DataDriftPreset`); this avoids the
 self-comparison problem of checking the reference against a held-out slice
-of the same dataset. **System metrics**: `prometheus-fastapi-instrumentator`
-exposes request counts/latency/sizes at `/metrics`. **Alerting**: a Cloud
+of the same dataset.
+2. System metrics: `prometheus-fastapi-instrumentator`
+exposes request counts/latency/sizes at `/metrics`.
+3. Alerting: a Cloud
 Monitoring policy fires on any 5xx within 5 minutes and emails a notification
 channel that we verified end-to-end (`verificationStatus: VERIFIED`) instead
 of assuming that delivery works. The alert has also fired in a real case:
@@ -905,7 +910,7 @@ as Compute Engine SKUs, plus small build/registry/storage/serving charges)
 and closed in the middle of a running sweep; the project was then re-linked
 to a second account from Duc-Anh Valentino Nguyen, which accrued $29.47
 (Vertex + Compute $10.97, Artifact Registry $12.79, Cloud Run $3.56). The
-most expensive service was therefore the **Vertex AI training stack**
+most expensive service was therefore the Vertex AI training stack
 (≈ $57 of ≈ $80), consistent with 73 custom jobs and ~47 h of billed GPU
 runtime; the Flex-Start queue waiting time was not billed.
 
@@ -933,17 +938,17 @@ re-link command; a pipeline must simply be restartable at any point.
 >
 > Answer:
 
-Yes, several things that the questions above do not cover. **An
-inference-optimization suite**: a bf16 vs int4 vs `torch.compile` benchmark
+Yes, several things that the questions above do not cover. An
+inference-optimization suite: a bf16 vs int4 vs `torch.compile` benchmark
 (int4 halves the GPU memory for a ~9 % latency cost), a global-magnitude
 pruning sweep over the full test split (graceful degradation up to ~30 %
 sparsity, collapse at 70 %), and a masked prune-finetune that recovers
 ~1 pt at 50 % sparsity, all run as Vertex jobs with the results in
-`reports/RESULTS.md`. **Automated model rollout**: moving the `production`
+`reports/RESULTS.md`. Automated model rollout: moving the `production`
 alias in the W&B model registry fires a webhook, which triggers a
 `repository_dispatch` GitHub Actions workflow (keyless Workload Identity
 Federation) that rolls out a fresh Cloud Run revision and smoke-tests it; we
-verified this rollout live. **A CI import guard**, added after a real
+verified this rollout live. A CI import guard, added after a real
 incident: a base-image drift produced images that built successfully but
 could not import the application; Cloud Build now runs an import smoke test,
 so broken images fail in CI and are never pushed. We also added a two-mode
@@ -1021,10 +1026,10 @@ Federation rather than stored service-account keys).
 The single biggest accuracy bug was a prompt-ordering mistake: placing the
 optional Hint/Lecture text before the answer Choices meant the tokenizer's
 `max_length` sometimes truncated the choices themselves. This cost
-roughly **16 points** of test accuracy until it was diagnosed and fixed by
+roughly 16 points of test accuracy until it was diagnosed and fixed by
 reordering the prompt builder.
 
-**Vertex AI GPU availability** cost us a lot of time: L4 quota and G2 machine
+Vertex AI GPU availability cost us a lot of time: L4 quota and G2 machine
 availability only matched in `europe-west4` (another region had quota but no
 G2 machines at all), and Flex Start's default `maxWaitDuration` silently
 resulted in a 24-hour cutoff during stockouts unless it was explicitly
@@ -1033,7 +1038,7 @@ killed several running trials; we treated the runs that W&B marked as
 "failed" (but that actually completed) as valid, since their artifacts were
 intact.
 
-**The pruning sweep** failed repeatedly on Vertex before it worked: capacity
+The pruning sweep failed repeatedly on Vertex before it worked: capacity
 errors, a CUDA out-of-memory during pruning, a packaging bug that dropped
 subpackages from a wheel built inside the image (fixed by building the wheel
 outside the image and copying it in), and a host-RAM out-of-memory caused by
@@ -1070,9 +1075,9 @@ traced them back to the sync behaviour.
 > *We have used ChatGPT to help debug our code. Additionally, we used GitHub Copilot to help write some of our code.*
 > Answer:
 
-**Duc-Anh Valentino Nguyen** set up  the initial repository scaffold (the cookiecutter-based initial commit) and
+Duc-Anh Valentino Nguyen set up  the initial repository scaffold (the cookiecutter-based initial commit) and
 early iterations of the project README (framework overview, team-member
-listing). **Yuxin Liu** implemented the data pipeline and the DVC setup, the
+listing). Yuxin Liu implemented the data pipeline and the DVC setup, the
 model/training code and Hydra configs, the Vertex AI training/sweep/
 evaluation/optimization jobs, the FastAPI serving app, the Streamlit frontend
 and the BentoML service, the CI/CD workflows (tests, linting, docs, and the
