@@ -234,11 +234,12 @@ corporate and increase the quality of your code.</p>
 <em>application but also ... .</em></p>
 <p>Answer:</p>
 </blockquote>
-<p>In total we implemented 132 tests across eight files. <code>test_model.py</code> (50)
+<p>In total we implemented 137 tests across eight files. <code>test_model.py</code> (50)
 covers model construction, LoRA setup, prompt building and config
 resolution; <code>test_data.py</code> (24) the
-download/preprocess pipeline and split integrity; <code>test_api.py</code> (19) the
-serving contracts, including validation failures; <code>test_monitoring.py</code> (12)
+download/preprocess pipeline and split integrity; <code>test_api.py</code> (24) the
+serving contracts (both the JSON and the file-upload predict endpoints),
+including validation failures; <code>test_monitoring.py</code> (12)
 drift-feature derivation and the Evidently path; <code>test_optimize.py</code> (11)
 pruning correctness, including that the achieved sparsity matches the requested
 target; <code>test_predict.py</code> (8) the prediction CLI; <code>test_train.py</code> (6)
@@ -635,7 +636,9 @@ that jobs were not cancelled during long capacity shortages.</p>
 <p>Yes, a FastAPI application (<code>scipali.serving.api</code>). <code>POST /predict</code>
 takes a Pydantic-validated JSON body (<code>question</code>, <code>choices</code>, optional
 <code>hint</code>/<code>lecture</code>, and a base64-encoded <code>image_b64</code>) and returns
-<code>{"prediction": "&lt;letter&gt;"}</code>; <code>GET /</code> reports health and whether the model is
+<code>{"prediction": "&lt;letter&gt;"}</code>; <code>POST /predict-file</code> is its multipart twin that
+accepts a direct file upload (for browser demos in the Swagger UI); <code>GET /</code>
+reports health and whether the model is
 loaded; <code>GET /monitor/drift</code> and <code>GET /metrics</code> expose monitoring. Two design
 decisions are the most important ones: lazy model loading (the app starts and
 passes its startup probes in seconds and loads the 3B model on the first
@@ -686,11 +689,11 @@ live endpoint.</p>
 <em>our API could handle approximately 500 requests per second before the service crashed.</em></p>
 <p>Answer:</p>
 </blockquote>
-<p>Yes, both. <strong>Functional tests</strong>: 19 tests in <code>tests/test_api.py</code> call the
-app through FastAPI's <code>TestClient</code> (the health contract, the <code>/predict</code>
-success path and validation failures with 422 on malformed bodies, the drift
-endpoint, and the metrics instrumentation) and run in CI on every push
-across the 3 OS × 2 Python matrix. <strong>Load testing</strong>: locust against the
+<p>Yes, both. <strong>Functional tests</strong>: 24 tests in <code>tests/test_api.py</code> call the
+app through FastAPI's <code>TestClient</code> (the health contract, the <code>/predict</code> and
+<code>/predict-file</code> success paths and validation failures with 422 on malformed
+bodies, the drift endpoint, and the metrics instrumentation) and run in CI
+on every push across the 3 OS × 2 Python matrix. <strong>Load testing</strong>: locust against the
 deployed service (<code>tests/load/locustfile.py</code>; the recorded run and its
 analysis are in <code>reports/load/</code>). Warm <code>/predict</code> showed p50 ≈ 10 s /
 p95 ≈ 27 s, and under concurrent users the initial deployment returned 429s

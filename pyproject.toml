@@ -31,6 +31,7 @@ dependencies = [
     "pandas>=2.3.3",
     "peft>=0.19.1",
     "pillow>=12.2.0",
+    "python-multipart==0.0.32",
     "rich>=15.0.0",
     "tensorboard>=2.20.0",
     "torch==2.6.0",

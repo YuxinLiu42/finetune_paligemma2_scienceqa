@@ -237,6 +237,86 @@ def test_predict_missing_image_returns_422() -> None:
     assert response.status_code == 422
 
 
+def _png_bytes() -> bytes:
+    """Return the raw bytes of a tiny PNG for multipart uploads."""
+    buf = io.BytesIO()
+    Image.new("RGB", (16, 16), "white").save(buf, format="PNG")
+    return buf.getvalue()
+
+
+def test_predict_file_returns_prediction() -> None:
+    """Upload endpoint returns a prediction letter when the model is loaded."""
+    with (
+        patch("scipali.serving.api._module", new=object()),
+        patch("scipali.serving.api.predict_single", return_value="A"),
+    ):
+        with TestClient(app) as client:
+            response = client.post(
+                "/predict-file",
+                files={"image": ("img.png", _png_bytes(), "image/png")},
+                data={"question": "Is water wet?", "choices": "Yes,No"},
+            )
+    assert response.status_code == 200
+    assert response.json()["prediction"] == "A"
+
+
+def test_predict_file_parses_choices_and_forwards_hint() -> None:
+    """The comma-separated choices are split/stripped and hint is forwarded."""
+    with (
+        patch("scipali.serving.api._module", new=object()),
+        patch("scipali.serving.api.predict_single", return_value="B") as mock_predict,
+    ):
+        with TestClient(app) as client:
+            client.post(
+                "/predict-file",
+                files={"image": ("img.png", _png_bytes(), "image/png")},
+                data={
+                    "question": "What do plants absorb?",
+                    "choices": " Oxygen , CO2 ",
+                    "hint": "Think about photosynthesis.",
+                },
+            )
+    _, kwargs = mock_predict.call_args
+    assert kwargs["choices"] == ["Oxygen", "CO2"]
+    assert kwargs.get("hint") == "Think about photosynthesis."
+    assert "lecture" not in kwargs
+
+
+def test_predict_file_too_few_choices_returns_422() -> None:
+    """Upload endpoint rejects a request with fewer than 2 choices."""
+    with patch("scipali.serving.api._module", new=object()):
+        with TestClient(app) as client:
+            response = client.post(
+                "/predict-file",
+                files={"image": ("img.png", _png_bytes(), "image/png")},
+                data={"question": "Is water wet?", "choices": "Yes"},
+            )
+    assert response.status_code == 422
+
+
+def test_predict_file_invalid_image_returns_400() -> None:
+    """Upload endpoint returns 400 when the file is not a decodable image."""
+    with patch("scipali.serving.api._module", new=object()):
+        with TestClient(app) as client:
+            response = client.post(
+                "/predict-file",
+                files={"image": ("img.txt", b"not an image", "text/plain")},
+                data={"question": "Is water wet?", "choices": "Yes,No"},
+            )
+    assert response.status_code == 400
+
+
+def test_predict_file_without_model_returns_503() -> None:
+    """Upload endpoint returns 503 when no checkpoint is loaded."""
+    with TestClient(app) as client:
+        response = client.post(
+            "/predict-file",
+            files={"image": ("img.png", _png_bytes(), "image/png")},
+            data={"question": "Is water wet?", "choices": "Yes,No"},
+        )
+    assert response.status_code == 503
+
+
 def test_monitor_drift_runs_evidently() -> None:
     """Drift endpoint reads reference/current from GCS and returns a verdict."""
     pytest.importorskip("evidently")

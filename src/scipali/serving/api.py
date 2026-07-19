@@ -11,7 +11,7 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 from urllib.parse import urlparse
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from PIL import Image
 from pydantic import BaseModel, Field
 from rich.logging import RichHandler
@@ -314,6 +314,77 @@ def root() -> dict[str, str]:
     }
 
 
+def _run_prediction(
+    question: str,
+    choices: list[str],
+    hint: str,
+    lecture: str,
+    image: Image.Image,
+    max_new_tokens: int,
+) -> PredictResponse:
+    """Shared inference path behind /predict and /predict-file.
+
+    Checks that the model is loaded, forwards only the optional prompt fields
+    that were actually provided, runs the prediction, and emits the structured
+    single-line JSON event that the drift-monitoring collector reads back from
+    Cloud Logging.
+
+    Args:
+        question: The question text.
+        choices: Parsed list of answer choice strings.
+        hint: Optional hint text ("" to skip).
+        lecture: Optional lecture text ("" to skip).
+        image: Decoded RGB image.
+        max_new_tokens: Maximum number of tokens the model may generate.
+
+    Returns:
+        PredictResponse with the predicted answer letter.
+
+    Raises:
+        HTTPException 503: Model checkpoint has not been loaded.
+    """
+    module = _ensure_loaded()
+    if module is None:
+        raise HTTPException(
+            status_code=503,
+            detail="Model checkpoint not loaded. "
+            "Please set CHECKPOINT_PATH and restart the service.",
+        )
+
+    # Only forward optional fields that were actually provided,
+    # matching whatever columns survived --drop-cols during preprocessing.
+    prompt_kwargs: dict[str, str] = {}
+    if hint:
+        prompt_kwargs["hint"] = hint
+    if lecture:
+        prompt_kwargs["lecture"] = lecture
+
+    prediction = predict_single(
+        module=module,
+        image=image,
+        question=question,
+        choices=choices,
+        max_new_tokens=max_new_tokens,
+        **prompt_kwargs,
+    )
+
+    # Input-output collection: one structured JSON line per prediction ->
+    # Cloud Logging, queryable later for data-drift monitoring. The image bytes
+    # are not logged (size); its dimensions are.
+    _log_prediction_event(
+        {
+            "event": "prediction",
+            "question": question,
+            "n_choices": len(choices),
+            "hint": bool(hint),
+            "lecture": bool(lecture),
+            "image_px": list(image.size),
+            "prediction": prediction,
+        }
+    )
+    return PredictResponse(prediction=prediction)
+
+
 @app.post(
     "/predict",
     response_model=PredictResponse,
@@ -337,14 +408,6 @@ def predict(request: PredictRequest) -> PredictResponse:
         HTTPException 503: Model checkpoint has not been loaded.
         HTTPException 400: Image decoding failed.
     """
-    module = _ensure_loaded()
-    if module is None:
-        raise HTTPException(
-            status_code=503,
-            detail="Model checkpoint not loaded. "
-            "Please set CHECKPOINT_PATH and restart the service.",
-        )
-
     # Decode the image (required — PaliGemma is image-conditioned)
     try:
         image_bytes = base64.b64decode(request.image_b64)
@@ -355,38 +418,84 @@ def predict(request: PredictRequest) -> PredictResponse:
             detail=f"Failed to decode image_b64: {exc}",
         ) from exc
 
-    # Only forward optional fields that were actually provided,
-    # matching whatever columns survived --drop-cols during preprocessing.
-    prompt_kwargs: dict[str, str] = {}
-    if request.hint:
-        prompt_kwargs["hint"] = request.hint
-    if request.lecture:
-        prompt_kwargs["lecture"] = request.lecture
-
-    prediction = predict_single(
-        module=module,
-        image=image,
+    return _run_prediction(
         question=request.question,
         choices=request.choices,
+        hint=request.hint,
+        lecture=request.lecture,
+        image=image,
         max_new_tokens=request.max_new_tokens,
-        **prompt_kwargs,
     )
 
-    # Input-output collection: one structured JSON line per prediction ->
-    # Cloud Logging, queryable later for data-drift monitoring. The image bytes
-    # are not logged (size); its dimensions are.
-    _log_prediction_event(
-        {
-            "event": "prediction",
-            "question": request.question,
-            "n_choices": len(request.choices),
-            "hint": bool(request.hint),
-            "lecture": bool(request.lecture),
-            "image_px": list(image.size),
-            "prediction": prediction,
-        }
+
+@app.post(
+    "/predict-file",
+    response_model=PredictResponse,
+    summary="Run inference on an uploaded image file (browser-friendly)",
+)
+async def predict_file(
+    image: UploadFile = File(..., description="Image file (JPEG or PNG)."),
+    question: str = Form(..., min_length=1, description="Question text."),
+    choices: str = Form(
+        ...,
+        description="Comma-separated answer choices (2-10 items), "
+        "e.g. 'oxygen,carbon dioxide,nitrogen'.",
+    ),
+    hint: str = Form(default="", description="Optional hint text. Skipped if empty."),
+    lecture: str = Form(
+        default="", description="Optional lecture text. Skipped if empty."
+    ),
+    max_new_tokens: int = Form(
+        default=10, ge=1, le=128, description="Max tokens to generate."
+    ),
+) -> PredictResponse:
+    """Multipart twin of /predict: upload the image as a file, no base64 needed.
+
+    This endpoint exists so the Swagger UI (/docs) renders a real file-upload
+    button; /predict stays the JSON contract used by the CLI, the demo script,
+    and the Streamlit frontend. The choices travel as one comma-separated
+    string because HTML forms carry flat fields, mirroring the predict CLI.
+
+    Args:
+        image: Uploaded image file (JPEG or PNG).
+        question: The question text.
+        choices: Comma-separated answer choices (2-10 items).
+        hint: Optional hint text appended to the prompt.
+        lecture: Optional lecture text appended to the prompt.
+        max_new_tokens: Maximum number of tokens the model may generate.
+
+    Returns:
+        PredictResponse with the predicted answer letter.
+
+    Raises:
+        HTTPException 503: Model checkpoint has not been loaded.
+        HTTPException 422: choices does not contain 2-10 items.
+        HTTPException 400: The uploaded file is not a decodable image.
+    """
+    choice_list = [c.strip() for c in choices.split(",") if c.strip()]
+    if not 2 <= len(choice_list) <= 10:
+        raise HTTPException(
+            status_code=422,
+            detail="choices must contain 2-10 comma-separated items, "
+            f"got {len(choice_list)}",
+        )
+    raw = await image.read()
+    try:
+        pil_image = Image.open(io.BytesIO(raw)).convert("RGB")
+    except Exception as exc:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Failed to decode uploaded image: {exc}",
+        ) from exc
+
+    return _run_prediction(
+        question=question,
+        choices=choice_list,
+        hint=hint,
+        lecture=lecture,
+        image=pil_image,
+        max_new_tokens=max_new_tokens,
     )
-    return PredictResponse(prediction=prediction)
 
 
 @app.get(

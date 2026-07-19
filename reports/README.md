@@ -284,11 +284,12 @@ first adapting to another author's personal conventions.
 >
 > Answer:
 
-In total we implemented 132 tests across eight files. `test_model.py` (50)
+In total we implemented 137 tests across eight files. `test_model.py` (50)
 covers model construction, LoRA setup, prompt building and config
 resolution; `test_data.py` (24) the
-download/preprocess pipeline and split integrity; `test_api.py` (19) the
-serving contracts, including validation failures; `test_monitoring.py` (12)
+download/preprocess pipeline and split integrity; `test_api.py` (24) the
+serving contracts (both the JSON and the file-upload predict endpoints),
+including validation failures; `test_monitoring.py` (12)
 drift-feature derivation and the Evidently path; `test_optimize.py` (11)
 pruning correctness, including that the achieved sparsity matches the requested
 target; `test_predict.py` (8) the prediction CLI; `test_train.py` (6)
@@ -768,7 +769,9 @@ that jobs were not cancelled during long capacity shortages.
 Yes, a FastAPI application (`scipali.serving.api`). `POST /predict`
 takes a Pydantic-validated JSON body (`question`, `choices`, optional
 `hint`/`lecture`, and a base64-encoded `image_b64`) and returns
-`{"prediction": "<letter>"}`; `GET /` reports health and whether the model is
+`{"prediction": "<letter>"}`; `POST /predict-file` is its multipart twin that
+accepts a direct file upload (for browser demos in the Swagger UI); `GET /`
+reports health and whether the model is
 loaded; `GET /monitor/drift` and `GET /metrics` expose monitoring. Two design
 decisions are the most important ones: lazy model loading (the app starts and
 passes its startup probes in seconds and loads the 3B model on the first
@@ -832,11 +835,11 @@ live endpoint.
 >
 > Answer:
 
-Yes, both. **Functional tests**: 19 tests in `tests/test_api.py` call the
-app through FastAPI's `TestClient` (the health contract, the `/predict`
-success path and validation failures with 422 on malformed bodies, the drift
-endpoint, and the metrics instrumentation) and run in CI on every push
-across the 3 OS × 2 Python matrix. **Load testing**: locust against the
+Yes, both. **Functional tests**: 24 tests in `tests/test_api.py` call the
+app through FastAPI's `TestClient` (the health contract, the `/predict` and
+`/predict-file` success paths and validation failures with 422 on malformed
+bodies, the drift endpoint, and the metrics instrumentation) and run in CI
+on every push across the 3 OS × 2 Python matrix. **Load testing**: locust against the
 deployed service (`tests/load/locustfile.py`; the recorded run and its
 analysis are in `reports/load/`). Warm `/predict` showed p50 ≈ 10 s /
 p95 ≈ 27 s, and under concurrent users the initial deployment returned 429s

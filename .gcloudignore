@@ -46,18 +46,21 @@ __pycache__
 htmlcov
 
 # run artifacts
-wandb
-lightning_logs
-checkpoints
-outputs
+# Anchored to the repo root (leading /): an unanchored `models/` also matched
+# src/scipali/models/ and silently dropped that subpackage from the upload —
+# the 2026-07-19 manual API build failed its import smoke test exactly this way.
+/wandb
+/lightning_logs
+/checkpoints
+/outputs
 
 # not COPY'd by any dockerfile — pure upload waste (tiny-paligemma alone is
 # ~100MB and, being iCloud-evicted, broke the gcloud tarball with
 # "unexpected end of data")
-tiny-paligemma/
-models/
-tests/
-reports/
+/tiny-paligemma/
+/models/
+/tests/
+/reports/
 profile_output.prof
 import_time.log
 

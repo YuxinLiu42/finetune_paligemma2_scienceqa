@@ -689,8 +689,13 @@ The service is public, so a prediction works from any machine without any
 setup: no repository, no Python environment, no credentials:
 
 - **Browser only:** open the live Swagger UI at
-  <https://paligemma-api-581237630637.europe-west4.run.app/docs> and send
-  `POST /predict` via "Try it out".
+  <https://paligemma-api-581237630637.europe-west4.run.app/docs>. The easiest
+  endpoint there is `POST /predict-file`: "Try it out" → upload the image
+  with the file button and type the choices comma-separated. `POST /predict`
+  is the JSON variant: a file path cannot be used there — paste the image as
+  base64 text into `image_b64` (`base64 < img.png | tr -d '\n'`), as in the
+  raw calls below, and keep the JSON strictly valid (no trailing commas; do
+  not copy the trailing `%` that zsh prints after the base64 output).
 - **Any terminal:** the raw calls below need only `curl` + `base64`
   (preinstalled on macOS/Linux); this is the main benefit of deployment: a
   client only needs `curl`, not CUDA.
@@ -708,6 +713,11 @@ curl -s -X POST "$API/predict" -H 'Content-Type: application/json' -d '{
   "choices": ["Phoenix", "Baton Rouge", "Honolulu", "Cheyenne"],
   "image_b64": "'"$(base64 < img.png | tr -d '\n')"'"}'
 # -> {"prediction":"D"}
+# the same prediction via the multipart upload endpoint (no base64 needed):
+curl -s -X POST "$API/predict-file" -F image=@img.png \
+  -F "question=What is the capital of Wyoming?" \
+  -F "choices=Phoenix,Baton Rouge,Honolulu,Cheyenne"
+# -> {"prediction":"D"}
 curl "$API/monitor/drift"          # Evidently drift check vs the seeded reference
 # -> {"dataset_drift":false,"n_drifted_columns":0,"n_columns":...}
 curl -s "$API/metrics" | head      # Prometheus metrics
@@ -722,7 +732,7 @@ each symptom means something different:
 |---|---|---|
 | `Connection refused` / "Backend unreachable" | Nothing is listening: server not started, crashed, or wrong port | Start the API; check `lsof -i :8000` |
 | `{"detail":"Method Not Allowed"}` (405) | Path exists, wrong verb: a browser GET on `/predict`, or a POST silently downgraded to GET by the `http://`→`https://` 301 redirect | POST it (curl/UI/Swagger); always use `https://` exactly |
-| `422 Unprocessable Entity` | Server healthy; the request body is invalid (missing `question` / `choices` / `image_b64`) | Fix the JSON payload |
+| `422 Unprocessable Entity` | Server healthy; the request body is invalid: a required field is missing (`question` / `choices` / `image_b64`) or the JSON itself is malformed (e.g. a trailing comma — the error then says `json_invalid` with the character position) | Fix the JSON payload |
 | `{"detail":"Model checkpoint not loaded…"}` | Server was started without `CHECKPOINT_PATH` | Restart it with the env var set |
 | Very slow first call / client timeout | Not an error: cold start (about 150 to 230 s on scaled-to-zero Cloud Run; locally the first predict loads the 3B model) | Send one warm-up request first |
 | `429 Rate exceeded` | One heavy inference per instance (`concurrency=1`); overflow beyond `max-instances=3` is rejected | Retry; see [Load test](#load-test) |

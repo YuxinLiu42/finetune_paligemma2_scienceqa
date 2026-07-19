@@ -126,7 +126,7 @@ uv sync
 # 2. fetch the processed dataset (DVC remote on GCS; needs `gcloud auth login`)
 dvc pull
 
-# 3. check that everything works: 132 CPU-only tests
+# 3. check that everything works: 137 CPU-only tests
 uv run pytest tests/
 
 # 4. ask the DEPLOYED model a question (public endpoint, no credentials needed)

@@ -1,10 +1,10 @@
 # API design
 
-The serving API is a small FastAPI app (`scipali.serving.api`) with three
-endpoints: a health check, single-sample inference, and a data-drift check.
-The full request/response models are validated by Pydantic and published as
-OpenAPI at `/openapi.json`, with interactive docs at `/docs` (Swagger) and
-`/redoc`.
+The serving API is a small FastAPI app (`scipali.serving.api`) with a health
+check, single-sample inference (JSON and file-upload variants), and a
+data-drift check. The full request/response models are validated by Pydantic
+and published as OpenAPI at `/openapi.json`, with interactive docs at `/docs`
+(Swagger) and `/redoc`.
 
 ## Endpoints
 
@@ -12,6 +12,7 @@ OpenAPI at `/openapi.json`, with interactive docs at `/docs` (Swagger) and
 |----------------------|----------------------------------|---------------------------------------|---------|
 | `GET /`              | Health + model-loaded flag       | —                                     | `{status, model_loaded}` |
 | `POST /predict`      | Inference on one ScienceQA item  | `PredictRequest` (JSON)               | `{prediction}` — the answer letter |
+| `POST /predict-file` | Same inference, browser-friendly | `multipart/form-data`: `image` file + form fields | `{prediction}` — the answer letter |
 | `GET /monitor/drift` | Evidently input data-drift check | `current_gcs` (optional gs:// override) | `DriftResponse` |
 | `GET /metrics`       | Prometheus system metrics  | —                                     | Prometheus text exposition |
 
@@ -34,6 +35,22 @@ runs without the optional dependency.
 }
 // response — PredictResponse
 { "prediction": "C" }   // a single normalised answer letter (A/B/C/…)
+```
+
+### `POST /predict-file`
+
+The `multipart/form-data` twin of `/predict`, added so the Swagger UI renders
+a real file-upload button (a browser cannot send a local file path, and JSON
+cannot carry a file). The image travels as an uploaded file; the choices
+travel as one comma-separated string, mirroring the predict CLI. Both
+endpoints share the same inference path and emit the same drift-monitoring
+log event.
+
+```bash
+curl -s -X POST "$API/predict-file" -F image=@img.png \
+  -F "question=What is the capital of Wyoming?" \
+  -F "choices=Phoenix,Baton Rouge,Honolulu,Cheyenne"
+# -> {"prediction":"D"}
 ```
 
 ### `GET /monitor/drift`
