@@ -233,7 +233,7 @@ We removed `notebooks/` (all experimentation went through Hydra-configured
 scripts, not notebooks) and did not use a `references/` folder. We added two
 things not in the base template: `cloud/` (Vertex AI + Cloud Build + ops
 scripts) and a `monitoring/` subpackage under `src/scipali/`, since the
-template doesn't anticipate a deployed-model monitoring loop.
+template does not anticipate a deployed-model monitoring loop.
 
 ### Question 6
 
@@ -261,7 +261,7 @@ These rules matter more as a project grows because consistent formatting and
 typing remove a whole class of review friction: a
 reviewer can focus on logic instead of style, static types catch a class of
 bugs before runtime, and a shared, enforced style means any contributor
-(including a future one who wasn't on the original team) can read unfamiliar
+(including a future one who was not on the original team) can read unfamiliar
 code without adapting to a different author's personal conventions.
 
 ## Version control
@@ -338,7 +338,7 @@ checks (a real Vertex AI run, a real drift report) rather than unit tests.
 
 Yes. Changes went into feature branches and were merged into `main` via pull
 requests rather than pushed directly; the repository history shows the PR merges. Since `main` is
-wired to CI (tests + linting on every push/PR) and to automatic deployment
+connected to CI (tests + linting on every push/PR) and to automatic deployment
 (Cloud Build rebuilds the API image, and later in the project a
 model-registry-change workflow rolls a promoted model out to Cloud Run), a
 broken `main` has real consequences beyond code review. Keeping changes in
@@ -364,7 +364,7 @@ protection rules in a longer-lived project.
 Yes. DVC tracks the processed ScienceQA-IMG splits, with a GCS remote
 (`gs://mlops-paligemma-west4/dvcstore`). `.dvc/config` sets `no_scm=true`
 because the training/optimize Docker images ship the `.dvc` pointer files
-without a `.git` directory (so DVC can't detect a git repo inside the
+without a `.git` directory (so DVC cannot detect a git repo inside the
 container), and `dvc pull` needs to work in that no-SCM mode.
 
 DVC let us keep the (large, binary) image data out of git entirely while still
@@ -374,7 +374,7 @@ GCS and are pulled on demand (locally, in CI, and inside Vertex AI training
 jobs). It also meant switching data sources mid-project (we initially targeted
 `lmms-lab/ScienceQA`, then switched to
 [`derek-thomas/ScienceQA`](https://huggingface.co/datasets/derek-thomas/ScienceQA)
-because the former ships no train split) did not require any special handling:
+because the former provides no train split) did not require any special handling:
 `dvc add` + `dvc push`, and the new processed split was versioned the same way.
 
 ### Question 11
@@ -469,7 +469,7 @@ Every run logs its fully-resolved Hydra config to Weights & Biases as part of
 the run's config, so the exact hyperparameters behind any result are always
 recoverable from the W&B run page, not just from whatever config file existed
 locally at the time. Dependency versions are pinned via `uv.lock` (`--frozen`
-installs in CI/Docker/Vertex), so package drift can't silently change results
+installs in CI/Docker/Vertex), so package drift cannot silently change results
 between runs. A seed is set for the training run, and the produced LoRA
 adapter, its evaluation metrics, and the W&B run config travel together (the
 adapter is uploaded as a W&B artifact and can be pulled back down alongside
@@ -513,7 +513,7 @@ in our sweep, the trial with the *best* `val/loss` (0.464) had the
 *higher* loss (0.511) but the *best* accuracy (0.702); see
 [`reports/RESULTS.md`](RESULTS.md#methodology-note--why-we-optimise-valaccuracy-not-valloss)
 for the full table. Since the task is graded on exact-match accuracy, not
-log-likelihood, optimising the metric that's actually reported avoided
+log-likelihood, optimising the metric that is actually reported avoided
 promoting a model that looked good on loss but was measurably worse on the
 metric we actually care about.
 
@@ -691,7 +691,7 @@ Verifiable from the CLI: `gcloud builds list --region=europe-west4`. Trigger
 `mlops-ci-api` auto-builds the API image on every push to `main` that touches
 `src/scipali/**`; the train image's trigger (`mlops-ci-train`) exists but is
 disabled, because that image needs a locally-built wheel injected into the
-build context (see Question 15), so it's built manually rather than from a
+build context (see Question 15), so it is built manually rather than from a
 bare git checkout.
 
 Recent API builds may show **FAILURE**, and this is deliberate: a base-image toolchain
@@ -989,11 +989,11 @@ stored service-account keys).
 
 The single biggest accuracy bug was a prompt-ordering mistake: placing the
 optional Hint/Lecture text before the answer Choices meant the tokenizer's
-`max_length` sometimes truncated the choices themselves. This was worth
-roughly **16 points** of test accuracy once diagnosed and fixed by reordering
-the prompt builder.
+`max_length` sometimes truncated the choices themselves. This cost
+roughly **16 points** of test accuracy until it was diagnosed and fixed by
+reordering the prompt builder.
 
-**Vertex AI GPU availability** cost real time: L4 quota and G2 machine
+**Vertex AI GPU availability** cost us significant time: L4 quota and G2 machine
 availability only lined up in `europe-west4` (a region with quota elsewhere had
 no G2 machines at all), and Flex Start's default `maxWaitDuration` silently
 meant a 24-hour stockout cutoff unless explicitly overridden. A GCP billing

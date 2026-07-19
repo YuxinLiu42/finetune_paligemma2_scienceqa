@@ -126,7 +126,8 @@ that wasted trials in sweep #1.
 ## Full-data retrain (r=16, W&B sweep `win9arpw`)
 
 After switching the data source to [`derek-thomas/ScienceQA`](https://huggingface.co/datasets/derek-thomas/ScienceQA) (the lmms-lab mirror
-ships no train split, which had forced carving "train" out of validation), the
+provides no train split, which had forced us to carve a "train" part out of
+validation), the
 real splits are train 6,218 / val 2,097 / test 2,017, and LoRA rank was raised
 8 → 16. A baseline + Bayesian sweep (metric `val/accuracy`) ran; the GCP billing
 account closed mid-sweep (after trial 7), but the completed trials' adapters and
@@ -389,7 +390,7 @@ Notes:
 accuracy using the PaliGemma foundation model,"_ with the Transformers
 framework, the PaliGemma VLM, and the `lmms-lab/ScienceQA` data.
 
-**Did we meet it?** Largely yes. LoRA fine-tuning of `paligemma2-3b-pt-224` on
+**Did we meet it?** Yes, to a large extent. LoRA fine-tuning of `paligemma2-3b-pt-224` on
 ScienceQA took the model from a base checkpoint that produces long unfocused
 text to one that answers the multiple-choice letter cleanly, reaching **72.19%
 test accuracy**

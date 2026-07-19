@@ -45,7 +45,7 @@ deployed behind a FastAPI service on Cloud Run with a Streamlit UI on top (see t
 the image subset ("ScienceQA-IMG"): train 6,218 / val 2,097 / test 2,017. Each
 sample has an image, a question, answer choices, the answer index, and optional
 hint / lecture plus a subject label. (We initially planned `lmms-lab/ScienceQA`,
-but that mirror ships no train split, so we switched.)
+but that mirror provides no train split, so we switched.)
 
 ### Model
 The PaliGemma2-3B vision-language model
@@ -225,7 +225,7 @@ uv run pytest tests/            # green before pushing
 git push -u origin feat/<name>  # then open a pull request
 ```
 
-`main` is wired to CI and deployment (a push rebuilds the API image), so
+`main` is connected to CI and deployment (a push rebuilds the API image), so
 changes merge via pull request once CI is green, because a broken `main` has
 real consequences beyond review.
 
@@ -398,7 +398,7 @@ path) and GCP/HF credentials, as in [Serve the API locally](#serve-the-api-local
 
 #### Clean up docker resources
 
-The images are large (the train image ships CUDA torch), and test runs without
+The images are large (the train image contains CUDA torch), and test runs without
 `--rm` leave stopped containers behind:
 
 ```bash
@@ -431,7 +431,7 @@ uv run python -m scipali.models.model
 This is exactly what the Vertex job does (next entry): it runs the
 `paligemma-train` image with `bash cloud/run_baseline_and_sweep.sh` on an L4:
 containerized training on a managed GPU host, with data, secrets, and image
-wired in automatically. Locally we can only smoke-test the container (no
+prepared automatically. Locally we can only smoke-test the container (no
 NVIDIA GPU on macOS; see the Docker zone); on a Linux box with a GPU, the
 manual equivalent has this shape (untested here, since Vertex *is* our GPU
 host):
@@ -447,8 +447,8 @@ docker run --rm --gpus all -e WANDB_API_KEY -e HF_TOKEN \
 We chose Vertex AI because we have no local GPU and wanted training to be a
 managed, ephemeral job rather than a machine: we pay only while the job
 runs, there is nothing to SSH into or remember to delete, scarce L4 capacity
-is handled by a queue instead of by us, and the image/data/secrets are wired
-in automatically. The cloud-training path: submits a Vertex AI custom job on a single L4 GPU
+is handled by a queue instead of by us, and the image/data/secrets are
+prepared automatically. The cloud-training path: submits a Vertex AI custom job on a single L4 GPU
 (`europe-west4`, Flex Start queue) running the train image; data arrives via
 the automatic `dvc pull`, W&B/HF secrets via Secret Manager (see the Docker note).
 
@@ -466,7 +466,7 @@ envsubst < cloud/vertex_config.template.yaml > cloud/vertex_config.yaml
 gcloud ai custom-jobs create --region=europe-west4 --project=paligemma-scienceqa \
   --display-name=paligemma-train --config=cloud/vertex_config.yaml
 gcloud ai custom-jobs stream-logs <job-id> --region=europe-west4
-# (no id at hand? the $JOB resolver in "Debug a failing cloud job" grabs the newest)
+# (if you have no id, the $JOB resolver in "Debug a failing cloud job" gets the newest)
 ```
 
 Inside the container, the job spec runs `bash cloud/run_baseline_and_sweep.sh`,
@@ -522,7 +522,7 @@ The fully manual alternative, `gcloud compute instances create <name>
 --zone=… --accelerator=type=nvidia-l4,count=1 …`, creates a raw GPU VM you
 must SSH into, run, and remember to delete. We deliberately use managed Vertex
 custom jobs instead: the machine exists only for the job's lifetime, and the
-image, DVC data pull, and secrets are wired in automatically.
+image, DVC data pull, and secrets are prepared automatically.
 
 #### Hyperparameter sweep (W&B)
 
@@ -776,8 +776,8 @@ setup: no repo, no Python env, no credentials:
   <https://paligemma-api-581237630637.europe-west4.run.app/docs> and fire
   `POST /predict` via "Try it out".
 - **Any terminal:** the raw calls below need only `curl` + `base64`
-  (preinstalled on macOS/Linux); deployment is the point, since a client needs
-  `curl`, not CUDA.
+  (preinstalled on macOS/Linux); this is the point of deployment: a client
+  only needs `curl`, not CUDA.
 
 Under the hood, the three raw calls (the API takes JSON with a
 base64-encoded image):
@@ -931,7 +931,7 @@ POST   /predict        24  13(54%)   |  10 s    27 s    27 s
 GET    /               12   8(67%)   |  4.6 s   10 s    10 s
 ```
 
-The 429 failures *were* the finding: the initial deploy (`--max-instances 1`,
+The 429 failures were the main finding: the initial deploy (`--max-instances 1`,
 `--concurrency 1`) served one request at a time and rejected the overflow,
 which is why the service now runs `--max-instances 3`.
 
