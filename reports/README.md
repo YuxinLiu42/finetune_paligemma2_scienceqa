@@ -908,8 +908,8 @@ Yuxin Liu accrued $50.15 (Compute Engine $33.25 + AI Platform Training
 $13.06, together the Vertex L4 training stack, since the GPU VMs are billed
 as Compute Engine SKUs, plus small build/registry/storage/serving charges)
 and closed in the middle of a running sweep; the project was then re-linked
-to a second account from Duc-Anh Valentino Nguyen, which accrued $29.47
-(Vertex + Compute $10.97, Artifact Registry $12.79, Cloud Run $3.56). The
+to a second account from Duc-Anh Valentino Nguyen, which accrued $29.65
+(Vertex + Compute $10.97, Artifact Registry $12.87, Cloud Run $3.65). The
 most expensive service was therefore the Vertex AI training stack
 (≈ $57 of ≈ $80), consistent with 73 custom jobs and ~47 h of billed GPU
 runtime; the Flex-Start queue waiting time was not billed.
