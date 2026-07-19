@@ -1067,8 +1067,7 @@ traced them back to the sync behaviour.
 > *We have used ChatGPT to help debug our code. Additionally, we used GitHub Copilot to help write some of our code.*
 > Answer:
 
-Based on the repository's commit history: **Duc-Anh Valentino Nguyen** set up
-the initial repository scaffold (the cookiecutter-based initial commit) and
+**Duc-Anh Valentino Nguyen** set up  the initial repository scaffold (the cookiecutter-based initial commit) and
 early iterations of the project README (framework overview, team-member
 listing). **Yuxin Liu** implemented the data pipeline and the DVC setup, the
 model/training code and Hydra configs, the Vertex AI training/sweep/
