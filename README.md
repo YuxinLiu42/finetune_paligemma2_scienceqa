@@ -8,9 +8,7 @@
 PaliGemma2-3B fine-tuned with LoRA on ScienceQA-IMG, built into a full MLOps
 pipeline: DVC data versioning, Hydra configs, W&B sweeps, Vertex AI training,
 Cloud Run serving, drift monitoring, and CI/CD. The main result is **72.19%**
-exact-match accuracy on the 2,017-sample test split. The full results are in
-[`reports/RESULTS.md`](reports/RESULTS.md); usage is documented in
-[`docs/source/usage.md`](docs/source/usage.md).
+exact-match accuracy on the 2,017-sample test split.
 
 <p align="center">
   <img src="reports/figures/randomQ_ui.png" alt="Streamlit UI: a ScienceQA test sample answered correctly by the deployed model" width="720">
