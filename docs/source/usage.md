@@ -147,6 +147,11 @@ curl -s -X POST "$API/predict" -H 'Content-Type: application/json' -d '{
   "question": "What is the capital of Wyoming?",
   "choices": ["Phoenix", "Baton Rouge", "Honolulu", "Cheyenne"],
   "image_b64": "'"$(base64 < img.png | tr -d '\n')"'"}'
+# the same prediction via the multipart upload endpoint (no base64 needed;
+# this is also the endpoint with the file-upload button in the Swagger UI):
+curl -s -X POST "$API/predict-file" -F image=@img.png \
+  -F "question=What is the capital of Wyoming?" \
+  -F "choices=Phoenix,Baton Rouge,Honolulu,Cheyenne"
 curl "$API/monitor/drift"          # Evidently drift check vs the seeded reference
 curl -s "$API/metrics" | head      # Prometheus metrics
 ```

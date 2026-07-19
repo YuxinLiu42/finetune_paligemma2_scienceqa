@@ -521,7 +521,7 @@ in practice: in our sweep, the trial with the *best* `val/loss` (0.464) had
 the *worst* `val/accuracy` (0.619), while the trial we actually selected
 (best `val/accuracy`, promoted to production at the time with 64.1% test
 accuracy) had a *higher* loss (0.511) but the *best* accuracy (0.702); see
-[`reports/RESULTS.md`](RESULTS.md#methodology-note--why-we-optimise-valaccuracy-not-valloss)
+[`reports/RESULTS.md`](RESULTS.md#methodology-note-why-we-optimise-valaccuracy-not-valloss)
 for the full table. Since the task is graded on exact-match accuracy and not
 on log-likelihood, optimising the metric that is actually reported prevented
 us from promoting a model that looked good on loss but was measurably worse
