@@ -1,4 +1,8 @@
-# Scipali - Answer Your Science Questions
+# Scipali: Answer Your Science Questions
+
+<p align="center">
+  <img src="figures/science-qa.jpg" alt="Science banner" width="720">
+</p>
 
 Fine-tuning **[PaliGemma2-3B](https://huggingface.co/google/paligemma2-3b-pt-224)**
 (LoRA) on the **[ScienceQA](https://huggingface.co/datasets/derek-thomas/ScienceQA)**
